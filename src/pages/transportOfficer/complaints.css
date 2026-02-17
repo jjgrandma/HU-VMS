@@ -1,0 +1,173 @@
+/* ===== COMPLAINTS PAGE ===== */
+.complaints-page {
+  font-family: 'Inter', sans-serif;
+  padding: 20px;
+  background-color: #0f172a;
+  color: #f1f5f9;
+  min-height: 100vh;
+}
+
+.complaints-page h1 {
+  font-size: 26px;
+  margin-bottom: 4px;
+}
+
+.complaints-page p {
+  color: #94a3b8;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+/* ===== FILTERS ===== */
+.filters {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.filters label {
+  margin-right: 6px;
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+.filters select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: none;
+  background: #1e293b;
+  color: #f1f5f9;
+  outline: none;
+}
+
+/* ===== COMPLAINT CARDS ===== */
+.complaints-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.complaint-card {
+  background: #1e293b;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.complaint-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+/* CARD HEADER */
+.complaint-header {
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+/* CARD STATUS */
+.complaint-status {
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+.status.pending {
+  color: #facc15; /* yellow */
+  font-weight: 600;
+}
+
+.status.in-progress {
+  color: #3b82f6; /* blue */
+  font-weight: 600;
+}
+
+.status.resolved {
+  color: #22c55e; /* green */
+  font-weight: 600;
+}
+
+/* RESPONSE INPUT */
+.complaint-response {
+  margin-top: 8px;
+}
+
+.complaint-response label {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.complaint-response input {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: none;
+  background: #0f172a;
+  color: #f1f5f9;
+  outline: none;
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+/* ACTION BUTTONS */
+.complaint-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.complaint-actions button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.complaint-actions button:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+/* ROLE-BASED BUTTON COLORS */
+.complaint-actions button:nth-child(1) {
+  background-color: #3b82f6; /* User / In Progress / Reassign */
+  color: #f1f5f9;
+}
+
+.complaint-actions button:nth-child(2) {
+  background-color: #f59e0b; /* User / Driver specific / Maintenance */
+  color: #f1f5f9;
+}
+
+.complaint-actions button:nth-child(3) {
+  background-color: #22c55e; /* Resolved */
+  color: #f1f5f9;
+}
+
+/* NO COMPLAINTS MESSAGE */
+.no-complaints {
+  color: #facc15;
+  font-size: 14px;
+  margin-top: 12px;
+}
+
+/* RESPONSIVE LAYOUT */
+@media (max-width: 800px) {
+  .filters {
+    flex-direction: column;
+  }
+
+  .complaint-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .complaint-card {
+    font-size: 14px;
+  }
+}

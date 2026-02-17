@@ -1,0 +1,172 @@
+/* ===== TRACKING PAGE ===== */
+.tracking-page {
+  font-family: 'Inter', sans-serif;
+  color: #f1f5f9;
+  padding: 20px;
+  background-color: #0f172a;
+  min-height: 100vh;
+}
+
+/* ===== HEADER ===== */
+.tracking-header h1 {
+  font-size: 26px;
+  margin-bottom: 4px;
+}
+
+.tracking-header p {
+  color: #94a3b8;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+/* ===== SEARCH BAR WITH ICON ===== */
+.tracking-search-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 24px;
+}
+
+.tracking-search-wrapper .search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+.tracking-search {
+  width: 100%;
+  padding: 8px 12px 8px 36px; /* left padding for icon */
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  background: #1e293b;
+  color: #f1f5f9;
+}
+
+.tracking-search::placeholder {
+  color: #94a3b8;
+}
+
+/* ===== CONTAINER: CARDS + MAP ===== */
+.tracking-container {
+  display: flex;
+  gap: 20px;
+  height: 600px;
+}
+
+/* ===== VEHICLE CARDS ===== */
+.tracking-cards {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+/* CARD STYLE */
+.tracking-card {
+  background: #1e293b;
+  padding: 14px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.tracking-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+/* CARD TEXT */
+.tracking-card strong {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.tracking-card span {
+  display: block;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+/* VEHICLE STATUS COLORS */
+.track-status.moving {
+  color: #22c55e; /* green */
+  font-weight: 600;
+}
+
+.track-status.idle {
+  color: #facc15; /* yellow */
+  font-weight: 600;
+}
+
+.track-status.offline {
+  color: #ef4444; /* red */
+  font-weight: 600;
+}
+
+/* NO RESULTS MESSAGE */
+.no-results {
+  color: #facc15;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+/* ===== MAP ===== */
+.tracking-map {
+  flex: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* ===== SCROLLBAR FOR CARDS ===== */
+.tracking-cards::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tracking-cards::-webkit-scrollbar-track {
+  background: #1e293b;
+  border-radius: 6px;
+}
+
+.tracking-cards::-webkit-scrollbar-thumb {
+  background-color: #3b82f6;
+  border-radius: 6px;
+}
+
+.tracking-cards::-webkit-scrollbar-thumb:hover {
+  background-color: #60a5fa;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .tracking-container {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .tracking-cards {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 10px;
+  }
+
+  .tracking-card {
+    min-width: 250px;
+  }
+
+  .tracking-map {
+    height: 400px;
+  }
+}
