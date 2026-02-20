@@ -45,7 +45,7 @@ export default function Requests() {
     },
     {
       id: 4,
-      title: "Research Equipment Transport",
+      title: "Research institute Transport",
       requester: "Research Institute",
       vehicleType: "Van",
       dateNeeded: "2026-02-24",
