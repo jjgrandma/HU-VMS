@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./manageUsers.css";
 
 export default function ManageUsers() {
@@ -11,13 +11,39 @@ export default function ManageUsers() {
   const [showForm, setShowForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterRole, setFilterRole] = useState("All");
+  const [filterStatus, setFilterStatus] = useState("All");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [notification, setNotification] = useState({ show: false, message: "", type: "" });
 
   const [newUser, setNewUser] = useState({
     username: "",
     password: "",
+    confirmPassword: "",
     role: "Driver",
     status: "Active",
   });
+
+  // Load users from localStorage on mount
+  useEffect(() => {
+    const savedUsers = localStorage.getItem("users");
+    if (savedUsers) {
+      setUsers(JSON.parse(savedUsers));
+    }
+  }, []);
+
+  // Save users to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem("users", JSON.stringify(users));
+  }, [users]);
+
+  // Show notification
+  const showNotification = (message, type = "success") => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => {
+      setNotification({ show: false, message: "", type: "" });
+    }, 3000);
+  };
 
   const handleChange = (e) => {
     setNewUser({
@@ -26,12 +52,37 @@ export default function ManageUsers() {
     });
   };
 
-  const handleAddOrUpdateUser = (e) => {
-    e.preventDefault();
+  const resetForm = () => {
+    setNewUser({
+      username: "",
+      password: "",
+      confirmPassword: "",
+      role: "Driver",
+      status: "Active",
+    });
+    setEditingIndex(null);
+    setShowForm(false);
+  };
 
+  const validateForm = () => {
     if (!newUser.username || !newUser.password) {
-      alert("Please fill all required fields");
-      return;
+      showNotification("Please fill all required fields", "error");
+      return false;
+    }
+
+    if (newUser.username.length < 3) {
+      showNotification("Username must be at least 3 characters", "error");
+      return false;
+    }
+
+    if (newUser.password.length < 4) {
+      showNotification("Password must be at least 4 characters", "error");
+      return false;
+    }
+
+    if (!editingIndex && newUser.password !== newUser.confirmPassword) {
+      showNotification("Passwords do not match", "error");
+      return false;
     }
 
     const duplicate = users.some(
@@ -41,69 +92,157 @@ export default function ManageUsers() {
     );
 
     if (duplicate) {
-      alert("Username already exists.");
-      return;
+      showNotification("Username already exists", "error");
+      return false;
     }
+
+    return true;
+  };
+
+  const handleAddOrUpdateUser = (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+
+    const userData = {
+      username: newUser.username,
+      password: newUser.password,
+      role: newUser.role,
+      status: newUser.status,
+    };
 
     if (editingIndex !== null) {
       const updatedUsers = [...users];
-      updatedUsers[editingIndex] = newUser;
+      updatedUsers[editingIndex] = userData;
       setUsers(updatedUsers);
-      setEditingIndex(null);
+      showNotification("User updated successfully", "success");
     } else {
-      setUsers([...users, newUser]);
+      setUsers([...users, userData]);
+      showNotification("User added successfully", "success");
     }
 
-    setNewUser({
-      username: "",
-      password: "",
-      role: "Driver",
-      status: "Active",
-    });
-
-    setShowForm(false);
+    resetForm();
   };
 
   const handleEdit = (index) => {
-    setNewUser(users[index]);
+    const user = users[index];
+    setNewUser({
+      username: user.username,
+      password: user.password,
+      confirmPassword: user.password,
+      role: user.role,
+      status: user.status,
+    });
     setEditingIndex(index);
     setShowForm(true);
   };
 
   const handleDelete = (index) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this user?");
-    if (!confirmDelete) return;
-
-    const updatedUsers = users.filter((_, i) => i !== index);
-    setUsers(updatedUsers);
+    setShowDeleteConfirm(index);
   };
 
-  const filteredUsers = users.filter((u) =>
-    u.username.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const confirmDelete = () => {
+    if (showDeleteConfirm !== null) {
+      const updatedUsers = users.filter((_, i) => i !== showDeleteConfirm);
+      setUsers(updatedUsers);
+      showNotification("User deleted successfully", "success");
+      setShowDeleteConfirm(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(null);
+  };
+
+  const toggleUserStatus = (index) => {
+    const updatedUsers = [...users];
+    updatedUsers[index].status = updatedUsers[index].status === "Active" ? "Inactive" : "Active";
+    setUsers(updatedUsers);
+    showNotification(`User status updated to ${updatedUsers[index].status}`, "success");
+  };
+
+  // Filter users based on search term, role, and status
+  const filteredUsers = users.filter((u) => {
+    const matchesSearch = u.username.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = filterRole === "All" || u.role === filterRole;
+    const matchesStatus = filterStatus === "All" || u.status === filterStatus;
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+
+  // Get unique roles for filter dropdown
+  const roles = ["All", ...new Set(users.map(u => u.role))];
 
   return (
-    <div className="page-container">
+    <div className="manage-users-container">
+      {/* Notification */}
+      {notification.show && (
+        <div className={`notification ${notification.type}`}>
+          {notification.message}
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm !== null && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Confirm Delete</h3>
+            <p>Are you sure you want to delete user "{users[showDeleteConfirm]?.username}"?</p>
+            <p className="muted-text">This action cannot be undone.</p>
+            <div className="modal-actions">
+              <button className="btn btn-danger" onClick={confirmDelete}>
+                Delete
+              </button>
+              <button className="btn btn-secondary" onClick={cancelDelete}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="page-header">
         <div>
-          <h2>Manage Users</h2>
-          <p className="muted">Control system access and permissions</p>
+          <h1>Manage Users</h1>
+          <p className="text-muted">Control system access and permissions</p>
         </div>
 
         <div className="header-actions">
           <input
             type="text"
             placeholder="Search users..."
-            className="table-search"
+            className="search-input"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+          
+          <select 
+            className="filter-select"
+            value={filterRole}
+            onChange={(e) => setFilterRole(e.target.value)}
+          >
+            {roles.map(role => (
+              <option key={role} value={role}>
+                {role === "All" ? "All Roles" : role}
+              </option>
+            ))}
+          </select>
+
+          <select 
+            className="filter-select"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <option value="All">All Status</option>
+            <option value="Active">Active Only</option>
+            <option value="Inactive">Inactive Only</option>
+          </select>
+
           <button
-            className="primary-btn"
+            className="btn btn-primary"
             onClick={() => {
+              resetForm();
               setShowForm(true);
-              setEditingIndex(null);
             }}
           >
             + Add User
@@ -111,115 +250,175 @@ export default function ManageUsers() {
         </div>
       </div>
 
-      {/* Add / Edit User Form */}
+      {/* Stats Cards */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <span className="stat-label">Total Users</span>
+          <span className="stat-value">{users.length}</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Active</span>
+          <span className="stat-value">{users.filter(u => u.status === "Active").length}</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Inactive</span>
+          <span className="stat-value">{users.filter(u => u.status === "Inactive").length}</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Admins</span>
+          <span className="stat-value">{users.filter(u => u.role === "Admin").length}</span>
+        </div>
+      </div>
+
+      {/* Add/Edit User Form */}
       {showForm && (
-        <div className="user-form">
-          <form onSubmit={handleAddOrUpdateUser}>
-            <h3>{editingIndex !== null ? "Edit User" : "Add New User"}</h3>
-
-            <input
-              type="text"
-              name="username"
-              placeholder="Username"
-              value={newUser.username}
-              onChange={handleChange}
-            />
-
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={newUser.password}
-              onChange={handleChange}
-            />
-
-            <select
-              name="role"
-              value={newUser.role}
-              onChange={handleChange}
-            >
-              <option value="User(Requestor)">User(Requestor)</option>
-              <option value="Admin">Admin</option>
-              <option value="Driver">Driver</option>
-              <option value="Transport Officer">Transport Officer</option>
-            </select>
-
-            <select
-              name="status"
-              value={newUser.status}
-              onChange={handleChange}
-            >
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-
-            <div className="form-buttons">
-              <button type="submit" className="primary-btn">
-                {editingIndex !== null ? "Update" : "Save"}
-              </button>
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={() => setShowForm(false)}
-              >
-                Cancel
-              </button>
+        <div className="form-overlay">
+          <div className="form-container">
+            <div className="form-header">
+              <h2>{editingIndex !== null ? "Edit User" : "Add New User"}</h2>
+              <button className="close-btn" onClick={resetForm}>×</button>
             </div>
-          </form>
+            
+            <form onSubmit={handleAddOrUpdateUser}>
+              <div className="form-group">
+                <label>Username *</label>
+                <input
+                  type="text"
+                  name="username"
+                  value={newUser.username}
+                  onChange={handleChange}
+                  placeholder="Enter username"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Password *</label>
+                <input
+                  type="password"
+                  name="password"
+                  value={newUser.password}
+                  onChange={handleChange}
+                  placeholder="Enter password"
+                  required
+                />
+              </div>
+
+              {!editingIndex && (
+                <div className="form-group">
+                  <label>Confirm Password *</label>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={newUser.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="Confirm password"
+                    required
+                  />
+                </div>
+              )}
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Role</label>
+                  <select name="role" value={newUser.role} onChange={handleChange}>
+                    <option value="User(Requestor)">User (Requestor)</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Driver">Driver</option>
+                    <option value="Transport Officer">Transport Officer</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Status</label>
+                  <select name="status" value={newUser.status} onChange={handleChange}>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-actions">
+                <button type="submit" className="btn btn-primary">
+                  {editingIndex !== null ? "Update User" : "Save User"}
+                </button>
+                <button type="button" className="btn btn-secondary" onClick={resetForm}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
-      {/* Table */}
-      <div className="table-container">
-        <table className="dark-table">
+      {/* Users Table */}
+      <div className="table-wrapper">
+        <table className="users-table">
           <thead>
             <tr>
               <th>Username</th>
               <th>Role</th>
               <th>Status</th>
-              <th align="right">Actions</th>
+              <th>Actions</th>
             </tr>
           </thead>
-
           <tbody>
-            {filteredUsers.map((user, index) => (
-              <tr key={index}>
-                <td className="highlight-text">{user.username}</td>
-
-                <td>
-                  <span className={`badge ${user.role.replace(" ", "").toLowerCase()}`}>
-                    {user.role}
-                  </span>
-                </td>
-
-                <td>
-                  <span
-                    className={`status ${
-                      user.status === "Active" ? "active" : "inactive"
-                    }`}
-                  >
-                    ● {user.status}
-                  </span>
-                </td>
-
-                <td align="right">
-                  <button
-                    className="icon-btn edit"
-                    onClick={() => handleEdit(index)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="icon-btn delete"
-                    onClick={() => handleDelete(index)}
-                  >
-                    Delete
-                  </button>
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map((user, index) => {
+                const originalIndex = users.findIndex(u => u.username === user.username);
+                return (
+                  <tr key={originalIndex}>
+                    <td className="username-cell">{user.username}</td>
+                    <td>
+                      <span className={`role-badge role-${user.role.toLowerCase().replace(/[^a-z]/g, '')}`}>
+                        {user.role}
+                      </span>
+                    </td>
+                    <td>
+                      <span 
+                        className={`status-badge ${user.status.toLowerCase()}`}
+                        onClick={() => toggleUserStatus(originalIndex)}
+                      >
+                        ● {user.status}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="action-buttons">
+                        <button
+                          className="btn-icon btn-edit"
+                          onClick={() => handleEdit(originalIndex)}
+                          title="Edit user"
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          className="btn-icon btn-delete"
+                          onClick={() => handleDelete(originalIndex)}
+                          title="Delete user"
+                        >
+                          🗑️ Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan="4" className="no-results">
+                  No users found matching your criteria
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
+      </div>
+
+      {/* Footer */}
+      <div className="table-footer">
+        <span className="text-muted">
+          Showing {filteredUsers.length} of {users.length} users
+        </span>
       </div>
     </div>
   );
