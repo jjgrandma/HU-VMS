@@ -2,6 +2,77 @@ import { useState } from "react";
 import "./requests.css";
 
 export default function Requests() {
+  /* ===== STATE ===== */
+  const [filterPriority, setFilterPriority] = useState("All");
+  const [filterStatus, setFilterStatus] = useState("All");
+  const [rejectionInput, setRejectionInput] = useState({});
+
+  const [requests, setRequests] = useState([
+    {
+      id: 1,
+      title: "Clinic Emergency Transport",
+      requester: "Health Office",
+      vehicleType: "Ambulance",
+      dateNeeded: "2026-03-01",
+      destination: "Black Lion Hospital",
+      purpose: "Emergency patient transfer",
+      priority: "Emergency",
+      status: "Pending",
+      rejectionReason: "",
+    },
+    {
+      id: 2,
+      title: "Staff Field Visit",
+      requester: "Admin",
+      vehicleType: "Bus",
+      dateNeeded: "2026-03-05",
+      destination: "Adama",
+      purpose: "Training",
+      priority: "Normal",
+      status: "Approved",
+      rejectionReason: "",
+    },
+  ]);
+
+  /* ===== COLOR MAP ===== */
+  const requesterColor = {
+    Admin: "admin",
+    "Health Office": "health",
+    Student: "student",
+  };
+
+  /* ===== FILTER LOGIC ===== */
+  const filteredRequests = requests.filter((req) => {
+    const priorityMatch =
+      filterPriority === "All" || req.priority === filterPriority;
+    const statusMatch =
+      filterStatus === "All" || req.status === filterStatus;
+    return priorityMatch && statusMatch;
+  });
+
+  /* ===== ACTIONS ===== */
+  const approveRequest = (id) => {
+    setRequests((prev) =>
+      prev.map((req) =>
+        req.id === id ? { ...req, status: "Approved" } : req
+      )
+    );
+  };
+
+  const rejectRequest = (id) => {
+    setRequests((prev) =>
+      prev.map((req) =>
+        req.id === id
+          ? {
+              ...req,
+              status: "Rejected",
+              rejectionReason: rejectionInput[id] || "No reason provided",
+            }
+          : req
+      )
+    );
+  };
+
   return (
     <div className="requests-page">
       <header className="requests-header">
@@ -38,7 +109,9 @@ export default function Requests() {
         {filteredRequests.map((req) => (
           <div
             key={req.id}
-            className={`request-card ${req.priority.toLowerCase()} ${requesterColor[req.requester]}`}
+            className={`request-card ${req.priority.toLowerCase()} ${
+              requesterColor[req.requester] || ""
+            }`}
           >
             <div className="request-info">
               <strong>{req.title}</strong>
@@ -48,6 +121,7 @@ export default function Requests() {
               <span><b>Destination:</b> {req.destination}</span>
               <span><b>Purpose:</b> {req.purpose}</span>
               <span><b>Priority:</b> {req.priority}</span>
+
               {req.status === "Rejected" && (
                 <span className="rejection-reason">
                   <b>Rejection Reason:</b> {req.rejectionReason}
@@ -62,7 +136,10 @@ export default function Requests() {
 
               {req.status === "Pending" && (
                 <div className="action-buttons">
-                  <button className="approve-btn" onClick={() => approveRequest(req.id)}>
+                  <button
+                    className="approve-btn"
+                    onClick={() => approveRequest(req.id)}
+                  >
                     Approve
                   </button>
 
@@ -71,10 +148,16 @@ export default function Requests() {
                       placeholder="Enter rejection reason..."
                       value={rejectionInput[req.id] || ""}
                       onChange={(e) =>
-                        setRejectionInput({ ...rejectionInput, [req.id]: e.target.value })
+                        setRejectionInput({
+                          ...rejectionInput,
+                          [req.id]: e.target.value,
+                        })
                       }
                     />
-                    <button className="reject-btn" onClick={() => rejectRequest(req.id)}>
+                    <button
+                      className="reject-btn"
+                      onClick={() => rejectRequest(req.id)}
+                    >
                       Reject
                     </button>
                   </div>

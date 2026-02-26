@@ -3,201 +3,166 @@ import "./manageVehicles.css";
 
 export default function ManageVehicles() {
   const [vehicles, setVehicles] = useState([
-    { plate: "ET-12345", type: "Bus", model: "Toyota Coaster", status: "Available" },
-    { plate: "ET-67890", type: "Pickup", model: "Hilux", status: "On Trip" },
-    { plate: "ET-44556", type: "Truck", model: "Isuzu NPR", status: "Maintenance" },
+    {
+      name: "Suzuki-80937",
+      type: "N/A",
+      department: "Research and Development",
+      date: "1980-09-30",
+      ownership: "Third Party Financed",
+      vendor: "Tariq Traders",
+    },
   ]);
 
+  const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [filterStatus, setFilterStatus] = useState("All");
-  const [searchTerm, setSearchTerm] = useState("");
 
-  const [newVehicle, setNewVehicle] = useState({
-    plate: "",
-    type: "Bus",
-    model: "",
-    status: "Available",
+  const [formData, setFormData] = useState({
+    name: "",
+    type: "",
+    department: "",
+    date: "",
+    ownership: "",
+    vendor: "",
   });
 
   const handleChange = (e) => {
-    setNewVehicle({
-      ...newVehicle,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleAddVehicle = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-
-    if (!newVehicle.plate || !newVehicle.model) {
-      alert("Please fill all required fields");
-      return;
-    }
-
-    // Prevent duplicate plate numbers
-    const exists = vehicles.some(
-      (v) => v.plate.toLowerCase() === newVehicle.plate.toLowerCase()
-    );
-
-    if (exists) {
-      alert("Vehicle with this plate already exists.");
-      return;
-    }
-
-    setVehicles([...vehicles, newVehicle]);
-
-    setNewVehicle({
-      plate: "",
-      type: "Bus",
-      model: "",
-      status: "Available",
+    setVehicles([...vehicles, formData]);
+    setFormData({
+      name: "",
+      type: "",
+      department: "",
+      date: "",
+      ownership: "",
+      vendor: "",
     });
-
     setShowForm(false);
   };
 
-  // FILTER + SEARCH LOGIC
-  const filteredVehicles = vehicles.filter((v) => {
-    const matchesStatus =
-      filterStatus === "All" ? true : v.status === filterStatus;
-
-    const matchesSearch =
-      v.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      v.model.toLowerCase().includes(searchTerm.toLowerCase());
-
-    return matchesStatus && matchesSearch;
-  });
+  const filtered = vehicles.filter(
+    (v) =>
+      v.name.toLowerCase().includes(search.toLowerCase()) ||
+      v.department.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div className="page-container">
+    <div className="vehicle-page">
       {/* Header */}
-      <div className="page-header">
-        <div>
-          <h2>Manage Vehicles</h2>
-          <p className="muted">Register, monitor, and manage fleet vehicles</p>
-        </div>
-
-        <div className="header-actions">
-          <input
-            type="text"
-            placeholder="Search by plate or model..."
-            className="table-search"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-
-          <button
-            className="primary-btn"
-            onClick={() => setShowForm(true)}
-          >
-            + Add Vehicle
-          </button>
-        </div>
+      <div className="vehicle-header">
+        <h2>Vehicle list</h2>
+        <button className="btn add" onClick={() => setShowForm(true)}>
+          + Add vehicle
+        </button>
       </div>
 
-      {/* Status Filter Buttons */}
-      <div className="filter-buttons">
-        <button onClick={() => setFilterStatus("All")}>All</button>
-        <button onClick={() => setFilterStatus("Available")}>Available</button>
-        <button onClick={() => setFilterStatus("On Trip")}>Assigned</button>
-        <button onClick={() => setFilterStatus("Maintenance")}>Maintenance</button>
+      {/* Search */}
+      <div className="table-controls right">
+        Search:
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
-
-      {/* Add Vehicle Form */}
-      {showForm && (
-        <div className="vehicle-form">
-          <form onSubmit={handleAddVehicle}>
-            <h3>Add New Vehicle</h3>
-
-            <input
-              type="text"
-              name="plate"
-              placeholder="Plate Number"
-              value={newVehicle.plate}
-              onChange={handleChange}
-            />
-
-            <select
-              name="type"
-              value={newVehicle.type}
-              onChange={handleChange}
-            >
-              <option value="Bus">Bus</option>
-              <option value="Truck">Truck</option>
-              <option value="Pickup">Pickup</option>
-            </select>
-
-            <input
-              type="text"
-              name="model"
-              placeholder="Vehicle Model"
-              value={newVehicle.model}
-              onChange={handleChange}
-            />
-
-            <select
-              name="status"
-              value={newVehicle.status}
-              onChange={handleChange}
-            >
-              <option value="Available">Available</option>
-              <option value="On Trip">On Trip</option>
-              <option value="Maintenance">Maintenance</option>
-            </select>
-
-            <div className="form-buttons">
-              <button type="submit" className="primary-btn">
-                Save
-              </button>
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={() => setShowForm(false)}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
 
       {/* Table */}
-      <div className="table-container">
-        <table className="dark-table">
-          <thead>
-            <tr>
-              <th>Plate Number</th>
-              <th>Type</th>
-              <th>Model</th>
-              <th>Status</th>
-              <th align="right">Actions</th>
+      <table className="vehicle-table">
+        <thead>
+          <tr>
+            <th>SI</th>
+            <th>Name</th>
+            <th>Vehicle type</th>
+            <th>Department</th>
+            <th>Registration date</th>
+            <th>Ownership</th>
+            <th>Vendor</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filtered.map((v, i) => (
+            <tr key={i}>
+              <td>{i + 1}</td>
+              <td>{v.name}</td>
+              <td>{v.type}</td>
+              <td>{v.department}</td>
+              <td>{v.date}</td>
+              <td>{v.ownership}</td>
+              <td>{v.vendor}</td>
             </tr>
-          </thead>
+          ))}
+        </tbody>
+      </table>
 
-          <tbody>
-            {filteredVehicles.map((v, index) => (
-              <tr key={index}>
-                <td className="highlight-text">{v.plate}</td>
-                <td>{v.type}</td>
-                <td>{v.model}</td>
-                <td>
-                  <span
-                    className={`vehicle-status ${v.status
-                      .replace(" ", "")
-                      .toLowerCase()}`}
-                  >
-                    ● {v.status}
-                  </span>
-                </td>
-                <td align="right">
-                  <button className="icon-btn edit">Edit</button>
-                  <button className="icon-btn delete">Remove</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* Add Vehicle Modal */}
+      {showForm && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Add Vehicle</h3>
+
+            <form onSubmit={handleSubmit}>
+              <input
+                name="name"
+                placeholder="Vehicle Name"
+                onChange={handleChange}
+                required
+              />
+
+              <input
+                name="type"
+                placeholder="Vehicle Type"
+                onChange={handleChange}
+                required
+              />
+
+              <input
+                name="department"
+                placeholder="Department"
+                onChange={handleChange}
+                required
+              />
+
+              <input
+                type="date"
+                name="date"
+                onChange={handleChange}
+                required
+              />
+
+              <input
+                name="ownership"
+                placeholder="Ownership"
+                onChange={handleChange}
+                required
+              />
+
+              <input
+                name="vendor"
+                placeholder="Vendor"
+                onChange={handleChange}
+                required
+              />
+
+              <div className="modal-actions">
+                <button type="submit" className="btn add">
+                  Save
+                </button>
+             
+                <button
+                  type="button"
+                  className="btn cancel"
+                  onClick={() => setShowForm(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
