@@ -2,7 +2,6 @@ import { useState } from "react";
 import "./requests.css";
 
 export default function Requests() {
-  /* ===== STATE ===== */
   const [filterPriority, setFilterPriority] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
   const [rejectionInput, setRejectionInput] = useState({});
@@ -11,66 +10,115 @@ export default function Requests() {
     {
       id: 1,
       title: "Clinic Emergency Transport",
-      requester: "Health Office",
-      vehicleType: "Ambulance",
-      dateNeeded: "2026-03-01",
-      destination: "Black Lion Hospital",
-      purpose: "Emergency patient transfer",
+      requester: "University Clinic",
+      vehicleType: "Pickup",
+      dateNeeded: "2026-02-18",
+      destination: "Haramaya Hospital",
+      purpose: "Medical emergency transfer",
       priority: "Emergency",
       status: "Pending",
       rejectionReason: "",
     },
     {
       id: 2,
-      title: "Staff Field Visit",
-      requester: "Admin",
+      title: "Staff Transport",
+      requester: "HR Department",
       vehicleType: "Bus",
-      dateNeeded: "2026-03-05",
-      destination: "Adama",
-      purpose: "Training",
+      dateNeeded: "2026-02-20",
+      destination: "Campus B",
+      purpose: "Staff meeting transportation",
       priority: "Normal",
-      status: "Approved",
+      status: "Pending",
+      rejectionReason: "",
+    },
+    {
+      id: 3,
+      title: "Goods Delivery",
+      requester: "Logistics Unit",
+      vehicleType: "Truck",
+      dateNeeded: "2026-02-22",
+      destination: "Central Store",
+      purpose: "Supply delivery",
+      priority: "High",
+      status: "Pending",
+      rejectionReason: "",
+    },
+    {
+      id: 4,
+      title: "Research Equipment Transport",
+      requester: "Research Institute",
+      vehicleType: "Van",
+      dateNeeded: "2026-02-24",
+      destination: "Science Lab",
+      purpose: "Transport sensitive lab equipment",
+      priority: "High",
+      status: "Pending",
+      rejectionReason: "",
+    },
+    {
+      id: 5,
+      title: "Cafe Supplies Delivery",
+      requester: "Cafe Service",
+      vehicleType: "Truck",
+      dateNeeded: "2026-02-25",
+      destination: "Student Cafeteria",
+      purpose: "Deliver ingredients and supplies",
+      priority: "Normal",
+      status: "Pending",
+      rejectionReason: "",
+    },
+    {
+      id: 6,
+      title: "Agriculture Service Transport",
+      requester: "Agriculture Unit",
+      vehicleType: "Pickup",
+      dateNeeded: "2026-02-26",
+      destination: "University Farm",
+      purpose: "Transport farming tools and seeds",
+      priority: "Emergency",
+      status: "Pending",
       rejectionReason: "",
     },
   ]);
 
-  /* ===== COLOR MAP ===== */
-  const requesterColor = {
-    Admin: "admin",
-    "Health Office": "health",
-    Student: "student",
-  };
-
-  /* ===== FILTER LOGIC ===== */
-  const filteredRequests = requests.filter((req) => {
-    const priorityMatch =
-      filterPriority === "All" || req.priority === filterPriority;
-    const statusMatch =
-      filterStatus === "All" || req.status === filterStatus;
-    return priorityMatch && statusMatch;
-  });
-
-  /* ===== ACTIONS ===== */
   const approveRequest = (id) => {
     setRequests((prev) =>
       prev.map((req) =>
-        req.id === id ? { ...req, status: "Approved" } : req
+        req.id === id ? { ...req, status: "Approved", rejectionReason: "" } : req
       )
     );
   };
 
   const rejectRequest = (id) => {
+    const reason = rejectionInput[id];
+    if (!reason || reason.trim() === "") {
+      alert("Please enter a rejection reason.");
+      return;
+    }
+
     setRequests((prev) =>
       prev.map((req) =>
-        req.id === id
-          ? {
-              ...req,
-              status: "Rejected",
-              rejectionReason: rejectionInput[id] || "No reason provided",
-            }
-          : req
+        req.id === id ? { ...req, status: "Rejected", rejectionReason: reason } : req
       )
     );
+
+    setRejectionInput((prev) => ({ ...prev, [id]: "" }));
+  };
+
+  const filteredRequests = requests.filter((req) => {
+    const priorityMatch = filterPriority === "All" || req.priority === filterPriority;
+    const statusMatch = filterStatus === "All" || req.status === filterStatus;
+    return priorityMatch && statusMatch;
+  });
+
+  // Map requester type to color classes
+  const requesterColor = {
+    "University Clinic": "clinic",
+    "HR Department": "hr",
+    "Logistics Unit": "logistics",
+    "Research Institute": "research",
+    "Cafe Service": "cafe",
+    "Agriculture Unit": "agriculture",
   };
 
   return (
@@ -109,9 +157,7 @@ export default function Requests() {
         {filteredRequests.map((req) => (
           <div
             key={req.id}
-            className={`request-card ${req.priority.toLowerCase()} ${
-              requesterColor[req.requester] || ""
-            }`}
+            className={`request-card ${req.priority.toLowerCase()} ${requesterColor[req.requester]}`}
           >
             <div className="request-info">
               <strong>{req.title}</strong>
@@ -121,7 +167,6 @@ export default function Requests() {
               <span><b>Destination:</b> {req.destination}</span>
               <span><b>Purpose:</b> {req.purpose}</span>
               <span><b>Priority:</b> {req.priority}</span>
-
               {req.status === "Rejected" && (
                 <span className="rejection-reason">
                   <b>Rejection Reason:</b> {req.rejectionReason}
@@ -136,10 +181,7 @@ export default function Requests() {
 
               {req.status === "Pending" && (
                 <div className="action-buttons">
-                  <button
-                    className="approve-btn"
-                    onClick={() => approveRequest(req.id)}
-                  >
+                  <button className="approve-btn" onClick={() => approveRequest(req.id)}>
                     Approve
                   </button>
 
@@ -148,16 +190,10 @@ export default function Requests() {
                       placeholder="Enter rejection reason..."
                       value={rejectionInput[req.id] || ""}
                       onChange={(e) =>
-                        setRejectionInput({
-                          ...rejectionInput,
-                          [req.id]: e.target.value,
-                        })
+                        setRejectionInput({ ...rejectionInput, [req.id]: e.target.value })
                       }
                     />
-                    <button
-                      className="reject-btn"
-                      onClick={() => rejectRequest(req.id)}
-                    >
+                    <button className="reject-btn" onClick={() => rejectRequest(req.id)}>
                       Reject
                     </button>
                   </div>
