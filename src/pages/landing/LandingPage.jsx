@@ -1,4 +1,11 @@
 import { useNavigate } from 'react-router-dom';
+import huVmsLogo from '../../assets/HU-VMS-logo.png';
+import realtimeTrackingImg from '../../assets/realtime tracking.jpg';
+import notifyImg from '../../assets/notify.jpg';
+import reportsImg from '../../assets/reports.jpg';
+import userManagementImg from '../../assets/usermanagement.jpg';
+import vmImg from '../../assets/vm.jpg';
+import customsImg from '../../assets/customs.jpg';
 import './landingPage.css';
 
 const LandingPage = () => {
@@ -15,7 +22,7 @@ const LandingPage = () => {
       <nav className="landing-nav">
         <div className="nav-container">
           <div className="nav-logo">
-            <span className="logo-icon">🚗</span>
+            <img src={huVmsLogo} alt="HU-VMS Logo" className="logo-icon-img" />
             <span className="logo-text">HU-VMS</span>
           </div>
           <div className="nav-links">
@@ -93,37 +100,49 @@ const LandingPage = () => {
           
           <div className="features-grid">
             <div className="feature-card">
-              <div className="feature-icon">🚗</div>
+              <div className="feature-icon feature-icon-image">
+                <img src={vmImg} alt="Vehicle Management" className="feature-image" />
+              </div>
               <h3>Vehicle Management</h3>
               <p>Track and manage your entire fleet with ease. Monitor vehicle status, maintenance schedules, and availability in real-time.</p>
             </div>
             
             <div className="feature-card">
-              <div className="feature-icon">👥</div>
+              <div className="feature-icon feature-icon-image">
+                <img src={userManagementImg} alt="User Management" className="feature-image" />
+              </div>
               <h3>User Management</h3>
               <p>Manage drivers, transport officers, and users efficiently. Assign roles and permissions with our intuitive interface.</p>
             </div>
             
             <div className="feature-card">
-              <div className="feature-icon">📊</div>
+              <div className="feature-icon feature-icon-image">
+                <img src={reportsImg} alt="Advanced Reports" className="feature-image" />
+              </div>
               <h3>Advanced Reports</h3>
               <p>Generate detailed reports on trips, fuel consumption, driver performance, and more. Export and share with ease.</p>
             </div>
             
             <div className="feature-card">
-              <div className="feature-icon">🗺️</div>
+              <div className="feature-icon feature-icon-image">
+                <img src={realtimeTrackingImg} alt="Real-time Tracking" className="feature-image" />
+              </div>
               <h3>Real-time Tracking</h3>
               <p>Track vehicle locations in real-time with our integrated mapping system. Monitor routes and optimize operations.</p>
             </div>
             
             <div className="feature-card">
-              <div className="feature-icon">🔔</div>
+              <div className="feature-icon feature-icon-image">
+                <img src={notifyImg} alt="Notifications" className="feature-image" />
+              </div>
               <h3>Notifications</h3>
               <p>Stay informed with instant notifications for requests, approvals, maintenance alerts, and system updates.</p>
             </div>
             
             <div className="feature-card">
-              <div className="feature-icon">⚙️</div>
+              <div className="feature-icon feature-icon-image">
+                <img src={customsImg} alt="Customizable" className="feature-image" />
+              </div>
               <h3>Customizable</h3>
               <p>Personalize your experience with multiple themes and configurable settings to match your preferences.</p>
             </div>
