@@ -1,5 +1,6 @@
 // src/pages/driver/components/NotificationPanel.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import './NotificationPanel.css';
 
 const NotificationPanel = ({ 
   notifications = [], 
@@ -8,11 +9,12 @@ const NotificationPanel = ({
   onMarkAllRead,
   onDelete,
   onRefresh,
-  isLoading = false 
+  isLoading = false,
+  isFullPage = false // ← NEW PROP: true for full page, false for dropdown
 }) => {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('newest'); // newest, oldest
+  const [sortBy, setSortBy] = useState('newest');
   const [showFilters, setShowFilters] = useState(false);
 
   // Group notifications by date
@@ -108,251 +110,6 @@ const NotificationPanel = ({
     if (onRefresh) onRefresh();
   };
 
-  const styles = {
-    panel: {
-      position: 'absolute',
-      top: '60px',
-      right: '20px',
-      width: '420px',
-      maxWidth: 'calc(100vw - 40px)',
-      backgroundColor: 'white',
-      borderRadius: '16px',
-      boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
-      zIndex: 1000,
-      overflow: 'hidden'
-    },
-    header: {
-      padding: '20px',
-      borderBottom: '1px solid #e2e8f0',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    },
-    headerTitle: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px'
-    },
-    title: {
-      fontSize: '18px',
-      fontWeight: '600',
-      color: '#1e293b',
-      margin: 0
-    },
-    unreadBadge: {
-      backgroundColor: '#0D8F81',
-      color: 'white',
-      padding: '2px 8px',
-      borderRadius: '12px',
-      fontSize: '12px',
-      fontWeight: '500'
-    },
-    closeBtn: {
-      background: 'none',
-      border: 'none',
-      fontSize: '20px',
-      cursor: 'pointer',
-      color: '#64748b',
-      padding: '8px',
-      borderRadius: '8px',
-      transition: 'all 0.3s'
-    },
-    searchBar: {
-      padding: '12px 20px',
-      borderBottom: '1px solid #e2e8f0'
-    },
-    searchInput: {
-      width: '100%',
-      padding: '10px 16px',
-      border: '1px solid #e2e8f0',
-      borderRadius: '8px',
-      fontSize: '14px',
-      outline: 'none',
-      transition: 'all 0.3s'
-    },
-    filterBar: {
-      padding: '12px 20px',
-      borderBottom: '1px solid #e2e8f0',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    },
-    filterChips: {
-      display: 'flex',
-      gap: '8px',
-      flexWrap: 'wrap'
-    },
-    filterChip: {
-      padding: '6px 12px',
-      border: '1px solid #e2e8f0',
-      borderRadius: '20px',
-      fontSize: '13px',
-      cursor: 'pointer',
-      transition: 'all 0.3s',
-      backgroundColor: 'transparent'
-    },
-    filterChipActive: {
-      backgroundColor: '#0D8F81',
-      borderColor: '#0D8F81',
-      color: 'white'
-    },
-    sortBtn: {
-      background: 'none',
-      border: 'none',
-      fontSize: '16px',
-      cursor: 'pointer',
-      padding: '6px',
-      borderRadius: '6px',
-      color: '#64748b'
-    },
-    notificationsList: {
-      maxHeight: '500px',
-      overflowY: 'auto',
-      padding: '0 20px'
-    },
-    dateGroup: {
-      marginBottom: '20px'
-    },
-    dateHeader: {
-      fontSize: '13px',
-      fontWeight: '600',
-      color: '#64748b',
-      padding: '12px 0 8px',
-      position: 'sticky',
-      top: 0,
-      backgroundColor: 'white',
-      zIndex: 1
-    },
-    notificationItem: {
-      display: 'flex',
-      gap: '12px',
-      padding: '12px',
-      borderRadius: '12px',
-      cursor: 'pointer',
-      transition: 'all 0.3s',
-      marginBottom: '4px',
-      position: 'relative'
-    },
-    notificationUnread: {
-      backgroundColor: '#f0fdf9'
-    },
-    iconWrapper: {
-      width: '40px',
-      height: '40px',
-      borderRadius: '12px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '20px',
-      flexShrink: 0
-    },
-    content: {
-      flex: 1,
-      minWidth: 0
-    },
-    title: {
-      fontSize: '14px',
-      fontWeight: '500',
-      color: '#1e293b',
-      margin: '0 0 4px',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    },
-    message: {
-      fontSize: '13px',
-      color: '#64748b',
-      margin: '0 0 4px',
-      lineHeight: '1.4'
-    },
-    time: {
-      fontSize: '11px',
-      color: '#94a3b8',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '4px'
-    },
-    unreadDot: {
-      width: '8px',
-      height: '8px',
-      backgroundColor: '#0D8F81',
-      borderRadius: '50%',
-      position: 'absolute',
-      right: '12px',
-      top: '50%',
-      transform: 'translateY(-50%)'
-    },
-    deleteBtn: {
-      opacity: 0,
-      background: 'none',
-      border: 'none',
-      fontSize: '16px',
-      cursor: 'pointer',
-      color: '#ef4444',
-      padding: '4px',
-      borderRadius: '4px',
-      transition: 'opacity 0.3s'
-    },
-    footer: {
-      padding: '16px 20px',
-      borderTop: '1px solid #e2e8f0',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    },
-    markAllBtn: {
-      background: 'none',
-      border: 'none',
-      color: '#0D8F81',
-      fontSize: '13px',
-      fontWeight: '500',
-      cursor: 'pointer',
-      padding: '8px 12px',
-      borderRadius: '6px'
-    },
-    settingsBtn: {
-      background: 'none',
-      border: 'none',
-      fontSize: '18px',
-      cursor: 'pointer',
-      padding: '8px',
-      borderRadius: '6px',
-      color: '#64748b'
-    },
-    emptyState: {
-      padding: '40px 20px',
-      textAlign: 'center'
-    },
-    emptyIcon: {
-      fontSize: '48px',
-      marginBottom: '12px',
-      display: 'block'
-    },
-    emptyText: {
-      color: '#64748b',
-      fontSize: '14px',
-      margin: 0
-    },
-    loadingSpinner: {
-      textAlign: 'center',
-      padding: '40px',
-      color: '#64748b'
-    },
-    advancedFilters: {
-      padding: '12px 20px',
-      backgroundColor: '#f8fafc',
-      borderBottom: '1px solid #e2e8f0'
-    },
-    filterSelect: {
-      padding: '8px',
-      border: '1px solid #e2e8f0',
-      borderRadius: '6px',
-      fontSize: '13px',
-      outline: 'none',
-      width: '100%'
-    }
-  };
-
   const filterOptions = [
     { value: 'all', label: 'All' },
     { value: 'trip', label: 'Trips' },
@@ -363,65 +120,198 @@ const NotificationPanel = ({
     { value: 'message', label: 'Messages' }
   ];
 
+  // If it's a full page, wrap in page container
+  if (isFullPage) {
+    return (
+      <div className="notification-page">
+        <div className="notification-page-header">
+          <h1>Notifications</h1>
+          <div className="header-actions">
+            <button className="settings-btn" onClick={handleRefresh}>
+              <span>🔄</span> Refresh
+            </button>
+            <button className="settings-btn" onClick={() => alert('Settings')}>
+              <span>⚙️</span> Settings
+            </button>
+          </div>
+        </div>
+        <div className="notification-page-content">
+          {/* Reuse the same panel structure but without absolute positioning */}
+          <div className="notification-panel notification-panel-page">
+            {/* Search Bar */}
+            <div className="notification-search">
+              <input
+                type="text"
+                className="notification-search-input"
+                placeholder="Search notifications..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            {/* Filter Chips */}
+            <div className="notification-filter-bar">
+              <div className="notification-filter-chips">
+                {filterOptions.map(option => (
+                  <button
+                    key={option.value}
+                    className={`notification-filter-chip ${filter === option.value ? 'active' : ''}`}
+                    onClick={() => setFilter(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <button
+                className="notification-sort-btn"
+                onClick={() => setSortBy(sortBy === 'newest' ? 'oldest' : 'newest')}
+                title={`Sort by ${sortBy === 'newest' ? 'oldest' : 'newest'}`}
+              >
+                {sortBy === 'newest' ? '↓' : '↑'}
+              </button>
+            </div>
+
+            {/* Advanced Filters Toggle */}
+            <div className="notification-filter-bar">
+              <button
+                className="notification-filter-chip"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                {showFilters ? 'Hide Filters' : 'More Filters'} ⚙️
+              </button>
+              <button className="notification-sort-btn" onClick={handleRefresh} title="Refresh">
+                🔄
+              </button>
+            </div>
+
+            {/* Advanced Filters */}
+            {showFilters && (
+              <div className="notification-advanced-filters">
+                <select className="notification-filter-select" defaultValue="">
+                  <option value="">All types</option>
+                  <option value="unread">Unread only</option>
+                  <option value="read">Read only</option>
+                </select>
+              </div>
+            )}
+
+            {/* Notifications List */}
+            <div className="notification-list notification-list-page">
+              {isLoading ? (
+                <div className="notification-loading">Loading...</div>
+              ) : filteredNotifications.length === 0 ? (
+                <div className="notification-empty">
+                  <span className="notification-empty-icon">🔔</span>
+                  <p className="notification-empty-text">No notifications to show</p>
+                  {searchTerm && (
+                    <button className="notification-clear-search" onClick={() => setSearchTerm('')}>
+                      Clear search
+                    </button>
+                  )}
+                </div>
+              ) : (
+                Object.entries(groupedNotifications).map(([date, items]) => (
+                  <div key={date} className="notification-date-group">
+                    <div className="notification-date-header">{date}</div>
+                    {items.map(notification => {
+                      const iconStyle = getNotificationIcon(notification.type);
+                      return (
+                        <div 
+                          key={notification.id} 
+                          className={`notification-item ${!notification.read ? 'unread' : ''}`}
+                          onClick={() => handleMarkAsRead(notification.id)}
+                        >
+                          <div className="notification-icon-wrapper" style={{ backgroundColor: iconStyle.bg }}>
+                            <span style={{ color: iconStyle.color }}>{iconStyle.icon}</span>
+                          </div>
+                          <div className="notification-content">
+                            {notification.title && (
+                              <div className="notification-title-row">
+                                <span className="notification-item-title">{notification.title}</span>
+                                <span className="notification-type-label" style={{ color: iconStyle.color }}>
+                                  {iconStyle.label}
+                                </span>
+                              </div>
+                            )}
+                            <p className="notification-message">{notification.message}</p>
+                            <div className="notification-time">
+                              <span>⏱️</span>
+                              <span>{formatTime(notification.timestamp || notification.time)}</span>
+                            </div>
+                          </div>
+                          {!notification.read && <span className="notification-unread-dot"></span>}
+                          <button
+                            className="notification-delete-btn"
+                            onClick={(e) => handleDelete(notification.id, e)}
+                            title="Delete"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="notification-footer">
+              <button className="notification-mark-all-btn" onClick={handleMarkAllRead}>
+                Mark all as read
+              </button>
+              <button className="notification-settings-btn" onClick={() => alert('Notification settings')} title="Settings">
+                ⚙️
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Original dropdown version (for header bell)
   return (
-    <div style={styles.panel}>
+    <div className="notification-panel notification-panel-dropdown">
       {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.headerTitle}>
-          <h3 style={styles.title}>Notifications</h3>
+      <div className="notification-header">
+        <div className="notification-header-title">
+          <h3 className="notification-title">Notifications</h3>
           {unreadCount > 0 && (
-            <span style={styles.unreadBadge}>{unreadCount} new</span>
+            <span className="notification-unread-badge">{unreadCount} new</span>
           )}
         </div>
-        <button 
-          style={styles.closeBtn}
-          onClick={onClose}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-        >
+        <button className="notification-close-btn" onClick={onClose}>
           ✕
         </button>
       </div>
 
       {/* Search Bar */}
-      <div style={styles.searchBar}>
+      <div className="notification-search">
         <input
           type="text"
+          className="notification-search-input"
           placeholder="Search notifications..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          style={styles.searchInput}
         />
       </div>
 
       {/* Filter Chips */}
-      <div style={styles.filterBar}>
-        <div style={styles.filterChips}>
+      <div className="notification-filter-bar">
+        <div className="notification-filter-chips">
           {filterOptions.map(option => (
             <button
               key={option.value}
-              style={{
-                ...styles.filterChip,
-                ...(filter === option.value ? styles.filterChipActive : {})
-              }}
+              className={`notification-filter-chip ${filter === option.value ? 'active' : ''}`}
               onClick={() => setFilter(option.value)}
-              onMouseEnter={(e) => {
-                if (filter !== option.value) {
-                  e.currentTarget.style.backgroundColor = '#f1f5f9';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (filter !== option.value) {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }
-              }}
             >
               {option.label}
             </button>
           ))}
         </div>
         <button
-          style={styles.sortBtn}
+          className="notification-sort-btn"
           onClick={() => setSortBy(sortBy === 'newest' ? 'oldest' : 'newest')}
           title={`Sort by ${sortBy === 'newest' ? 'oldest' : 'newest'}`}
         >
@@ -430,26 +320,22 @@ const NotificationPanel = ({
       </div>
 
       {/* Advanced Filters Toggle */}
-      <div style={styles.filterBar}>
+      <div className="notification-filter-bar">
         <button
+          className="notification-filter-chip"
           onClick={() => setShowFilters(!showFilters)}
-          style={{ ...styles.filterChip, fontSize: '12px' }}
         >
           {showFilters ? 'Hide Filters' : 'More Filters'} ⚙️
         </button>
-        <button
-          style={styles.sortBtn}
-          onClick={handleRefresh}
-          title="Refresh"
-        >
+        <button className="notification-sort-btn" onClick={handleRefresh} title="Refresh">
           🔄
         </button>
       </div>
 
       {/* Advanced Filters */}
       {showFilters && (
-        <div style={styles.advancedFilters}>
-          <select style={styles.filterSelect} defaultValue="">
+        <div className="notification-advanced-filters">
+          <select className="notification-filter-select" defaultValue="">
             <option value="">All types</option>
             <option value="unread">Unread only</option>
             <option value="read">Read only</option>
@@ -458,67 +344,52 @@ const NotificationPanel = ({
       )}
 
       {/* Notifications List */}
-      <div style={styles.notificationsList}>
+      <div className="notification-list">
         {isLoading ? (
-          <div style={styles.loadingSpinner}>Loading...</div>
+          <div className="notification-loading">Loading...</div>
         ) : filteredNotifications.length === 0 ? (
-          <div style={styles.emptyState}>
-            <span style={styles.emptyIcon}>🔔</span>
-            <p style={styles.emptyText}>No notifications to show</p>
+          <div className="notification-empty">
+            <span className="notification-empty-icon">🔔</span>
+            <p className="notification-empty-text">No notifications to show</p>
             {searchTerm && (
-              <button 
-                onClick={() => setSearchTerm('')}
-                style={{ ...styles.markAllBtn, marginTop: '12px' }}
-              >
+              <button className="notification-clear-search" onClick={() => setSearchTerm('')}>
                 Clear search
               </button>
             )}
           </div>
         ) : (
           Object.entries(groupedNotifications).map(([date, items]) => (
-            <div key={date} style={styles.dateGroup}>
-              <div style={styles.dateHeader}>{date}</div>
+            <div key={date} className="notification-date-group">
+              <div className="notification-date-header">{date}</div>
               {items.map(notification => {
                 const iconStyle = getNotificationIcon(notification.type);
                 return (
                   <div 
                     key={notification.id} 
-                    style={{
-                      ...styles.notificationItem,
-                      ...(!notification.read ? styles.notificationUnread : {})
-                    }}
+                    className={`notification-item ${!notification.read ? 'unread' : ''}`}
                     onClick={() => handleMarkAsRead(notification.id)}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = notification.read ? '#f8fafc' : '#e6f7f2';
-                      e.currentTarget.querySelector('.delete-btn').style.opacity = 1;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = notification.read ? 'transparent' : '#f0fdf9';
-                      e.currentTarget.querySelector('.delete-btn').style.opacity = 0;
-                    }}
                   >
-                    <div style={{ ...styles.iconWrapper, backgroundColor: iconStyle.bg }}>
+                    <div className="notification-icon-wrapper" style={{ backgroundColor: iconStyle.bg }}>
                       <span style={{ color: iconStyle.color }}>{iconStyle.icon}</span>
                     </div>
-                    <div style={styles.content}>
+                    <div className="notification-content">
                       {notification.title && (
-                        <div style={styles.title}>
-                          <span>{notification.title}</span>
-                          <span style={{ fontSize: '11px', color: iconStyle.color }}>
+                        <div className="notification-title-row">
+                          <span className="notification-item-title">{notification.title}</span>
+                          <span className="notification-type-label" style={{ color: iconStyle.color }}>
                             {iconStyle.label}
                           </span>
                         </div>
                       )}
-                      <p style={styles.message}>{notification.message}</p>
-                      <div style={styles.time}>
+                      <p className="notification-message">{notification.message}</p>
+                      <div className="notification-time">
                         <span>⏱️</span>
                         <span>{formatTime(notification.timestamp || notification.time)}</span>
                       </div>
                     </div>
-                    {!notification.read && <span style={styles.unreadDot}></span>}
+                    {!notification.read && <span className="notification-unread-dot"></span>}
                     <button
-                      className="delete-btn"
-                      style={styles.deleteBtn}
+                      className="notification-delete-btn"
                       onClick={(e) => handleDelete(notification.id, e)}
                       title="Delete"
                     >
@@ -533,20 +404,11 @@ const NotificationPanel = ({
       </div>
 
       {/* Footer */}
-      <div style={styles.footer}>
-        <button 
-          style={styles.markAllBtn}
-          onClick={handleMarkAllRead}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0fdf9'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-        >
+      <div className="notification-footer">
+        <button className="notification-mark-all-btn" onClick={handleMarkAllRead}>
           Mark all as read
         </button>
-        <button 
-          style={styles.settingsBtn}
-          onClick={() => alert('Notification settings')}
-          title="Settings"
-        >
+        <button className="notification-settings-btn" onClick={() => alert('Notification settings')} title="Settings">
           ⚙️
         </button>
       </div>

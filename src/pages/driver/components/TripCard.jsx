@@ -1,5 +1,6 @@
 // src/pages/driver/components/TripCard.jsx
 import React, { useState } from 'react';
+import './TripCard.css';
 
 const TripCard = ({ trip, compact = false, onStatusChange }) => {
   const [expanded, setExpanded] = useState(false);
@@ -31,8 +32,7 @@ const TripCard = ({ trip, compact = false, onStatusChange }) => {
   const getStatusConfig = (status) => {
     const configs = {
       scheduled: {
-        bg: '#e3f2fd',
-        color: '#1976d2',
+        className: 'status-scheduled',
         text: 'Scheduled',
         icon: '⏰',
         gradient: 'linear-gradient(145deg, #e3f2fd, #bbdefb)',
@@ -41,8 +41,7 @@ const TripCard = ({ trip, compact = false, onStatusChange }) => {
         nextActionIcon: '🚀'
       },
       'in-progress': {
-        bg: '#e8f5e8',
-        color: '#2e7d32',
+        className: 'status-progress',
         text: 'In Progress',
         icon: '🔄',
         gradient: 'linear-gradient(145deg, #e8f5e8, #c8e6c9)',
@@ -51,8 +50,7 @@ const TripCard = ({ trip, compact = false, onStatusChange }) => {
         nextActionIcon: '✅'
       },
       completed: {
-        bg: '#f3e5f5',
-        color: '#7b1fa2',
+        className: 'status-completed',
         text: 'Completed',
         icon: '✓',
         gradient: 'linear-gradient(145deg, #f3e5f5, #e1bee7)',
@@ -61,8 +59,7 @@ const TripCard = ({ trip, compact = false, onStatusChange }) => {
         nextActionIcon: '📊'
       },
       cancelled: {
-        bg: '#ffebee',
-        color: '#c62828',
+        className: 'status-cancelled',
         text: 'Cancelled',
         icon: '✕',
         gradient: 'linear-gradient(145deg, #ffebee, #ffcdd2)',
@@ -81,30 +78,18 @@ const TripCard = ({ trip, compact = false, onStatusChange }) => {
     if (onStatusChange) {
       onStatusChange(tripData.id, newStatus);
     }
+
     // Show success message
     const message = document.createElement('div');
-    message.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: linear-gradient(145deg, #0D8F81, #0b7a6e);
-      color: white;
-      padding: 16px 24px;
-      border-radius: 50px;
-      box-shadow: 0 20px 40px rgba(13,143,129,0.3);
-      z-index: 9999;
-      animation: slideIn 0.3s ease-out;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    `;
+    message.className = 'trip-toast-message';
     message.innerHTML = `
       <span style="font-size: 20px;">✅</span>
       <span>Trip ${statusConfig.text.toLowerCase()} successfully!</span>
     `;
     document.body.appendChild(message);
+
     setTimeout(() => {
-      message.style.animation = 'slideOut 0.3s ease-out';
+      message.classList.add('slide-out');
       setTimeout(() => document.body.removeChild(message), 300);
     }, 3000);
   };
@@ -453,256 +438,167 @@ const TripCard = ({ trip, compact = false, onStatusChange }) => {
 
   if (compact) {
     return (
-      <>
-        <style>{animations}</style>
-        <div 
-          style={{...styles.card, ...styles.compactCard}}
-          className="trip-card"
-          onClick={() => setExpanded(!expanded)}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 30px 60px -15px rgba(0, 0, 0, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.25)';
-          }}
-        >
-          <div style={styles.compactTime}>{tripData.time || '10:30 AM'}</div>
-          <div style={styles.compactRoute}>
-            <span style={styles.compactPickup}>{tripData.pickup.split(',')[0]}</span>
-            <span style={styles.compactArrow}>→</span>
-            <span style={styles.compactDropoff}>{tripData.dropoff.split(',')[0]}</span>
-          </div>
-          <span style={{
-            ...styles.compactStatus,
-            background: statusConfig.bg,
-            color: statusConfig.color
-          }}>
-            {statusConfig.icon} {statusConfig.text}
-          </span>
+      <div
+        className="trip-card trip-card-compact"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div className="trip-compact-time">{tripData.time || '10:30 AM'}</div>
+        <div className="trip-compact-route">
+          <span className="trip-compact-pickup">{tripData.pickup.split(',')[0]}</span>
+          <span className="trip-compact-arrow">→</span>
+          <span className="trip-compact-dropoff">{tripData.dropoff.split(',')[0]}</span>
         </div>
-      </>
+        <span className={`trip-compact-status ${statusConfig.className}`}>
+          {statusConfig.icon} {statusConfig.text}
+        </span>
+      </div>
     );
   }
 
   return (
-    <>
-      <style>{animations}</style>
-      <div 
-        style={styles.card}
-        className="trip-card"
-        onMouseEnter={(e) => {
-          if (!expanded) {
-            e.currentTarget.style.transform = 'translateY(-4px)';
-            e.currentTarget.style.boxShadow = '0 30px 60px -15px rgba(0, 0, 0, 0.3)';
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (!expanded) {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.25)';
-          }
-        }}
-      >
-        {/* Header */}
-        <div 
-          style={styles.header}
-          onClick={() => setExpanded(!expanded)}
-          onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
-          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-        >
-          <div style={styles.tripInfo}>
-            <span style={styles.tripId}>#{tripData.id}</span>
-            <span style={styles.tripDate}>
-              <span>📅</span> {tripData.date}
-            </span>
-          </div>
-          <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
-            <span style={{
-              ...styles.statusBadge,
-              background: statusConfig.bg,
-              color: statusConfig.color,
-              boxShadow: statusConfig.shadow
-            }}>
-              <span>{statusConfig.icon}</span>
-              <span>{statusConfig.text}</span>
-            </span>
-            <span style={{
-              ...styles.expandIcon,
-              transform: expanded ? 'rotate(180deg)' : 'rotate(0)'
-            }}>
-              ▼
-            </span>
-          </div>
+    <div className={`trip-card ${expanded ? 'expanded' : ''}`}>
+      {/* Header */}
+      <div className="trip-header" onClick={() => setExpanded(!expanded)}>
+        <div className="trip-header-info">
+          <span className="trip-id">#{tripData.id}</span>
+          <span className="trip-date">
+            <span>📅</span> {tripData.date}
+          </span>
         </div>
-
-        {/* Route */}
-        <div style={styles.route}>
-          <div style={styles.routePoint}>
-            <div style={{...styles.pointDot, ...styles.pointDotGreen}}></div>
-            <div style={styles.pointDetails}>
-              <div style={styles.pointLabel}>PICKUP</div>
-              <div style={styles.pointAddress}>{tripData.pickup}</div>
-            </div>
-          </div>
-          <div style={styles.routeLine}></div>
-          <div style={styles.routePoint}>
-            <div style={{...styles.pointDot, ...styles.pointDotRed}}></div>
-            <div style={styles.pointDetails}>
-              <div style={styles.pointLabel}>DROPOFF</div>
-              <div style={styles.pointAddress}>{tripData.dropoff}</div>
-            </div>
-          </div>
+        <div className="trip-header-actions">
+          <span className={`trip-status-badge ${statusConfig.className}`}>
+            <span>{statusConfig.icon}</span>
+            <span>{statusConfig.text}</span>
+          </span>
+          <span className={`trip-expand-icon ${expanded ? 'expanded' : ''}`}>
+            ▼
+          </span>
         </div>
-
-        {/* Expanded Content */}
-        {expanded && (
-          <div style={{animation: 'slideIn 0.3s ease-out'}}>
-            {/* Details Grid */}
-            <div style={styles.detailsGrid}>
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>📏 Distance</span>
-                <span style={styles.detailValue}>{tripData.distance} km</span>
-              </div>
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>⏱️ Duration</span>
-                <span style={styles.detailValue}>{formatTime(parseInt(tripData.duration))}</span>
-              </div>
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>💰 Earnings</span>
-                <span style={{...styles.detailValue, color: '#0D8F81'}}>${tripData.earnings}</span>
-              </div>
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>🚗 Vehicle</span>
-                <span style={styles.detailValue}>{tripData.vehicle}</span>
-              </div>
-            </div>
-
-            {/* Passenger Info */}
-            <div style={styles.passengerInfo}>
-              <img 
-                src={tripData.passengerImage} 
-                alt={tripData.passenger}
-                style={styles.passengerImage}
-              />
-              <div style={styles.passengerDetails}>
-                <div style={styles.passengerName}>{tripData.passenger}</div>
-                <div style={styles.passengerMeta}>
-                  <span style={styles.passengerRating}>
-                    <span>⭐</span> {tripData.passengerRating}
-                  </span>
-                  <span>•</span>
-                  <span>📞 (555) 123-4567</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Notes if available */}
-            {tripData.notes && (
-              <div style={styles.notes}>
-                <span>📝</span>
-                <span>{tripData.notes}</span>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div style={styles.actions}>
-              {status === 'scheduled' && (
-                <button 
-                  style={{...styles.actionButton, ...styles.primaryButton}}
-                  onClick={() => handleStatusChange('in-progress')}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 20px 30px rgba(13,143,129,0.4)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 10px 20px rgba(13,143,129,0.3)';
-                  }}
-                >
-                  <span>🚀</span>
-                  Start Trip
-                </button>
-              )}
-              {status === 'in-progress' && (
-                <button 
-                  style={{...styles.actionButton, ...styles.successButton}}
-                  onClick={() => handleStatusChange('completed')}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 20px 30px rgba(16,185,129,0.4)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 10px 20px rgba(16,185,129,0.3)';
-                  }}
-                >
-                  <span>✅</span>
-                  Complete Trip
-                </button>
-              )}
-              <button 
-                style={{...styles.actionButton, ...styles.secondaryButton}}
-                onClick={() => setShowMap(!showMap)}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'white';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(145deg, #f8fafc, #f1f5f9)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                <span>🗺️</span>
-                {showMap ? 'Hide Map' : 'Show Route'}
-              </button>
-              <button 
-                style={{...styles.actionButton, ...styles.outlineButton}}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#f8fafc';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                <span>📞</span>
-                Contact
-              </button>
-            </div>
-
-            {/* Map Preview */}
-            {showMap && (
-              <div 
-                className="map-preview"
-                style={styles.mapPreview}
-                onClick={() => window.open(`https://maps.google.com/?saddr=${tripData.pickupLat},${tripData.pickupLng}&daddr=${tripData.dropoffLat},${tripData.dropoffLng}`, '_blank')}
-              >
-                <img 
-                  src={`https://maps.googleapis.com/maps/api/staticmap?size=600x200&maptype=roadmap&markers=color:green%7C${tripData.pickupLat},${tripData.pickupLng}&markers=color:red%7C${tripData.dropoffLat},${tripData.dropoffLng}&path=color:0x0D8F81|weight:5|${tripData.pickupLat},${tripData.pickupLng}|${tripData.dropoffLat},${tripData.dropoffLng}&key=YOUR_API_KEY`}
-                  alt="Route map"
-                  style={styles.mapImage}
-                />
-                <div style={styles.mapOverlay}>
-                  <span style={{
-                    background: 'white',
-                    padding: '12px 24px',
-                    borderRadius: '30px',
-                    fontWeight: '600',
-                    color: '#1e293b',
-                    boxShadow: '0 10px 20px rgba(0,0,0,0.2)'
-                  }}>
-                    Open in Google Maps →
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </div>
-    </>
+
+      {/* Route */}
+      <div className="trip-route">
+        <div className="trip-route-point">
+          <div className="trip-point-dot trip-point-dot-green"></div>
+          <div className="trip-point-details">
+            <div className="trip-point-label">PICKUP</div>
+            <div className="trip-point-address">{tripData.pickup}</div>
+          </div>
+        </div>
+        <div className="trip-route-line"></div>
+        <div className="trip-route-point">
+          <div className="trip-point-dot trip-point-dot-red"></div>
+          <div className="trip-point-details">
+            <div className="trip-point-label">DROPOFF</div>
+            <div className="trip-point-address">{tripData.dropoff}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Expanded Content */}
+      {expanded && (
+        <div className="trip-expanded-content">
+          {/* Details Grid */}
+          <div className="trip-details-grid">
+            <div className="trip-detail-item">
+              <span className="trip-detail-label">📏 Distance</span>
+              <span className="trip-detail-value">{tripData.distance} km</span>
+            </div>
+            <div className="trip-detail-item">
+              <span className="trip-detail-label">⏱️ Duration</span>
+              <span className="trip-detail-value">{formatTime(parseInt(tripData.duration))}</span>
+            </div>
+            <div className="trip-detail-item">
+              <span className="trip-detail-label">💰 Earnings</span>
+              <span className="trip-detail-value trip-earnings">${tripData.earnings}</span>
+            </div>
+            <div className="trip-detail-item">
+              <span className="trip-detail-label">🚗 Vehicle</span>
+              <span className="trip-detail-value">{tripData.vehicle}</span>
+            </div>
+          </div>
+
+          {/* Passenger Info */}
+          <div className="trip-passenger">
+            <img
+              src={tripData.passengerImage}
+              alt={tripData.passenger}
+              className="trip-passenger-image"
+            />
+            <div className="trip-passenger-details">
+              <div className="trip-passenger-name">{tripData.passenger}</div>
+              <div className="trip-passenger-meta">
+                <span className="trip-passenger-rating">
+                  <span>⭐</span> {tripData.passengerRating}
+                </span>
+                <span>•</span>
+                <span>📞 (555) 123-4567</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Notes if available */}
+          {tripData.notes && (
+            <div className="trip-notes">
+              <span>📝</span>
+              <span>{tripData.notes}</span>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="trip-actions">
+            {status === 'scheduled' && (
+              <button
+                className="trip-action-btn trip-action-primary"
+                onClick={() => handleStatusChange('in-progress')}
+              >
+                <span>🚀</span>
+                Start Trip
+              </button>
+            )}
+            {status === 'in-progress' && (
+              <button
+                className="trip-action-btn trip-action-success"
+                onClick={() => handleStatusChange('completed')}
+              >
+                <span>✅</span>
+                Complete Trip
+              </button>
+            )}
+            <button
+              className="trip-action-btn trip-action-secondary"
+              onClick={() => setShowMap(!showMap)}
+            >
+              <span>🗺️</span>
+              {showMap ? 'Hide Map' : 'Show Route'}
+            </button>
+            <button className="trip-action-btn trip-action-outline">
+              <span>📞</span>
+              Contact
+            </button>
+          </div>
+
+          {/* Map Preview */}
+          {showMap && (
+            <div
+              className="trip-map-preview"
+              onClick={() => window.open(`https://maps.google.com/?saddr=${tripData.pickupLat},${tripData.pickupLng}&daddr=${tripData.dropoffLat},${tripData.dropoffLng}`, '_blank')}
+            >
+              <img
+                src={`https://maps.googleapis.com/maps/api/staticmap?size=600x200&maptype=roadmap&markers=color:green%7C${tripData.pickupLat},${tripData.pickupLng}&markers=color:red%7C${tripData.dropoffLat},${tripData.dropoffLng}&path=color:0x0D8F81|weight:5|${tripData.pickupLat},${tripData.pickupLng}|${tripData.dropoffLat},${tripData.dropoffLng}&key=YOUR_API_KEY`}
+                alt="Route map"
+                className="trip-map-image"
+              />
+              <div className="trip-map-overlay">
+                <span className="trip-map-button">
+                  Open in Google Maps →
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 };
 

@@ -1,0 +1,37 @@
+{showQuickActions && !sidebarCollapsed && (
+  <div className="quick-actions-dropdown">
+    <button className="dropdown-item" onClick={() => handleQuickAction('verify-stop', 'fulle')}>
+      <span className="item-icon">⛽</span>
+      <span className="item-text">pour Faille</span>
+    </button>
+
+    <div className="dropdown-divider"></div>
+
+    <div className="dropdown-section-title">ACTIONS RAPIDES</div>
+
+    <button className="dropdown-item" onClick={() => handleQuickAction('start-trip')}>
+      <span className="item-icon">🚀</span>
+      <span className="item-text">Démarrer un voyage</span>
+    </button>
+
+    <button className="dropdown-item" onClick={() => handleQuickAction('fuel')}>
+      <span className="item-icon">⛽</span>
+      <span className="item-text">Enregistrer le carburant</span>
+    </button>
+
+    <button className="dropdown-item" onClick={() => handleQuickAction('break')}>
+      <span className="item-icon">☕</span>
+      <span className="item-text">Prendre une pause</span>
+    </button>
+
+    <button className="dropdown-item" onClick={() => handleQuickAction('report')}>
+      <span className="item-icon">⚠️</span>
+      <span className="item-text">Signaler un problème</span>
+    </button>
+
+    <button className="dropdown-item" onClick={() => handleQuickAction('contact')}>
+      <span className="item-icon">📞</span>
+      <span className="item-text">Contacter la répartition</span>
+    </button>
+  </div>
+)}

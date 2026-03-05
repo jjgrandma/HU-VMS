@@ -1,0 +1,466 @@
+/* src/pages/driver/components/BreakTimer.css */
+
+/* ===== BREAK TIMER CONTAINER ===== */
+.break-timer-container {
+  background: linear-gradient(135deg, #ffffff, #f8fafc);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
+  border: 1px solid #eef2f6;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.break-timer-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(13, 143, 129, 0.03) 0%, transparent 70%);
+  animation: rotate 30s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.break-timer-container:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 15px 40px rgba(13, 143, 129, 0.12);
+  border-color: rgba(13, 143, 129, 0.2);
+}
+
+/* ===== HEADER ===== */
+.break-timer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.break-timer-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  background: linear-gradient(135deg, #1e293b, #0D8F81);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.break-timer-title span {
+  font-size: 28px;
+  filter: drop-shadow(0 4px 8px rgba(13, 143, 129, 0.2));
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.break-timer-history-btn {
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+}
+
+.break-timer-history-btn:hover {
+  background: linear-gradient(135deg, #0D8F81, #0b7a6e);
+  color: white;
+  transform: rotate(90deg) scale(1.1);
+  border-color: transparent;
+  box-shadow: 0 8px 20px rgba(13, 143, 129, 0.3);
+}
+
+/* ===== TIMER DISPLAY ===== */
+.break-timer-display {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.break-timer-circle {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.08));
+}
+
+.break-timer-svg {
+  position: absolute;
+  transform: rotate(-90deg);
+}
+
+.break-timer-progress {
+  transition: stroke-dashoffset 0.5s ease;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+}
+
+.break-timer-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  width: 100%;
+}
+
+.break-timer-time {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.2;
+  margin-bottom: 4px;
+  font-family: 'Courier New', monospace;
+  background: linear-gradient(135deg, #1e293b, #0D8F81);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.break-timer-label {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 8px;
+  border-radius: 20px;
+  display: inline-block;
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.break-timer-label.on-break {
+  background: rgba(255, 152, 0, 0.15);
+  color: #ff9800;
+  animation: pulse 2s infinite;
+}
+
+.break-timer-label.working {
+  background: rgba(76, 175, 80, 0.15);
+  color: #4caf50;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* ===== ACTIONS ===== */
+.break-timer-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.break-timer-start-btn,
+.break-timer-end-btn {
+  padding: 14px 32px;
+  border: none;
+  border-radius: 40px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.break-timer-start-btn {
+  background: linear-gradient(135deg, #4caf50, #45a049);
+  color: white;
+}
+
+.break-timer-end-btn {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  color: white;
+}
+
+.break-timer-start-btn::before,
+.break-timer-end-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.break-timer-start-btn:hover,
+.break-timer-end-btn:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+}
+
+.break-timer-start-btn:hover::before,
+.break-timer-end-btn:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.break-timer-start-btn span,
+.break-timer-end-btn span {
+  font-size: 20px;
+  animation: rotate 3s infinite;
+}
+
+/* ===== HISTORY SECTION ===== */
+.break-timer-history {
+  margin-top: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border-radius: 16px;
+  animation: slideUp 0.3s ease-out;
+  border: 1px solid #e2e8f0;
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.break-timer-history-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.break-timer-history-title::before {
+  content: '📋';
+  font-size: 18px;
+}
+
+.break-timer-no-history {
+  color: #64748b;
+  font-size: 14px;
+  text-align: center;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px dashed #e2e8f0;
+}
+
+.break-timer-history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.break-timer-history-item:hover {
+  transform: translateX(8px);
+  background: white;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border-bottom: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.break-timer-history-item:last-child {
+  border-bottom: none;
+}
+
+.break-timer-history-item span:first-child {
+  color: #475569;
+  font-weight: 500;
+}
+
+.break-timer-history-duration {
+  font-weight: 700;
+  color: #0D8F81;
+  background: rgba(13, 143, 129, 0.1);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  border: 1px solid rgba(13, 143, 129, 0.2);
+}
+
+.break-timer-total {
+  margin-top: 16px;
+  padding: 14px;
+  background: linear-gradient(135deg, #0D8F81, #0b7a6e);
+  color: white;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(13, 143, 129, 0.3);
+  animation: glow 2s infinite;
+}
+
+@keyframes glow {
+
+  0%,
+  100% {
+    box-shadow: 0 8px 20px rgba(13, 143, 129, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 12px 30px rgba(13, 143, 129, 0.5);
+  }
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 768px) {
+  .break-timer-container {
+    padding: 20px;
+  }
+
+  .break-timer-circle {
+    width: 120px;
+    height: 120px;
+  }
+
+  .break-timer-time {
+    font-size: 20px;
+  }
+
+  .break-timer-start-btn,
+  .break-timer-end-btn {
+    padding: 12px 24px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .break-timer-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .break-timer-start-btn,
+  .break-timer-end-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .break-timer-history-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .break-timer-history-duration {
+    align-self: flex-start;
+  }
+}
+
+/* ===== DARK MODE SUPPORT ===== */
+@media (prefers-color-scheme: dark) {
+  .break-timer-container {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border-color: #334155;
+  }
+
+  .break-timer-title {
+    background: linear-gradient(135deg, #f1f5f9, #0D8F81);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .break-timer-time {
+    background: linear-gradient(135deg, #f1f5f9, #0D8F81);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .break-timer-history {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border-color: #334155;
+  }
+
+  .break-timer-history-item span:first-child {
+    color: #cbd5e1;
+  }
+
+  .break-timer-no-history {
+    background: #1e293b;
+    color: #94a3b8;
+  }
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+  .break-timer-container {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+
+  .break-timer-start-btn,
+  .break-timer-end-btn,
+  .break-timer-history-btn {
+    display: none;
+  }
+}

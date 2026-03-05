@@ -1,0 +1,161 @@
+.manage-vehicles-container {
+  padding: 30px;
+  background: #0f0f1e;
+  min-height: 100vh;
+  color: #fff;
+}
+
+.manage-vehicles-container h1 {
+  font-size: 32px;
+  margin-bottom: 30px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.controls-bar {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 250px;
+  padding: 12px 20px;
+  background: #1a1a2e;
+  border: 1px solid #2a2a3e;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.search-input:focus {
+  border-color: #2196F3;
+}
+
+.search-input::placeholder {
+  color: #666;
+}
+
+.filter-select {
+  padding: 12px 20px;
+  background: #1a1a2e;
+  border: 1px solid #2a2a3e;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+}
+
+.filter-select:focus {
+  border-color: #2196F3;
+}
+
+.table-container {
+  background: #1a1a2e;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #2a2a3e;
+}
+
+.vehicles-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.vehicles-table thead {
+  background: #16162a;
+}
+
+.vehicles-table th {
+  padding: 18px 20px;
+  text-align: left;
+  font-weight: 600;
+  color: #fff;
+  font-size: 14px;
+  border-bottom: 1px solid #2a2a3e;
+}
+
+.vehicles-table tbody tr {
+  border-bottom: 1px solid #2a2a3e;
+  transition: background 0.3s ease;
+}
+
+.vehicles-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.vehicles-table td {
+  padding: 18px 20px;
+  color: #ccc;
+  font-size: 14px;
+}
+
+.status-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.status-available {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+}
+
+.status-assigned {
+  background: rgba(33, 150, 243, 0.2);
+  color: #2196F3;
+}
+
+.status-maintenance {
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+}
+
+.btn-delete {
+  padding: 8px 20px;
+  background: #f44336;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.3s ease;
+}
+
+.btn-delete:hover {
+  background: #d32f2f;
+}
+
+.no-results {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .manage-vehicles-container {
+    padding: 20px;
+  }
+
+  .controls-bar {
+    flex-direction: column;
+  }
+
+  .table-container {
+    overflow-x: auto;
+  }
+
+  .vehicles-table {
+    min-width: 800px;
+  }
+}
