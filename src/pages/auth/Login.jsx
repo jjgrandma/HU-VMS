@@ -1,11 +1,10 @@
-import { useContext, useState } from "react";
-import { AuthContext } from "../../context/AuthContext";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import busLogo from "../../assets/bus.png"; // local logo
 import "./login.css";
 
-export default function Login() {
-  const { setUser } = useContext(AuthContext);
-
+export default function Login({ onLogin }) {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -24,26 +23,33 @@ export default function Login() {
       return;
     }
 
-    setUser({
+    // Call the onLogin prop passed from App.jsx
+    onLogin({
       username: formData.username,
       role: formData.role,
     });
+
+    // Navigate to the appropriate dashboard based on role
+    switch (formData.role) {
+      case 'ADMIN':
+        navigate('/admin/dashboard');
+        break;
+      case 'TRANSPORT':
+        navigate('/transport/dashboard');
+        break;
+      case 'DRIVER':
+        navigate('/driver/dashboard');
+        break;
+      case 'USER':
+        navigate('/user/dashboard');
+        break;
+      default:
+        navigate('/');
+    }
   };
 
   return (
     <div className="login-page">
-
-      {/* ===== HEADER ===== */}
-      <header className="top-header">
-        <div className="header-left">
-          <h2>HARAMAYA UNIVERSITY</h2>
-          <p>Vehicle Management System</p>
-        </div>
-
-        <div className="header-right">
-          <span>Email HU-VMS Alert</span>
-        </div>
-      </header>
 
       {/* ===== CENTER CONTENT ===== */}
       <div className="login-container">

@@ -1,23 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import { Search } from "lucide-react";
-import L from "leaflet";
+import { useState, useEffect } from "react";
 import "./tracking.css";
-
-// Fix Leaflet marker icons
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
 
 export default function Tracking() {
   const [vehicles, setVehicles] = useState([]);
   const [search, setSearch] = useState("");
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
     const data = [
@@ -46,8 +33,21 @@ export default function Tracking() {
         status: "offline",
       },
     ];
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setVehicles(data);
+
+    // Try to load map libraries
+    const checkMapLibraries = async () => {
+      try {
+        await import('leaflet');
+        await import('react-leaflet');
+        setMapLoaded(true);
+      } catch (error) {
+        console.log('Map libraries not installed. Run: npm install leaflet react-leaflet');
+        setMapLoaded(false);
+      }
+    };
+    
+    checkMapLibraries();
   }, []);
 
   const filteredVehicles = vehicles.filter(
@@ -59,14 +59,15 @@ export default function Tracking() {
 
   return (
     <div className="tracking-page">
-
-      {/* HEADER + SEARCH */}
       <header className="tracking-header">
         <h1>Vehicle Tracking</h1>
         <p>Monitor vehicles in real time</p>
 
         <div className="tracking-search-wrapper">
-          <Search className="search-icon" />
+          <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
           <input
             type="text"
             placeholder="Search by Vehicle ID, Driver, or Route..."
@@ -78,8 +79,6 @@ export default function Tracking() {
       </header>
 
       <div className="tracking-container">
-
-        {/* VEHICLE CARDS */}
         <div className="tracking-cards">
           {filteredVehicles.map((v) => (
             <div className="tracking-card" key={v.id}>
@@ -87,6 +86,7 @@ export default function Tracking() {
                 <strong>Vehicle: {v.id}</strong>
                 <span>Driver: {v.driver}</span>
                 <span>Route: {v.route}</span>
+                <span>Location: {v.lat}°N, {v.lng}°E</span>
               </div>
               <span className={`track-status ${v.status}`}>
                 ● {v.status.charAt(0).toUpperCase() + v.status.slice(1)}
@@ -99,30 +99,44 @@ export default function Tracking() {
           )}
         </div>
 
-        {/* MAP */}
-        <div className="tracking-map">
-          <MapContainer
-            center={[9.03, 38.74]}
-            zoom={12}
-            style={{ height: "100%", width: "100%" }}
-          >
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            {filteredVehicles.map((v) => (
-              <Marker key={v.id} position={[v.lat, v.lng]}>
-                <Popup>
-                  <strong>{v.id}</strong>
-                  <br />
-                  Driver: {v.driver}
-                  <br />
-                  Status: {v.status}
-                  <br />
-                  Route: {v.route}
-                </Popup>
-              </Marker>
-            ))}
-          </MapContainer>
+        <div className="tracking-map-container">
+          {mapLoaded ? (
+            <div className="map-loading">
+              <p>Loading map...</p>
+            </div>
+          ) : (
+            <div className="map-placeholder">
+              <div className="map-placeholder-content">
+                <svg className="map-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+                  <line x1="8" y1="2" x2="8" y2="18"></line>
+                  <line x1="16" y1="6" x2="16" y2="22"></line>
+                </svg>
+                <h3>Interactive Map</h3>
+                <p>Real-time vehicle tracking map</p>
+                <div className="map-info">
+                  <div className="info-item">
+                    <span className="info-label">Total Vehicles:</span>
+                    <span className="info-value">{vehicles.length}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Active:</span>
+                    <span className="info-value">{vehicles.filter(v => v.status === 'moving').length}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Idle:</span>
+                    <span className="info-value">{vehicles.filter(v => v.status === 'idle').length}</span>
+                  </div>
+                </div>
+                <div className="map-note">
+                  <p>📍 To enable the interactive map, run:</p>
+                  <code>npm install leaflet react-leaflet</code>
+                  <p>Then restart your development server</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-
       </div>
     </div>
   );

@@ -1,75 +1,36 @@
 /* Global box sizing */
 * {
   box-sizing: border-box;
-  margin: 0.5em;
+  margin: 0;
   padding: 0;
 }
 
 /* ===== PAGE BACKGROUND ===== */
 .login-page {
-  min-height: 90vh;
+  min-height: 100vh;
+  width: 100%;
   background: linear-gradient(135deg, #6b5cff, #2e2a4d);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   font-family: 'Segoe UI', sans-serif;
-}
-
-/* ===== HEADER ===== */
-.top-header {
-  width: 100%;
-  background: #519516;
-  color: white;
-  padding: 20px 40px;
-  border-radius: 0 0 18px 18px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-}
-
-.header-left h2 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: bold;
-}
-
-.header-left p {
-  margin-top: 4px;
-  font-size: 14px;
-  color: #dcd6f7;
-}
-
-.header-right span {
-  font-size: 14px;
-  cursor: pointer;
-  padding: 6px 10px;
-  background: rgba(255,255,255,0.15);
-  border-radius: 6px;
-  transition: 0.3s ease;
-}
-
-.header-right span:hover {
-  text-decoration: none;
-  background: rgba(255,255,255,0.3);
+  padding: 20px;
 }
 
 /* ===== CENTER CONTENT ===== */
 .login-container {
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  margin-top: 25px; /* spacing from header */
-  margin-bottom: 35px; /* spacing before footer */
+  max-width: 500px;
 }
 
 /* ===== LOGIN CARD ===== */
 .login-card {
   width: 380px;
-  padding: 35px 30px;
+  padding: 25px 30px;
   background: #2b2745;
   border-radius: 18px;
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
@@ -81,23 +42,23 @@
 .logo-wrapper {
   display: flex;
   justify-content: center;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 .login-logo {
-  width: 80px;
-  height: 80px;
-  border-radius: 12px;  /* optional rounded corners */
+  width: 70px;
+  height: 70px;
+  border-radius: 12px;
   object-fit: contain;
-  background: white;    /* ensures PNG is visible */
-  padding: 10px;        /* spacing inside logo */
+  background: white;
+  padding: 8px;
 }
 
 /* ===== SUBTITLE ===== */
 .subtitle {
   font-size: 14px;
   color: #b5b2d6;
-  margin-bottom: 25px;
+  margin-bottom: 20px;
 }
 
 /* ===== LABELS ===== */
@@ -112,8 +73,8 @@
 .login-card input,
 .login-card select {
   width: 100%;
-  padding: 11px;
-  margin-bottom: 15px;
+  padding: 10px;
+  margin-bottom: 12px;
   background: #3a365c;
   border: 1px solid #4e4a75;
   border-radius: 8px;
@@ -136,7 +97,7 @@
 /* ===== LINKS ===== */
 .login-actions {
   text-align: right;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
 }
 
 .login-actions a,
@@ -172,7 +133,7 @@
 
 /* ===== SUPPORT TEXT ===== */
 .support {
-  margin-top: 18px;
+  margin-top: 15px;
   font-size: 12px;
   color: #b5b2d6;
 }
@@ -184,9 +145,119 @@
   color: #dcd6f7;
   font-size: 12px;
   padding: 12px 0;
-  background: #5e21a8;
-  border-radius: 18px 18px 0 0;
-  margin-top: auto;
+  background: transparent;
+  margin-top: 20px;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 768px) {
+  .login-page {
+    padding: 15px;
+  }
+
+  .login-container {
+    max-width: 100%;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 25px 25px;
+  }
+
+  .login-logo {
+    width: 65px;
+    height: 65px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-page {
+    padding: 10px;
+  }
+
+  .login-card {
+    width: 100%;
+    padding: 20px 20px;
+    border-radius: 16px;
+  }
+
+  .login-logo {
+    width: 60px;
+    height: 60px;
+    padding: 6px;
+  }
+
+  .logo-wrapper {
+    margin-bottom: 12px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    margin-bottom: 18px;
+  }
+
+  .login-card label {
+    font-size: 12px;
+    margin-bottom: 5px;
+  }
+
+  .login-card input,
+  .login-card select {
+    padding: 9px;
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+
+  .login-card button {
+    padding: 11px;
+    font-size: 13px;
+  }
+
+  .login-actions {
+    margin-bottom: 10px;
+  }
+
+  .login-actions a,
+  .support a {
+    font-size: 11px;
+  }
+
+  .support {
+    margin-top: 12px;
+    font-size: 11px;
+  }
+
+  .login-footer {
+    font-size: 11px;
+    padding: 10px 0;
+  }
+}
+
+@media (max-width: 360px) {
+  .login-card {
+    padding: 18px 16px;
+  }
+
+  .login-logo {
+    width: 55px;
+    height: 55px;
+  }
+
+  .subtitle {
+    font-size: 12px;
+  }
+
+  .login-card input,
+  .login-card select {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .login-card button {
+    padding: 10px;
+    font-size: 12px;
+  }
 }
 
 /* Hide footer on very small screens */

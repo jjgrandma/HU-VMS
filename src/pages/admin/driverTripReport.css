@@ -1,0 +1,130 @@
+.driver-trip-report-container {
+  padding: 30px;
+  background: #0f0f1e;
+  min-height: 100vh;
+  color: #fff;
+}
+
+.driver-trip-report-container h1 {
+  font-size: 32px;
+  margin-bottom: 30px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.controls-bar {
+  margin-bottom: 30px;
+}
+
+.search-input {
+  width: 100%;
+  max-width: 500px;
+  padding: 12px 20px;
+  background: #1a1a2e;
+  border: 1px solid #2a2a3e;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.search-input:focus {
+  border-color: #2196F3;
+}
+
+.search-input::placeholder {
+  color: #666;
+}
+
+.table-container {
+  background: #1a1a2e;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #2a2a3e;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.report-table thead {
+  background: #16162a;
+}
+
+.report-table th {
+  padding: 18px 20px;
+  text-align: left;
+  font-weight: 600;
+  color: #fff;
+  font-size: 14px;
+  border-bottom: 1px solid #2a2a3e;
+}
+
+.report-table tbody tr {
+  border-bottom: 1px solid #2a2a3e;
+  transition: background 0.3s ease;
+}
+
+.report-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.report-table td {
+  padding: 18px 20px;
+  color: #ccc;
+  font-size: 14px;
+}
+
+.rating-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+  background: rgba(255, 193, 7, 0.2);
+  color: #FFC107;
+}
+
+.no-results {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .driver-trip-report-container {
+    padding: 20px;
+  }
+
+  .table-container {
+    overflow-x: auto;
+  }
+
+  .report-table {
+    min-width: 900px;
+  }
+}
+
+/* Report Header */
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.report-header h1 {
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .report-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
