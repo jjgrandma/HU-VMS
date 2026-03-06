@@ -1,0 +1,54 @@
+.gps-tracking {
+    padding: 0;
+    animation: fadeInUp 0.6s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.gps-tracking h2 {
+    margin: 0 0 25px 0;
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    position: relative;
+    padding-bottom: 15px;
+}
+
+.gps-tracking h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    margin-bottom: 5px;
+}
+
+.info-card strong {
+    display: block;
+    color: #333;
+    font-size: 16px;
+}
+
+.map-container {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.map-container .leaflet-container {
+    border-radius: 4px;
+}
