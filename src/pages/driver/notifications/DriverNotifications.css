@@ -1,0 +1,110 @@
+.driver-notifications {
+    padding: 20px;
+}
+
+.driver-notifications h2 {
+    margin-top: 0;
+    color: #333;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.filter-buttons button {
+    padding: 8px 16px;
+    border: 2px solid #ddd;
+    background: white;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.filter-buttons button:hover {
+    border-color: #2196F3;
+}
+
+.filter-buttons button.active {
+    background: #2196F3;
+    color: white;
+    border-color: #2196F3;
+}
+
+.notifications-list {
+    display: grid;
+    gap: 15px;
+}
+
+.no-notifications {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.notification-card {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    gap: 15px;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.notification-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.notification-card.unread {
+    border-left: 4px solid #2196F3;
+    background: #f0f8ff;
+}
+
+.notification-card.read {
+    opacity: 0.7;
+}
+
+.notification-card.high {
+    border-left-color: #f44336;
+}
+
+.notification-icon {
+    font-size: 32px;
+    flex-shrink: 0;
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-content h4 {
+    margin: 0 0 5px 0;
+    color: #333;
+}
+
+.notification-content p {
+    margin: 0 0 10px 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.notification-time {
+    font-size: 12px;
+    color: #999;
+}
+
+.unread-indicator {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 10px;
+    height: 10px;
+    background: #2196F3;
+    border-radius: 50%;
+}

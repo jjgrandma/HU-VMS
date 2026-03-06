@@ -1,0 +1,145 @@
+/* Driver Availability Dropdown */
+.driver-availability-dropdown {
+    position: relative;
+}
+
+.status-dropdown-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    font-weight: 500;
+    color: #495057;
+}
+
+.status-dropdown-btn:hover {
+    background: #f8f9fa;
+    border-color: #ced4da;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.status-dropdown-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.status-circle-small {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.status-label {
+    font-weight: 600;
+    color: #212529;
+}
+
+.dropdown-arrow {
+    font-size: 10px;
+    color: #6c757d;
+    margin-left: 4px;
+}
+
+/* Status Dropdown Menu */
+.status-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e9ecef;
+    padding: 12px;
+    min-width: 200px;
+    z-index: 1002;
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.status-option {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+    padding: 12px 16px;
+    background: white;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 8px;
+    position: relative;
+}
+
+.status-option:last-child {
+    margin-bottom: 0;
+}
+
+.status-option:hover {
+    background: #f8f9fa;
+    border-color: #dee2e6;
+    transform: translateX(4px);
+}
+
+.status-option.active {
+    background: #e7f5ff;
+    border-color: #28a745;
+}
+
+.status-option:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.status-circle-large {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2),
+        inset 0 -2px 6px rgba(0, 0, 0, 0.1),
+        inset 0 2px 6px rgba(255, 255, 255, 0.3);
+    position: relative;
+    flex-shrink: 0;
+}
+
+.circle-shine {
+    position: absolute;
+    top: 15%;
+    left: 20%;
+    width: 30%;
+    height: 30%;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    filter: blur(6px);
+}
+
+.option-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: #212529;
+    flex: 1;
+}
+
+.check-mark {
+    color: #28a745;
+    font-size: 18px;
+    font-weight: bold;
+}

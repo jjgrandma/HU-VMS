@@ -1,0 +1,126 @@
+.vehicle-info {
+    padding: 0;
+}
+
+.vehicle-info h2 {
+    margin: 0 0 20px 0;
+    color: #212529;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.vehicle-card {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.vehicle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f1f3f5;
+}
+
+.vehicle-header h3 {
+    margin: 0;
+    color: #212529;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.vehicle-id {
+    background: #28a745;
+    color: white;
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.vehicle-details {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-row span {
+    color: #6c757d;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.detail-row strong {
+    color: #212529;
+    font-weight: 500;
+}
+
+.fuel-indicator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    max-width: 300px;
+}
+
+.fuel-bar {
+    height: 8px;
+    background: #28a745;
+    border-radius: 4px;
+    transition: width 0.3s;
+    min-width: 20px;
+}
+
+.fuel-bar.low {
+    background: #dc3545;
+}
+
+.warning {
+    background: #fff3cd;
+    color: #856404;
+    padding: 12px 15px;
+    border-radius: 6px;
+    border-left: 4px solid #ffc107;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.warning-text {
+    color: #dc3545;
+}
+
+.btn-report-issue {
+    margin-top: 20px;
+    padding: 12px 24px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    width: 100%;
+    transition: background 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-report-issue:hover {
+    background: #c82333;
+}
