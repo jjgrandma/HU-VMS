@@ -9,26 +9,39 @@ const AdminSidebar = ({ onLogout }) => {
   const [openDropdown, setOpenDropdown] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
   const [notificationCount] = useState(4); // Mock count - would come from API
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const toggleDropdown = (menu) => {
     setOpenDropdown(openDropdown === menu ? '' : menu);
   };
 
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
-    <div className="admin-sidebar">
+    <>
+      {/* Mobile Menu Toggle Button */}
+      <button className="mobile-menu-toggle" onClick={toggleMobileMenu}>
+        <span className={`hamburger ${isMobileMenuOpen ? 'open' : ''}`}>
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+      </button>
+
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div className="mobile-overlay" onClick={closeMobileMenu}></div>
+      )}
+
+      <div className={`admin-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
       <div className="sidebar-header">
         <h2>Admin Panel</h2>
-        <div className="header-actions">
-          <NotificationBell 
-            count={notificationCount}
-            onClick={() => setShowNotifications(true)}
-          />
-          {onLogout && (
-            <button onClick={onLogout} className="logout-btn">
-              Logout
-            </button>
-          )}
-        </div>
       </div>
 
       <NotificationPanel 
@@ -40,6 +53,7 @@ const AdminSidebar = ({ onLogout }) => {
         <Link 
           to="/admin/dashboard" 
           className={`nav-item ${location.pathname === '/admin/dashboard' ? 'active' : ''}`}
+          onClick={closeMobileMenu}
         >
           <span className="nav-icon">📊</span>
           <span>Dashboard Overview</span>
@@ -59,24 +73,21 @@ const AdminSidebar = ({ onLogout }) => {
               <Link 
                 to="/admin/manage-vehicles" 
                 className={`dropdown-item ${location.pathname === '/admin/manage-vehicles' ? 'active' : ''}`}
+                onClick={closeMobileMenu}
               >
-                Manage Vehicles
-              </Link>
-              <Link 
-                to="/admin/vehicle-status" 
-                className={`dropdown-item ${location.pathname === '/admin/vehicle-status' ? 'active' : ''}`}
-              >
-                Vehicle Status
+                View Vehicle List
               </Link>
               <Link 
                 to="/admin/add-vehicle" 
                 className={`dropdown-item ${location.pathname === '/admin/add-vehicle' ? 'active' : ''}`}
+                onClick={closeMobileMenu}
               >
                 Add Vehicle
               </Link>
               <Link 
                 to="/admin/vehicle-trip-history" 
                 className={`dropdown-item ${location.pathname === '/admin/vehicle-trip-history' ? 'active' : ''}`}
+                onClick={closeMobileMenu}
               >
                 Trip History
               </Link>
@@ -98,18 +109,21 @@ const AdminSidebar = ({ onLogout }) => {
               <Link 
                 to="/admin/manage-users" 
                 className={`dropdown-item ${location.pathname === '/admin/manage-users' ? 'active' : ''}`}
+                onClick={closeMobileMenu}
               >
                 Manage Users
               </Link>
               <Link 
                 to="/admin/add-user" 
                 className={`dropdown-item ${location.pathname === '/admin/add-user' ? 'active' : ''}`}
+                onClick={closeMobileMenu}
               >
                 Add New User
               </Link>
               <Link 
                 to="/admin/manage-drivers" 
                 className={`dropdown-item ${location.pathname === '/admin/manage-drivers' ? 'active' : ''}`}
+                onClick={closeMobileMenu}
               >
                 Manage Drivers
               </Link>
@@ -131,55 +145,53 @@ const AdminSidebar = ({ onLogout }) => {
               <Link 
                 to="/admin/user-request-report" 
                 className={`dropdown-item ${location.pathname === '/admin/user-request-report' ? 'active' : ''}`}
+                onClick={closeMobileMenu}
               >
                 User Request Report
               </Link>
               <Link 
                 to="/admin/vehicle-trip-report" 
                 className={`dropdown-item ${location.pathname === '/admin/vehicle-trip-report' ? 'active' : ''}`}
+                onClick={closeMobileMenu}
               >
                 Vehicle Trip Report
               </Link>
               <Link 
                 to="/admin/driver-trip-report" 
                 className={`dropdown-item ${location.pathname === '/admin/driver-trip-report' ? 'active' : ''}`}
+                onClick={closeMobileMenu}
               >
                 Driver Trip Report
               </Link>
               <Link 
                 to="/admin/driver-performance-report" 
                 className={`dropdown-item ${location.pathname === '/admin/driver-performance-report' ? 'active' : ''}`}
+                onClick={closeMobileMenu}
               >
                 Driver Performance
               </Link>
               <Link 
                 to="/admin/fuel-records-report" 
                 className={`dropdown-item ${location.pathname === '/admin/fuel-records-report' ? 'active' : ''}`}
+                onClick={closeMobileMenu}
               >
                 Fuel Records
               </Link>
             </div>
           )}
         </div>
-
-        <Link 
-          to="/admin/settings" 
-          className={`nav-item ${location.pathname === '/admin/settings' ? 'active' : ''}`}
-        >
-          <span className="nav-icon">⚙️</span>
-          <span>Settings</span>
-        </Link>
       </nav>
 
       <div className="sidebar-footer">
         {onLogout && (
-          <button onClick={onLogout} className="logout-btn-footer">
+          <button onClick={() => { onLogout(); closeMobileMenu(); }} className="logout-btn-footer">
             <span className="logout-icon">🚪</span>
             <span>Logout</span>
           </button>
         )}
       </div>
     </div>
+    </>
   );
 };
 

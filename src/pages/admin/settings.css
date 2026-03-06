@@ -188,6 +188,104 @@
   box-shadow: 0 0 0 3px var(--primary-color-alpha);
 }
 
+.form-group select {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 15px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.form-group select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-color-alpha);
+}
+
+.form-group textarea {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 15px;
+  transition: all 0.3s ease;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-color-alpha);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.profile-picture-section {
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+  padding: 20px;
+  background: var(--card-bg-secondary);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.current-picture {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.profile-pic {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--primary-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.online-badge {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background: var(--success-color);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 2px solid var(--card-bg);
+}
+
+.picture-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.picture-actions .btn-secondary {
+  width: auto;
+  margin: 0;
+}
+
+.help-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
 .settings-footer {
   margin-top: 30px;
   display: flex;
@@ -228,27 +326,235 @@
 
 @media (max-width: 768px) {
   .settings-container {
-    padding: 20px;
+    padding: 16px;
+  }
+
+  .settings-container h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
   }
 
   .settings-tabs {
     overflow-x: auto;
+    gap: 8px;
+    margin-bottom: 20px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .settings-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .tab-btn {
     white-space: nowrap;
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+
+  .settings-content {
+    padding: 20px;
+    border-radius: 12px;
+  }
+
+  .settings-section h2 {
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+
+  .section-description {
+    font-size: 13px;
+    margin-bottom: 20px;
   }
 
   .theme-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 30px;
+  }
+
+  .theme-card {
+    padding: 16px;
+  }
+
+  .theme-preview {
+    height: 100px;
+  }
+
+  .theme-icon {
+    font-size: 40px;
+  }
+
+  .theme-info h3 {
+    font-size: 16px;
+  }
+
+  .settings-group {
+    margin-bottom: 24px;
+  }
+
+  .settings-group h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+
+  .setting-item {
+    padding: 10px 0;
+    font-size: 14px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .profile-picture-section {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 20px;
+    padding: 16px;
+  }
+
+  .picture-actions {
+    width: 100%;
+  }
+
+  .picture-actions .btn-secondary {
+    width: 100%;
   }
 
   .settings-footer {
     flex-direction: column;
+    margin-top: 24px;
+    gap: 10px;
   }
 
   .btn-primary,
   .btn-secondary {
     width: 100%;
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .settings-container {
+    padding: 12px;
+  }
+
+  .settings-container h1 {
+    font-size: 20px;
+    margin-bottom: 16px;
+  }
+
+  .tab-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .settings-content {
+    padding: 16px;
+  }
+
+  .settings-section h2 {
+    font-size: 18px;
+  }
+
+  .section-description {
+    font-size: 12px;
+  }
+
+  .theme-preview {
+    height: 80px;
+  }
+
+  .theme-icon {
+    font-size: 32px;
+  }
+
+  .theme-info h3 {
+    font-size: 14px;
+  }
+
+  .active-badge {
+    font-size: 11px;
+    padding: 3px 10px;
+  }
+
+  .settings-group h3 {
+    font-size: 15px;
+  }
+
+  .setting-item {
+    font-size: 13px;
+    padding: 8px 0;
+  }
+
+  .setting-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+  }
+
+  .form-group input {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 360px) {
+  .settings-container {
+    padding: 10px;
+  }
+
+  .settings-container h1 {
+    font-size: 18px;
+  }
+
+  .tab-btn {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .settings-content {
+    padding: 12px;
+  }
+
+  .settings-section h2 {
+    font-size: 16px;
+  }
+
+  .theme-card {
+    padding: 12px;
+  }
+
+  .theme-preview {
+    height: 70px;
+  }
+
+  .theme-icon {
+    font-size: 28px;
   }
 }

@@ -5,111 +5,244 @@ const NotificationPanel = ({ isOpen, onClose }) => {
   const [notifications, setNotifications] = useState([
     {
       id: 1,
-      type: 'report_request',
-      from: 'Transport Officer - John Smith',
-      message: 'Requested Vehicle Trip Report for March 2024',
+      type: 'access_denied',
+      role: 'Driver',
+      username: 'john_driver',
+      fullName: 'John Smith',
+      message: 'Cannot access account - Login failed multiple times',
       timestamp: '5 minutes ago',
       status: 'pending',
-      priority: 'high'
+      priority: 'high',
+      avatar: '👨‍✈️'
     },
     {
       id: 2,
       type: 'password_reset',
-      from: 'User - Jane Doe',
+      role: 'User',
+      username: 'jane_user',
+      fullName: 'Jane Doe',
+      requestType: 'password',
       message: 'Password reset request',
       timestamp: '15 minutes ago',
       status: 'pending',
-      priority: 'medium'
+      priority: 'medium',
+      avatar: '👩'
     },
     {
       id: 3,
-      type: 'username_recovery',
-      from: 'Driver - Mike Johnson',
-      message: 'Username recovery request',
+      type: 'username_reset',
+      role: 'Driver',
+      username: 'mike_driver',
+      fullName: 'Mike Johnson',
+      requestType: 'both',
+      message: 'Username and Password reset request',
       timestamp: '1 hour ago',
       status: 'pending',
-      priority: 'low'
+      priority: 'high',
+      avatar: '👨‍✈️'
     },
     {
       id: 4,
-      type: 'system_issue',
-      from: 'Transport Officer - Sarah Williams',
-      message: 'System access denied - Unable to view tracking page',
+      type: 'report_request',
+      role: 'Transport Officer',
+      username: 'sarah_officer',
+      fullName: 'Sarah Williams',
+      reportType: 'vehicle_usage',
+      message: 'Requested Vehicle Usage Report for March 2024',
       timestamp: '2 hours ago',
       status: 'pending',
-      priority: 'high'
+      priority: 'medium',
+      avatar: '👩‍💼'
     },
     {
       id: 5,
       type: 'report_request',
-      from: 'Transport Officer - David Brown',
-      message: 'Requested Driver Performance Report',
+      role: 'Transport Officer',
+      username: 'david_officer',
+      fullName: 'David Brown',
+      reportType: 'driver_activity',
+      message: 'Requested Driver Activity Report',
       timestamp: '3 hours ago',
       status: 'resolved',
-      priority: 'medium'
+      priority: 'low',
+      avatar: '👨‍💼',
+      resolvedData: {
+        reportUrl: '/reports/driver-activity-2024.pdf'
+      }
     }
   ]);
 
   const [filter, setFilter] = useState('all');
-  const [selectedNotification, setSelectedNotification] = useState(null);
-  const [comment, setComment] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [expandedNotif, setExpandedNotif] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [showRejectInput, setShowRejectInput] = useState(null);
+  const [tempPassword, setTempPassword] = useState('');
 
-  const handleApprove = (id) => {
-    setNotifications(notifications.map(notif => 
-      notif.id === id ? { ...notif, status: 'resolved' } : notif
-    ));
-    setSelectedNotification(null);
-    alert('Request approved and processed');
-  };
-
-  const handleReject = (id) => {
-    setNotifications(notifications.map(notif => 
-      notif.id === id ? { ...notif, status: 'rejected' } : notif
-    ));
-    setSelectedNotification(null);
-    alert('Request rejected');
-  };
-
-  const handleAddComment = (id) => {
-    if (!comment.trim()) {
-      alert('Please enter a comment');
-      return;
+  // Generate temporary password
+  const generateTempPassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
     }
+    return password;
+  };
+
+  // Handle Access Denied - Unlock Account
+  const handleUnlockAccount = (id, username) => {
+    setNotifications(notifications.map(notif => 
+      notif.id === id ? { 
+        ...notif, 
+        status: 'resolved',
+        resolvedData: {
+          action: 'Account unlocked',
+          message: `Account ${username} has been unlocked successfully`
+        }
+      } : notif
+    ));
+    alert(`✅ Account ${username} unlocked successfully!`);
+  };
+
+  // Handle Reset Login Session
+  const handleResetSession = (id, username) => {
+    setNotifications(notifications.map(notif => 
+      notif.id === id ? { 
+        ...notif, 
+        status: 'resolved',
+        resolvedData: {
+          action: 'Session reset',
+          message: `Login session for ${username} has been reset`
+        }
+      } : notif
+    ));
+    alert(`✅ Login session for ${username} reset successfully!`);
+  };
+
+  // Handle Approve Credential Reset
+  const handleApproveCredentialReset = (id, username, requestType) => {
+    const newPassword = generateTempPassword();
+    setTempPassword(newPassword);
     
     setNotifications(notifications.map(notif => 
       notif.id === id ? { 
         ...notif, 
-        comments: [...(notif.comments || []), {
-          text: comment,
-          timestamp: 'Just now',
-          author: 'Admin'
-        }]
+        status: 'approved',
+        resolvedData: {
+          action: 'Credentials reset',
+          tempPassword: newPassword,
+          requestType: requestType,
+          message: `Temporary password generated and sent to user`
+        }
       } : notif
     ));
-    setComment('');
-    alert('Comment added successfully');
+    
+    setExpandedNotif(id);
   };
 
-  const handleViewDetails = (notif) => {
-    setSelectedNotification(notif);
-    setComment('');
+  // Handle Reject with Reason
+  const handleRejectWithReason = (id) => {
+    if (!rejectionReason.trim()) {
+      alert('Please provide a rejection reason');
+      return;
+    }
+
+    setNotifications(notifications.map(notif => 
+      notif.id === id ? { 
+        ...notif, 
+        status: 'rejected',
+        rejectionReason: rejectionReason
+      } : notif
+    ));
+    
+    setRejectionReason('');
+    setShowRejectInput(null);
+    alert('✅ Request rejected and user notified');
+  };
+
+  // Handle Generate Report
+  const handleGenerateReport = (id, reportType) => {
+    const reportName = reportType.replace('_', ' ').toUpperCase();
+    const reportUrl = `/reports/${reportType}-${Date.now()}.pdf`;
+    
+    setNotifications(notifications.map(notif => 
+      notif.id === id ? { 
+        ...notif, 
+        status: 'resolved',
+        resolvedData: {
+          action: 'Report generated',
+          reportUrl: reportUrl,
+          reportName: reportName
+        }
+      } : notif
+    ));
+    
+    setExpandedNotif(id);
+    alert(`✅ ${reportName} Report generated successfully!`);
+  };
+
+  // Handle Send Report
+  const handleSendReport = (reportUrl, username) => {
+    alert(`✅ Report sent to ${username} successfully!`);
+  };
+
+  // Handle Download Report
+  const handleDownloadReport = (reportUrl) => {
+    alert(`📥 Downloading report: ${reportUrl}`);
+    // In real implementation: window.open(reportUrl, '_blank');
   };
 
   const getIcon = (type) => {
     switch(type) {
-      case 'report_request': return '📊';
+      case 'access_denied': return '🔒';
       case 'password_reset': return '🔑';
-      case 'username_recovery': return '👤';
-      case 'system_issue': return '⚠️';
+      case 'username_reset': return '👤';
+      case 'report_request': return '📊';
       default: return '📬';
     }
   };
 
-  const filteredNotifications = filter === 'all' 
-    ? notifications 
-    : notifications.filter(n => n.status === filter);
+  const getRoleColor = (role) => {
+    switch(role) {
+      case 'Driver': return '#3b82f6';
+      case 'User': return '#10b981';
+      case 'Transport Officer': return '#f59e0b';
+      default: return '#6b7280';
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'pending': return '#f59e0b';
+      case 'approved': return '#10b981';
+      case 'rejected': return '#ef4444';
+      case 'resolved': return '#3b82f6';
+      default: return '#6b7280';
+    }
+  };
+
+  // Filter notifications
+  let filteredNotifications = notifications;
+  
+  if (filter !== 'all') {
+    filteredNotifications = filteredNotifications.filter(n => n.status === filter);
+  }
+  
+  if (roleFilter !== 'all') {
+    filteredNotifications = filteredNotifications.filter(n => n.role === roleFilter);
+  }
+  
+  if (searchQuery) {
+    filteredNotifications = filteredNotifications.filter(n => 
+      n.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      n.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      n.message.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }
 
   const pendingCount = notifications.filter(n => n.status === 'pending').length;
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   if (!isOpen) return null;
 
@@ -118,165 +251,318 @@ const NotificationPanel = ({ isOpen, onClose }) => {
       <div className="notification-panel" onClick={(e) => e.stopPropagation()}>
         <div className="notification-header">
           <div>
-            <h2>Notifications</h2>
-            <span className="notification-count">{pendingCount} pending</span>
+            <h2>🔔 Notifications</h2>
+            <span className="notification-count">
+              {pendingCount} pending · {unreadCount} unread
+            </span>
           </div>
           <button className="close-btn" onClick={onClose}>✕</button>
         </div>
 
-        <div className="notification-filters">
-          <button 
-            className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
-            onClick={() => setFilter('all')}
-          >
-            All ({notifications.length})
-          </button>
-          <button 
-            className={`filter-btn ${filter === 'pending' ? 'active' : ''}`}
-            onClick={() => setFilter('pending')}
-          >
-            Pending ({pendingCount})
-          </button>
-          <button 
-            className={`filter-btn ${filter === 'resolved' ? 'active' : ''}`}
-            onClick={() => setFilter('resolved')}
-          >
-            Resolved
-          </button>
+        {/* Search Bar */}
+        <div className="notification-search">
+          <input
+            type="text"
+            placeholder="🔍 Search notifications..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input"
+          />
         </div>
 
+        {/* Filters */}
+        <div className="notification-filters">
+          <div className="filter-group">
+            <label>Status:</label>
+            <button 
+              className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
+              onClick={() => setFilter('all')}
+            >
+              All
+            </button>
+            <button 
+              className={`filter-btn ${filter === 'pending' ? 'active' : ''}`}
+              onClick={() => setFilter('pending')}
+            >
+              Pending
+            </button>
+            <button 
+              className={`filter-btn ${filter === 'approved' ? 'active' : ''}`}
+              onClick={() => setFilter('approved')}
+            >
+              Approved
+            </button>
+            <button 
+              className={`filter-btn ${filter === 'rejected' ? 'active' : ''}`}
+              onClick={() => setFilter('rejected')}
+            >
+              Rejected
+            </button>
+            <button 
+              className={`filter-btn ${filter === 'resolved' ? 'active' : ''}`}
+              onClick={() => setFilter('resolved')}
+            >
+              Resolved
+            </button>
+          </div>
+          
+          <div className="filter-group">
+            <label>Role:</label>
+            <button 
+              className={`filter-btn ${roleFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setRoleFilter('all')}
+            >
+              All
+            </button>
+            <button 
+              className={`filter-btn ${roleFilter === 'Driver' ? 'active' : ''}`}
+              onClick={() => setRoleFilter('Driver')}
+            >
+              Driver
+            </button>
+            <button 
+              className={`filter-btn ${roleFilter === 'User' ? 'active' : ''}`}
+              onClick={() => setRoleFilter('User')}
+            >
+              User
+            </button>
+            <button 
+              className={`filter-btn ${roleFilter === 'Transport Officer' ? 'active' : ''}`}
+              onClick={() => setRoleFilter('Transport Officer')}
+            >
+              Officer
+            </button>
+          </div>
+        </div>
+
+        {/* Notification List */}
         <div className="notification-list">
           {filteredNotifications.map(notif => (
-            <div key={notif.id} className={`notification-item ${notif.priority}`}>
-              <div className="notification-icon">{getIcon(notif.type)}</div>
-              <div className="notification-content">
-                <div className="notification-from">{notif.from}</div>
-                <div className="notification-message">{notif.message}</div>
-                <div className="notification-meta">
-                  <span className="notification-time">{notif.timestamp}</span>
-                  <span className={`notification-status ${notif.status}`}>
+            <div 
+              key={notif.id} 
+              className={`notification-card ${notif.status} ${expandedNotif === notif.id ? 'expanded' : ''}`}
+              style={{ borderLeftColor: getStatusColor(notif.status) }}
+            >
+              {/* Card Header */}
+              <div className="card-header">
+                <div className="user-info">
+                  <div className="user-avatar">{notif.avatar}</div>
+                  <div className="user-details">
+                    <div className="user-name">{notif.fullName}</div>
+                    <div className="user-meta">
+                      <span 
+                        className="user-role"
+                        style={{ backgroundColor: getRoleColor(notif.role) }}
+                      >
+                        {notif.role}
+                      </span>
+                      <span className="user-username">@{notif.username}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="card-meta">
+                  <span className="notif-icon">{getIcon(notif.type)}</span>
+                  <span 
+                    className="status-badge"
+                    style={{ backgroundColor: getStatusColor(notif.status) }}
+                  >
                     {notif.status}
                   </span>
                 </div>
-                {notif.comments && notif.comments.length > 0 && (
-                  <div className="notification-comments">
-                    <div className="comments-header">💬 {notif.comments.length} comment(s)</div>
-                  </div>
-                )}
               </div>
-              <div className="notification-actions">
+
+              {/* Card Content */}
+              <div className="card-content">
+                <p className="notif-message">{notif.message}</p>
+                <span className="notif-time">⏰ {notif.timestamp}</span>
+              </div>
+
+              {/* Expanded Details */}
+              {expandedNotif === notif.id && (
+                <div className="expanded-details">
+                  {/* Access Denied Details */}
+                  {notif.type === 'access_denied' && notif.status === 'pending' && (
+                    <div className="action-section">
+                      <h4>🔒 Account Access Issue</h4>
+                      <p><strong>Username:</strong> {notif.username}</p>
+                      <p><strong>Role:</strong> {notif.role}</p>
+                      <div className="action-buttons">
+                        <button 
+                          className="btn-action btn-unlock"
+                          onClick={() => handleUnlockAccount(notif.id, notif.username)}
+                        >
+                          🔓 Unlock Account
+                        </button>
+                        <button 
+                          className="btn-action btn-reset"
+                          onClick={() => handleResetSession(notif.id, notif.username)}
+                        >
+                          🔄 Reset Session
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Credential Reset Details */}
+                  {(notif.type === 'password_reset' || notif.type === 'username_reset') && notif.status === 'pending' && (
+                    <div className="action-section">
+                      <h4>🔑 Credential Reset Request</h4>
+                      <p><strong>Username:</strong> {notif.username}</p>
+                      <p><strong>Request Type:</strong> {notif.requestType === 'both' ? 'Username & Password' : notif.requestType}</p>
+                      <div className="action-buttons">
+                        <button 
+                          className="btn-action btn-approve"
+                          onClick={() => handleApproveCredentialReset(notif.id, notif.username, notif.requestType)}
+                        >
+                          ✅ Approve & Reset
+                        </button>
+                        <button 
+                          className="btn-action btn-reject"
+                          onClick={() => setShowRejectInput(notif.id)}
+                        >
+                          ❌ Reject
+                        </button>
+                      </div>
+                      
+                      {showRejectInput === notif.id && (
+                        <div className="reject-section">
+                          <textarea
+                            placeholder="Enter rejection reason..."
+                            value={rejectionReason}
+                            onChange={(e) => setRejectionReason(e.target.value)}
+                            rows="3"
+                          />
+                          <button 
+                            className="btn-submit-reject"
+                            onClick={() => handleRejectWithReason(notif.id)}
+                          >
+                            Send Rejection
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Approved Credential Reset - Show Temp Password */}
+                  {notif.status === 'approved' && notif.resolvedData && (
+                    <div className="success-section">
+                      <h4>✅ Request Approved</h4>
+                      <div className="temp-password-box">
+                        <p><strong>Temporary Password:</strong></p>
+                        <code className="temp-password">{notif.resolvedData.tempPassword}</code>
+                        <button 
+                          className="btn-copy"
+                          onClick={() => {
+                            navigator.clipboard.writeText(notif.resolvedData.tempPassword);
+                            alert('Password copied to clipboard!');
+                          }}
+                        >
+                          📋 Copy
+                        </button>
+                      </div>
+                      <p className="success-message">✉️ Confirmation sent to user</p>
+                    </div>
+                  )}
+
+                  {/* Report Request Details */}
+                  {notif.type === 'report_request' && notif.status === 'pending' && (
+                    <div className="action-section">
+                      <h4>📊 Report Request</h4>
+                      <p><strong>Report Type:</strong> {notif.reportType?.replace('_', ' ').toUpperCase()}</p>
+                      <p><strong>Requested by:</strong> {notif.fullName} ({notif.role})</p>
+                      <div className="action-buttons">
+                        <button 
+                          className="btn-action btn-generate"
+                          onClick={() => handleGenerateReport(notif.id, notif.reportType)}
+                        >
+                          📄 Generate Report
+                        </button>
+                        <button 
+                          className="btn-action btn-reject"
+                          onClick={() => setShowRejectInput(notif.id)}
+                        >
+                          ❌ Reject Request
+                        </button>
+                      </div>
+                      
+                      {showRejectInput === notif.id && (
+                        <div className="reject-section">
+                          <textarea
+                            placeholder="Enter rejection reason..."
+                            value={rejectionReason}
+                            onChange={(e) => setRejectionReason(e.target.value)}
+                            rows="3"
+                          />
+                          <button 
+                            className="btn-submit-reject"
+                            onClick={() => handleRejectWithReason(notif.id)}
+                          >
+                            Send Rejection
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Report Generated - Show Download */}
+                  {notif.status === 'resolved' && notif.resolvedData?.reportUrl && (
+                    <div className="success-section">
+                      <h4>✅ Report Generated</h4>
+                      <p><strong>{notif.resolvedData.reportName}</strong></p>
+                      <div className="action-buttons">
+                        <button 
+                          className="btn-action btn-download"
+                          onClick={() => handleDownloadReport(notif.resolvedData.reportUrl)}
+                        >
+                          📥 Download Report
+                        </button>
+                        <button 
+                          className="btn-action btn-send"
+                          onClick={() => handleSendReport(notif.resolvedData.reportUrl, notif.username)}
+                        >
+                          📧 Send to Officer
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Rejected - Show Reason */}
+                  {notif.status === 'rejected' && notif.rejectionReason && (
+                    <div className="rejected-section">
+                      <h4>❌ Request Rejected</h4>
+                      <p><strong>Reason:</strong></p>
+                      <p className="rejection-reason">{notif.rejectionReason}</p>
+                    </div>
+                  )}
+
+                  {/* Resolved - Show Action */}
+                  {notif.status === 'resolved' && notif.resolvedData && !notif.resolvedData.reportUrl && (
+                    <div className="success-section">
+                      <h4>✅ {notif.resolvedData.action}</h4>
+                      <p>{notif.resolvedData.message}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Card Actions */}
+              <div className="card-actions">
                 <button 
-                  className="view-btn"
-                  onClick={() => handleViewDetails(notif)}
-                  title="View details and add comment"
+                  className="btn-expand"
+                  onClick={() => setExpandedNotif(expandedNotif === notif.id ? null : notif.id)}
                 >
-                  👁️
+                  {expandedNotif === notif.id ? '▲ Collapse' : '▼ Expand & Take Action'}
                 </button>
-                {notif.status === 'pending' && (
-                  <>
-                    <button 
-                      className="approve-btn"
-                      onClick={() => handleApprove(notif.id)}
-                      title="Approve"
-                    >
-                      ✓
-                    </button>
-                    <button 
-                      className="reject-btn"
-                      onClick={() => handleReject(notif.id)}
-                      title="Reject"
-                    >
-                      ✕
-                    </button>
-                  </>
-                )}
               </div>
             </div>
           ))}
+          
           {filteredNotifications.length === 0 && (
             <div className="no-notifications">
-              <p>No notifications</p>
+              <p>📭 No notifications found</p>
             </div>
           )}
         </div>
-
-        {selectedNotification && (
-          <div className="notification-detail-overlay" onClick={() => setSelectedNotification(null)}>
-            <div className="notification-detail-panel" onClick={(e) => e.stopPropagation()}>
-              <div className="detail-header">
-                <h3>Notification Details</h3>
-                <button className="close-btn" onClick={() => setSelectedNotification(null)}>✕</button>
-              </div>
-
-              <div className="detail-content">
-                <div className="detail-info">
-                  <div className="detail-icon">{getIcon(selectedNotification.type)}</div>
-                  <div>
-                    <div className="detail-from">{selectedNotification.from}</div>
-                    <div className="detail-message">{selectedNotification.message}</div>
-                    <div className="detail-meta">
-                      <span className="detail-time">{selectedNotification.timestamp}</span>
-                      <span className={`detail-status ${selectedNotification.status}`}>
-                        {selectedNotification.status}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="comments-section">
-                  <h4>Comments & Responses</h4>
-                  {selectedNotification.comments && selectedNotification.comments.length > 0 ? (
-                    <div className="comments-list">
-                      {selectedNotification.comments.map((comment, index) => (
-                        <div key={index} className="comment-item">
-                          <div className="comment-author">{comment.author}</div>
-                          <div className="comment-text">{comment.text}</div>
-                          <div className="comment-time">{comment.timestamp}</div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="no-comments">No comments yet</p>
-                  )}
-                </div>
-
-                <div className="add-comment-section">
-                  <textarea
-                    className="comment-input"
-                    placeholder="Add a comment or response..."
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    rows="3"
-                  />
-                  <div className="comment-actions">
-                    <button 
-                      className="btn-submit-comment"
-                      onClick={() => handleAddComment(selectedNotification.id)}
-                    >
-                      💬 Add Comment
-                    </button>
-                    {selectedNotification.status === 'pending' && (
-                      <>
-                        <button 
-                          className="btn-approve"
-                          onClick={() => handleApprove(selectedNotification.id)}
-                        >
-                          ✓ Approve
-                        </button>
-                        <button 
-                          className="btn-reject"
-                          onClick={() => handleReject(selectedNotification.id)}
-                        >
-                          ✕ Reject
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

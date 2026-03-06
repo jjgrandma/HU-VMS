@@ -260,15 +260,24 @@ body {
 /* Responsive */
 @media (max-width: 1024px) {
   .main-content {
+    margin-left: 240px;
+  }
+  
+  .main-content::before {
+    left: 240px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
     margin-left: 0;
+    width: 100%;
   }
   
   .main-content::before {
     left: 0;
   }
-}
-
-@media (max-width: 768px) {
+  
   .login-card {
     margin: 1rem;
     padding: 2rem;
@@ -289,6 +298,24 @@ body {
   .cards {
     grid-template-columns: 1fr;
     gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard {
+    padding: 0.8rem;
+  }
+  
+  .dashboard h1 {
+    font-size: 1.6rem;
+  }
+  
+  .cards {
+    gap: 0.8rem;
+  }
+  
+  .card {
+    padding: 1.5rem;
   }
 }
 
