@@ -49,6 +49,20 @@ import RequestStatus from './pages/user/RequestStatus';
 import SubmitComplaint from './pages/user/SubmitComplaint';
 import Notifications from './pages/user/Notifications';
 
+// Fuel Station Officer
+import FuelStationLayout from './pages/fuelStationOfficer/FuelStationLayout';
+import FuelDashboard from './pages/fuelStationOfficer/FuelDashboard';
+import FuelDispenseForm from './pages/fuelStationOfficer/FuelDispenseForm';
+import FuelInventory from './pages/fuelStationOfficer/FuelInventory';
+import FuelTransactionHistory from './pages/fuelStationOfficer/FuelTransactionHistory';
+
+// Gate Security
+import GateSecurityLayout from './pages/gateSecurity/GateSecurityLayout';
+import GateDashboard from './pages/gateSecurity/GateDashboard';
+import ALPRCamera from './pages/gateSecurity/ALPRCamera';
+import VehicleVerification from './pages/gateSecurity/VehicleVerification';
+import GateLogs from './pages/gateSecurity/GateLogs';
+
 function App() {
   const [user, setUser] = useState(null);
 
@@ -246,6 +260,32 @@ function App() {
               <Route path="submit-complaint" element={<SubmitComplaint />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="profile" element={<UserProfile />} />
+            </Route>
+          </>
+        )}
+
+        {/* Fuel Station Officer Routes */}
+        {user?.role === 'FUEL_OFFICER' && (
+          <>
+            <Route path="/fuel" element={<Navigate to="/fuel/dashboard" replace />} />
+            <Route path="/fuel" element={<FuelStationLayout onLogout={handleLogout} />}>
+              <Route path="dashboard" element={<FuelDashboard />} />
+              <Route path="dispense" element={<FuelDispenseForm />} />
+              <Route path="inventory" element={<FuelInventory />} />
+              <Route path="transactions" element={<FuelTransactionHistory />} />
+            </Route>
+          </>
+        )}
+
+        {/* Gate Security Routes */}
+        {user?.role === 'GATE_OFFICER' && (
+          <>
+            <Route path="/gate" element={<Navigate to="/gate/dashboard" replace />} />
+            <Route path="/gate" element={<GateSecurityLayout onLogout={handleLogout} />}>
+              <Route path="dashboard" element={<GateDashboard />} />
+              <Route path="camera" element={<ALPRCamera />} />
+              <Route path="verification" element={<VehicleVerification />} />
+              <Route path="logs" element={<GateLogs />} />
             </Route>
           </>
         )}

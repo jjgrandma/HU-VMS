@@ -1,0 +1,266 @@
+/* Gate Security Dashboard Wrapper */
+.gate-dashboard-wrapper {
+  display: flex;
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+/* Mobile Menu Toggle */
+.gate-mobile-menu-toggle {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1100;
+  background: #dc2626;
+  border: none;
+  border-radius: 8px;
+  width: 45px;
+  height: 45px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+  transition: all 0.3s ease;
+}
+
+.gate-mobile-menu-toggle:hover {
+  background: #b91c1c;
+  transform: scale(1.05);
+}
+
+.gate-hamburger {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.gate-hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #fff;
+  transition: all 0.3s ease;
+  border-radius: 2px;
+}
+
+.gate-hamburger.open span:nth-child(1) {
+  transform: rotate(45deg) translate(6px, 6px);
+}
+
+.gate-hamburger.open span:nth-child(2) {
+  opacity: 0;
+}
+
+.gate-hamburger.open span:nth-child(3) {
+  transform: rotate(-45deg) translate(6px, -6px);
+}
+
+/* Mobile Overlay */
+.gate-mobile-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+/* Sidebar */
+.gate-sidebar {
+  width: 260px;
+  background: linear-gradient(180deg, #dc2626 0%, #991b1b 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 100;
+  transition: transform 0.3s ease;
+}
+
+.gate-sidebar-header {
+  padding: 30px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gate-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gate-logo-icon {
+  font-size: 32px;
+}
+
+.gate-logo-text {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* Sidebar Navigation */
+.gate-sidebar-nav {
+  flex: 1;
+  padding: 20px 0;
+}
+
+.gate-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  transition: all 0.3s ease;
+  font-size: 15px;
+  font-weight: 500;
+  border-left: 4px solid transparent;
+}
+
+.gate-nav-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-left-color: #fff;
+}
+
+.gate-nav-item.active {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-left-color: #fff;
+  font-weight: 600;
+}
+
+.gate-nav-icon {
+  font-size: 20px;
+  width: 24px;
+  text-align: center;
+}
+
+/* Sidebar Footer */
+.gate-sidebar-footer {
+  padding: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gate-logout-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.gate-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.3);
+  transform: translateY(-2px);
+}
+
+.gate-logout-icon {
+  font-size: 20px;
+}
+
+/* Main Content */
+.gate-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* Header */
+.gate-header {
+  background: #fff;
+  padding: 20px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.gate-header-left h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.gate-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.gate-welcome {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.gate-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #dc2626, #991b1b);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.gate-page-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .gate-mobile-menu-toggle {
+    display: flex;
+  }
+
+  .gate-mobile-overlay {
+    display: block;
+  }
+
+  .gate-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    transform: translateX(-100%);
+    z-index: 1050;
+  }
+
+  .gate-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .gate-header {
+    padding: 20px;
+  }
+
+  .gate-header-left h1 {
+    font-size: 20px;
+  }
+
+  .gate-welcome {
+    display: none;
+  }
+}

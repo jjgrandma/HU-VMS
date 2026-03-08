@@ -43,6 +43,12 @@ export default function Login({ onLogin }) {
       case 'USER':
         navigate('/user/dashboard');
         break;
+      case 'FUEL_OFFICER':
+        navigate('/fuel/dashboard');
+        break;
+      case 'GATE_OFFICER':
+        navigate('/gate/dashboard');
+        break;
       default:
         navigate('/');
     }
@@ -99,6 +105,8 @@ export default function Login({ onLogin }) {
               <option value="TRANSPORT">Transport Officer</option>
               <option value="DRIVER">Driver</option>
               <option value="USER">User</option>
+              <option value="FUEL_OFFICER">Fuel Station Officer</option>
+              <option value="GATE_OFFICER">Gate Security Officer</option>
             </select>
 
             <div className="login-actions">
