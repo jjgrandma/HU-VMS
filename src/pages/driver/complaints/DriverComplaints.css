@@ -1,0 +1,197 @@
+.driver-complaints {
+    padding: 20px;
+}
+
+.driver-complaints h2 {
+    margin-top: 0;
+    color: #333;
+}
+
+.no-complaints {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-size: 18px;
+}
+
+.complaints-list {
+    display: grid;
+    gap: 20px;
+}
+
+.complaint-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #ff9800;
+}
+
+.complaint-card.resolved {
+    border-left-color: #4CAF50;
+    opacity: 0.8;
+}
+
+.complaint-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.complaint-id {
+    font-weight: bold;
+    color: #333;
+}
+
+.status {
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.status.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status.responded {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.status.resolved {
+    background: #d4edda;
+    color: #155724;
+}
+
+.complaint-content p {
+    margin: 8px 0;
+    color: #666;
+}
+
+.complaint-description {
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 10px 0;
+    color: #333;
+}
+
+.driver-response {
+    background: #e3f2fd;
+    padding: 15px;
+    border-radius: 4px;
+    margin-top: 15px;
+}
+
+.driver-response strong {
+    color: #1976D2;
+}
+
+.driver-response p {
+    margin: 5px 0 0 0;
+    color: #333;
+}
+
+.btn-respond {
+    margin-top: 15px;
+    padding: 10px 20px;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-respond:hover {
+    background: #1976D2;
+}
+
+.response-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.response-modal .modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 600px;
+    width: 90%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.response-modal h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.complaint-text {
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 15px 0;
+    color: #666;
+}
+
+.response-modal textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn-primary {
+    flex: 1;
+    padding: 12px;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.btn-primary:hover {
+    background: #1976D2;
+}
+
+.btn-primary:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    flex: 1;
+    padding: 12px;
+    background: #757575;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.btn-secondary:hover {
+    background: #616161;
+}

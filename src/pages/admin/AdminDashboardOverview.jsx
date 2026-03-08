@@ -130,8 +130,8 @@ const AdminDashboardOverview = () => {
           <h2>Vehicle Trip History <span className="live-indicator">● LIVE</span></h2>
           <div className="bar-chart">
             {vehicleData.map((data, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className="bar-item"
                 onMouseEnter={(e) => {
                   setHoveredMonth(index);
@@ -148,7 +148,7 @@ const AdminDashboardOverview = () => {
                 }}
               >
                 <div className="bar-column">
-                  <div 
+                  <div
                     className={`bar-fill ${hoveredMonth === index ? 'hovered' : ''}`}
                     style={{ height: `${(data.trips / 70) * 100}%` }}
                   >
@@ -295,8 +295,8 @@ const AdminDashboardOverview = () => {
                   <span className="driver-rating">⭐ {driver.rating}</span>
                 </div>
                 <div className="driver-progress">
-                  <div 
-                    className="progress-bar" 
+                  <div
+                    className="progress-bar"
                     style={{ width: `${(driver.trips / 50) * 100}%` }}
                   ></div>
                 </div>
@@ -380,7 +380,7 @@ const AdminDashboardOverview = () => {
       </div>
 
       {tooltip.show && (
-        <div 
+        <div
           className="chart-tooltip"
           style={{
             left: `${tooltip.x + 10}px`,
