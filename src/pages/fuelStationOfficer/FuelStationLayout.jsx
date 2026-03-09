@@ -48,8 +48,8 @@ const FuelStationLayout = ({ onLogout }) => {
         </div>
 
         <nav className="fuel-sidebar-nav">
-          <Link 
-            to="/fuel/dashboard" 
+          <Link
+            to="/fuel/dashboard"
             className={`fuel-nav-item ${location.pathname === '/fuel/dashboard' || location.pathname === '/fuel' ? 'active' : ''}`}
             onClick={closeMobileMenu}
           >
@@ -57,8 +57,17 @@ const FuelStationLayout = ({ onLogout }) => {
             <span>Dashboard</span>
           </Link>
 
-          <Link 
-            to="/fuel/dispense" 
+          <Link
+            to="/fuel/requests"
+            className={`fuel-nav-item ${location.pathname === '/fuel/requests' ? 'active' : ''}`}
+            onClick={closeMobileMenu}
+          >
+            <span className="fuel-nav-icon">📋</span>
+            <span>Fuel Requests</span>
+          </Link>
+
+          <Link
+            to="/fuel/dispense"
             className={`fuel-nav-item ${location.pathname === '/fuel/dispense' ? 'active' : ''}`}
             onClick={closeMobileMenu}
           >
@@ -66,8 +75,8 @@ const FuelStationLayout = ({ onLogout }) => {
             <span>Dispense Fuel</span>
           </Link>
 
-          <Link 
-            to="/fuel/inventory" 
+          <Link
+            to="/fuel/inventory"
             className={`fuel-nav-item ${location.pathname === '/fuel/inventory' ? 'active' : ''}`}
             onClick={closeMobileMenu}
           >
@@ -75,12 +84,21 @@ const FuelStationLayout = ({ onLogout }) => {
             <span>Fuel Inventory</span>
           </Link>
 
-          <Link 
-            to="/fuel/transactions" 
+          <Link
+            to="/fuel/reports"
+            className={`fuel-nav-item ${location.pathname === '/fuel/reports' ? 'active' : ''}`}
+            onClick={closeMobileMenu}
+          >
+            <span className="fuel-nav-icon">📄</span>
+            <span>Reports</span>
+          </Link>
+
+          <Link
+            to="/fuel/transactions"
             className={`fuel-nav-item ${location.pathname === '/fuel/transactions' ? 'active' : ''}`}
             onClick={closeMobileMenu}
           >
-            <span className="fuel-nav-icon">📋</span>
+            <span className="fuel-nav-icon">📜</span>
             <span>Transactions</span>
           </Link>
         </nav>

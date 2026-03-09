@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import './FuelDispenseForm.css';
 import './fuelstation.css';
 
 const FuelDispenseForm = () => {
@@ -9,10 +10,13 @@ const FuelDispenseForm = () => {
     liters: '',
     odometerReading: '',
     date: new Date().toISOString().split('T')[0],
-    notes: ''
+    notes: '',
+    authorizationCode: ''
   });
 
   const [errors, setErrors] = useState({});
+  const [authStatus, setAuthStatus] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Mock data
   const vehicles = [
@@ -54,18 +58,22 @@ const FuelDispenseForm = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.vehicleId) newErrors.vehicleId = 'Vehicle ID is required';
     if (!formData.driverName) newErrors.driverName = 'Driver name is required';
     if (!formData.fuelType) newErrors.fuelType = 'Fuel type is required';
     if (!formData.liters) newErrors.liters = 'Liters is required';
     if (!formData.odometerReading) newErrors.odometerReading = 'Odometer reading is required';
     if (!formData.date) newErrors.date = 'Date is required';
-    
+
+    if (!authStatus || !authStatus.verified) {
+      newErrors.authorization = 'Fuel authorization must be verified before dispensing';
+    }
+
     if (formData.liters && (parseFloat(formData.liters) <= 0 || parseFloat(formData.liters) > 200)) {
       newErrors.liters = 'Liters must be between 0 and 200';
     }
-    
+
     if (formData.odometerReading && parseFloat(formData.odometerReading) < 0) {
       newErrors.odometerReading = 'Odometer reading must be positive';
     }
@@ -73,14 +81,41 @@ const FuelDispenseForm = () => {
     return newErrors;
   };
 
+  const handleVerifyAuthorization = () => {
+    if (!formData.vehicleId || !formData.driverName) {
+      alert('Please select vehicle and driver first');
+      return;
+    }
+    setShowAuthModal(true);
+  };
+
+  const handleAuthVerification = (code) => {
+    // Mock authorization verification
+    const validCodes = ['AUTH-2024-001', 'AUTH-2024-002', 'AUTH-2024-003'];
+
+    if (validCodes.includes(code)) {
+      setAuthStatus({
+        verified: true,
+        authorizedBy: 'Transport Office',
+        message: 'Authorization verified successfully'
+      });
+      setShowAuthModal(false);
+    } else {
+      setAuthStatus({
+        verified: false,
+        message: 'Invalid authorization code'
+      });
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const newErrors = validateForm();
-    
+
     if (Object.keys(newErrors).length === 0) {
       // Generate transaction ID
       const transactionId = `TXN-${Date.now().toString().slice(-6)}`;
-      
+
       const transactionData = {
         id: transactionId,
         ...formData,
@@ -90,10 +125,10 @@ const FuelDispenseForm = () => {
         operator: 'Fuel Officer',
         timestamp: new Date().toISOString()
       };
-      
+
       console.log('New fuel transaction:', transactionData);
       alert(`Fuel dispensed successfully!\nTransaction ID: ${transactionId}\nVehicle: ${formData.vehicleId}\nAmount: ${formData.liters}L ${formData.fuelType}`);
-      
+
       // Reset form
       setFormData({
         vehicleId: '',
@@ -117,9 +152,11 @@ const FuelDispenseForm = () => {
       liters: '',
       odometerReading: '',
       date: new Date().toISOString().split('T')[0],
-      notes: ''
+      notes: '',
+      authorizationCode: ''
     });
     setErrors({});
+    setAuthStatus(null);
   };
 
   return (
@@ -128,8 +165,21 @@ const FuelDispenseForm = () => {
         <h2>Fuel Dispense Form</h2>
         <p>Record fuel dispensing transactions</p>
       </div>
-      
+
       <div className="fuel-form-container">
+        {/* Authorization Status Banner */}
+        {authStatus && (
+          <div className={`auth-status-banner ${authStatus.verified ? 'success' : 'error'}`}>
+            <span className="auth-icon">{authStatus.verified ? '✓' : '✗'}</span>
+            <div className="auth-message">
+              <strong>{authStatus.message}</strong>
+              {authStatus.verified && authStatus.authorizedBy && (
+                <p>Authorized by: {authStatus.authorizedBy}</p>
+              )}
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div className="fuel-form-grid">
             {/* Vehicle ID */}
@@ -241,6 +291,28 @@ const FuelDispenseForm = () => {
               {errors.date && <p className="fuel-error-message">{errors.date}</p>}
             </div>
 
+            {/* Authorization Verification - Full width */}
+            <div className="fuel-form-group full-width">
+              <label className="fuel-form-label">
+                Fuel Authorization <span className="required">*</span>
+              </label>
+              <div className="auth-verification-section">
+                <button
+                  type="button"
+                  onClick={handleVerifyAuthorization}
+                  className="fuel-btn-verify"
+                >
+                  <span>🔐</span> Verify Authorization
+                </button>
+                {authStatus && authStatus.verified && (
+                  <span className="auth-verified-badge">
+                    ✓ Verified
+                  </span>
+                )}
+              </div>
+              {errors.authorization && <p className="fuel-error-message">{errors.authorization}</p>}
+            </div>
+
             {/* Notes - Full width */}
             <div className="fuel-form-group full-width">
               <label className="fuel-form-label">Notes (Optional)</label>
@@ -265,6 +337,61 @@ const FuelDispenseForm = () => {
           </div>
         </form>
       </div>
+
+      {/* Authorization Verification Modal */}
+      {showAuthModal && (
+        <div className="fuel-modal-overlay" onClick={() => setShowAuthModal(false)}>
+          <div className="fuel-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="fuel-modal-header">
+              <h3>Verify Fuel Authorization</h3>
+              <button
+                className="fuel-modal-close"
+                onClick={() => setShowAuthModal(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="fuel-modal-content">
+              <div className="auth-info-box">
+                <p><strong>Vehicle:</strong> {formData.vehicleId}</p>
+                <p><strong>Driver:</strong> {formData.driverName}</p>
+              </div>
+
+              <div className="fuel-form-group">
+                <label className="fuel-form-label">
+                  Authorization Code <span className="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.authorizationCode}
+                  onChange={(e) => setFormData(prev => ({ ...prev, authorizationCode: e.target.value }))}
+                  placeholder="Enter authorization code (e.g., AUTH-2024-001)"
+                  className="fuel-form-input"
+                />
+                <p className="fuel-help-text">
+                  Valid codes: AUTH-2024-001, AUTH-2024-002, AUTH-2024-003
+                </p>
+              </div>
+            </div>
+
+            <div className="fuel-modal-actions">
+              <button
+                onClick={() => handleAuthVerification(formData.authorizationCode)}
+                className="fuel-btn-primary"
+              >
+                <span>✓</span> Verify
+              </button>
+              <button
+                onClick={() => setShowAuthModal(false)}
+                className="fuel-btn-secondary"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

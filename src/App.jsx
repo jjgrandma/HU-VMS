@@ -52,9 +52,11 @@ import Notifications from './pages/user/Notifications';
 // Fuel Station Officer
 import FuelStationLayout from './pages/fuelStationOfficer/FuelStationLayout';
 import FuelDashboard from './pages/fuelStationOfficer/FuelDashboard';
+import FuelRequests from './pages/fuelStationOfficer/FuelRequests';
 import FuelDispenseForm from './pages/fuelStationOfficer/FuelDispenseForm';
 import FuelInventory from './pages/fuelStationOfficer/FuelInventory';
 import FuelTransactionHistory from './pages/fuelStationOfficer/FuelTransactionHistory';
+import FuelReports from './pages/fuelStationOfficer/FuelReports';
 
 // Gate Security
 import GateSecurityLayout from './pages/gateSecurity/GateSecurityLayout';
@@ -76,223 +78,225 @@ function App() {
 
   return (
     <Routes>
-        {/* Landing Page - Always accessible */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login onLogin={handleLogin} />} />
+      {/* Landing Page - Always accessible */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<Login onLogin={handleLogin} />} />
 
-        {!user && (
-          <>
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </>
-        )}
+      {!user && (
+        <>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </>
+      )}
 
-        {/* Admin Routes */}
-        {user?.role === 'ADMIN' && (
-          <>
-            <Route path="/admin" element={
-              <div className="app">
-                <AdminSidebar onLogout={handleLogout} />
-                <div className="main-content">
-                  <AdminHeader />
-                  <AdminDashboardOverview />
-                </div>
+      {/* Admin Routes */}
+      {user?.role === 'ADMIN' && (
+        <>
+          <Route path="/admin" element={
+            <div className="app">
+              <AdminSidebar onLogout={handleLogout} />
+              <div className="main-content">
+                <AdminHeader />
+                <AdminDashboardOverview />
               </div>
-            } />
-            <Route path="/admin/dashboard" element={
-              <div className="app">
-                <AdminSidebar onLogout={handleLogout} />
-                <div className="main-content">
-                  <AdminHeader />
-                  <AdminDashboardOverview />
-                </div>
+            </div>
+          } />
+          <Route path="/admin/dashboard" element={
+            <div className="app">
+              <AdminSidebar onLogout={handleLogout} />
+              <div className="main-content">
+                <AdminHeader />
+                <AdminDashboardOverview />
               </div>
-            } />
-            <Route path="/admin/manage-vehicles" element={
-              <div className="app">
-                <AdminSidebar onLogout={handleLogout} />
-                <div className="main-content">
-                  <AdminHeader />
-                  <ManageVehiclesPage />
-                </div>
+            </div>
+          } />
+          <Route path="/admin/manage-vehicles" element={
+            <div className="app">
+              <AdminSidebar onLogout={handleLogout} />
+              <div className="main-content">
+                <AdminHeader />
+                <ManageVehiclesPage />
               </div>
-            } />
-            <Route path="/admin/vehicle-status" element={
-              <div className="app">
-                <AdminSidebar onLogout={handleLogout} />
-                <div className="main-content">
-                  <AdminHeader />
-                  <VehicleStatus />
-                </div>
+            </div>
+          } />
+          <Route path="/admin/vehicle-status" element={
+            <div className="app">
+              <AdminSidebar onLogout={handleLogout} />
+              <div className="main-content">
+                <AdminHeader />
+                <VehicleStatus />
               </div>
-            } />
-            <Route path="/admin/add-vehicle" element={
-              <div className="app">
-                <AdminSidebar onLogout={handleLogout} />
-                <div className="main-content">
-                  <AdminHeader />
-                  <AddVehicle />
-                </div>
+            </div>
+          } />
+          <Route path="/admin/add-vehicle" element={
+            <div className="app">
+              <AdminSidebar onLogout={handleLogout} />
+              <div className="main-content">
+                <AdminHeader />
+                <AddVehicle />
               </div>
-            } />
-            <Route path="/admin/vehicle-trip-history" element={
-              <div className="app">
-                <AdminSidebar onLogout={handleLogout} />
-                <div className="main-content">
-                  <AdminHeader />
-                  <VehicleTripHistory />
-                </div>
+            </div>
+          } />
+          <Route path="/admin/vehicle-trip-history" element={
+            <div className="app">
+              <AdminSidebar onLogout={handleLogout} />
+              <div className="main-content">
+                <AdminHeader />
+                <VehicleTripHistory />
               </div>
-            } />
-            <Route path="/admin/manage-users" element={
-              <div className="app">
-                <AdminSidebar onLogout={handleLogout} />
-                <div className="main-content">
-                  <AdminHeader />
-                  <ManageUsersPage />
-                </div>
+            </div>
+          } />
+          <Route path="/admin/manage-users" element={
+            <div className="app">
+              <AdminSidebar onLogout={handleLogout} />
+              <div className="main-content">
+                <AdminHeader />
+                <ManageUsersPage />
               </div>
-            } />
-            <Route path="/admin/add-user" element={
-              <div className="app">
-                <AdminSidebar onLogout={handleLogout} />
-                <div className="main-content">
-                  <AdminHeader />
-                  <AddUser />
-                </div>
+            </div>
+          } />
+          <Route path="/admin/add-user" element={
+            <div className="app">
+              <AdminSidebar onLogout={handleLogout} />
+              <div className="main-content">
+                <AdminHeader />
+                <AddUser />
               </div>
-            } />
-            <Route path="/admin/manage-drivers" element={
-              <div className="app">
-                <AdminSidebar onLogout={handleLogout} />
-                <div className="main-content">
-                  <AdminHeader />
-                  <ManageDrivers />
-                </div>
+            </div>
+          } />
+          <Route path="/admin/manage-drivers" element={
+            <div className="app">
+              <AdminSidebar onLogout={handleLogout} />
+              <div className="main-content">
+                <AdminHeader />
+                <ManageDrivers />
               </div>
-            } />
-            <Route path="/admin/user-request-report" element={
-              <div className="app">
-                <AdminSidebar onLogout={handleLogout} />
-                <div className="main-content">
-                  <AdminHeader />
-                  <UserRequestReport />
-                </div>
+            </div>
+          } />
+          <Route path="/admin/user-request-report" element={
+            <div className="app">
+              <AdminSidebar onLogout={handleLogout} />
+              <div className="main-content">
+                <AdminHeader />
+                <UserRequestReport />
               </div>
-            } />
-            <Route path="/admin/vehicle-trip-report" element={
-              <div className="app">
-                <AdminSidebar onLogout={handleLogout} />
-                <div className="main-content">
-                  <AdminHeader />
-                  <VehicleTripReport />
-                </div>
+            </div>
+          } />
+          <Route path="/admin/vehicle-trip-report" element={
+            <div className="app">
+              <AdminSidebar onLogout={handleLogout} />
+              <div className="main-content">
+                <AdminHeader />
+                <VehicleTripReport />
               </div>
-            } />
-            <Route path="/admin/driver-trip-report" element={
-              <div className="app">
-                <AdminSidebar onLogout={handleLogout} />
-                <div className="main-content">
-                  <AdminHeader />
-                  <DriverTripReport />
-                </div>
+            </div>
+          } />
+          <Route path="/admin/driver-trip-report" element={
+            <div className="app">
+              <AdminSidebar onLogout={handleLogout} />
+              <div className="main-content">
+                <AdminHeader />
+                <DriverTripReport />
               </div>
-            } />
-            <Route path="/admin/driver-performance-report" element={
-              <div className="app">
-                <AdminSidebar onLogout={handleLogout} />
-                <div className="main-content">
-                  <AdminHeader />
-                  <DriverPerformanceReport />
-                </div>
+            </div>
+          } />
+          <Route path="/admin/driver-performance-report" element={
+            <div className="app">
+              <AdminSidebar onLogout={handleLogout} />
+              <div className="main-content">
+                <AdminHeader />
+                <DriverPerformanceReport />
               </div>
-            } />
-            <Route path="/admin/fuel-records-report" element={
-              <div className="app">
-                <AdminSidebar onLogout={handleLogout} />
-                <div className="main-content">
-                  <AdminHeader />
-                  <FuelRecordsReport />
-                </div>
+            </div>
+          } />
+          <Route path="/admin/fuel-records-report" element={
+            <div className="app">
+              <AdminSidebar onLogout={handleLogout} />
+              <div className="main-content">
+                <AdminHeader />
+                <FuelRecordsReport />
               </div>
-            } />
-            <Route path="/admin/settings" element={
-              <div className="app">
-                <AdminSidebar onLogout={handleLogout} />
-                <div className="main-content">
-                  <AdminHeader />
-                  <Settings />
-                </div>
+            </div>
+          } />
+          <Route path="/admin/settings" element={
+            <div className="app">
+              <AdminSidebar onLogout={handleLogout} />
+              <div className="main-content">
+                <AdminHeader />
+                <Settings />
               </div>
-            } />
-          </>
-        )}
+            </div>
+          } />
+        </>
+      )}
 
-        {/* Transport Officer Routes */}
-        {user?.role === 'TRANSPORT' && (
-          <>
-            <Route path="/transport" element={<Navigate to="/transport/dashboard" replace />} />
-            <Route path="/transport" element={<TransportOfficerLayout onLogout={handleLogout} />}>
-              <Route path="dashboard" element={<OfficerDashboard />} />
-              <Route path="requests" element={<Requests />} />
-              <Route path="tracking" element={<Tracking />} />
-              <Route path="complaints" element={<Complaints />} />
-              <Route path="reports" element={<ViewReports />} />
-            </Route>
-          </>
-        )}
+      {/* Transport Officer Routes */}
+      {user?.role === 'TRANSPORT' && (
+        <>
+          <Route path="/transport" element={<Navigate to="/transport/dashboard" replace />} />
+          <Route path="/transport" element={<TransportOfficerLayout onLogout={handleLogout} />}>
+            <Route path="dashboard" element={<OfficerDashboard />} />
+            <Route path="requests" element={<Requests />} />
+            <Route path="tracking" element={<Tracking />} />
+            <Route path="complaints" element={<Complaints />} />
+            <Route path="reports" element={<ViewReports />} />
+          </Route>
+        </>
+      )}
 
-        {/* Driver Routes */}
-        {user?.role === 'DRIVER' && (
-          <>
-            <Route path="/driver" element={<DriverDashboard onLogout={handleLogout} />} />
-            <Route path="/driver/dashboard" element={<DriverDashboard onLogout={handleLogout} />} />
-          </>
-        )}
+      {/* Driver Routes */}
+      {user?.role === 'DRIVER' && (
+        <>
+          <Route path="/driver" element={<DriverDashboard onLogout={handleLogout} />} />
+          <Route path="/driver/dashboard" element={<DriverDashboard onLogout={handleLogout} />} />
+        </>
+      )}
 
-        {/* User Routes */}
-        {user?.role === 'USER' && (
-          <>
-            <Route path="/user" element={<UserLayout onLogout={handleLogout} />}>
-              <Route index element={<UserDashboard />} />
-              <Route path="dashboard" element={<UserDashboard />} />
-              <Route path="request-vehicle" element={<SubmitVehicleRequest />} />
-              <Route path="my-requests" element={<RequestStatus />} />
-              <Route path="submit-complaint" element={<SubmitComplaint />} />
-              <Route path="notifications" element={<Notifications />} />
-              <Route path="profile" element={<UserProfile />} />
-            </Route>
-          </>
-        )}
+      {/* User Routes */}
+      {user?.role === 'USER' && (
+        <>
+          <Route path="/user" element={<UserLayout onLogout={handleLogout} />}>
+            <Route index element={<UserDashboard />} />
+            <Route path="dashboard" element={<UserDashboard />} />
+            <Route path="request-vehicle" element={<SubmitVehicleRequest />} />
+            <Route path="my-requests" element={<RequestStatus />} />
+            <Route path="submit-complaint" element={<SubmitComplaint />} />
+            <Route path="notifications" element={<Notifications />} />
+            <Route path="profile" element={<UserProfile />} />
+          </Route>
+        </>
+      )}
 
-        {/* Fuel Station Officer Routes */}
-        {user?.role === 'FUEL_OFFICER' && (
-          <>
-            <Route path="/fuel" element={<Navigate to="/fuel/dashboard" replace />} />
-            <Route path="/fuel" element={<FuelStationLayout onLogout={handleLogout} />}>
-              <Route path="dashboard" element={<FuelDashboard />} />
-              <Route path="dispense" element={<FuelDispenseForm />} />
-              <Route path="inventory" element={<FuelInventory />} />
-              <Route path="transactions" element={<FuelTransactionHistory />} />
-            </Route>
-          </>
-        )}
+      {/* Fuel Station Officer Routes */}
+      {user?.role === 'FUEL_OFFICER' && (
+        <>
+          <Route path="/fuel" element={<Navigate to="/fuel/dashboard" replace />} />
+          <Route path="/fuel" element={<FuelStationLayout onLogout={handleLogout} />}>
+            <Route path="dashboard" element={<FuelDashboard />} />
+            <Route path="requests" element={<FuelRequests />} />
+            <Route path="dispense" element={<FuelDispenseForm />} />
+            <Route path="inventory" element={<FuelInventory />} />
+            <Route path="reports" element={<FuelReports />} />
+            <Route path="transactions" element={<FuelTransactionHistory />} />
+          </Route>
+        </>
+      )}
 
-        {/* Gate Security Routes */}
-        {user?.role === 'GATE_OFFICER' && (
-          <>
-            <Route path="/gate" element={<Navigate to="/gate/dashboard" replace />} />
-            <Route path="/gate" element={<GateSecurityLayout onLogout={handleLogout} />}>
-              <Route path="dashboard" element={<GateDashboard />} />
-              <Route path="camera" element={<ALPRCamera />} />
-              <Route path="verification" element={<VehicleVerification />} />
-              <Route path="logs" element={<GateLogs />} />
-            </Route>
-          </>
-        )}
+      {/* Gate Security Routes */}
+      {user?.role === 'GATE_OFFICER' && (
+        <>
+          <Route path="/gate" element={<Navigate to="/gate/dashboard" replace />} />
+          <Route path="/gate" element={<GateSecurityLayout onLogout={handleLogout} />}>
+            <Route path="dashboard" element={<GateDashboard />} />
+            <Route path="camera" element={<ALPRCamera />} />
+            <Route path="verification" element={<VehicleVerification />} />
+            <Route path="logs" element={<GateLogs />} />
+          </Route>
+        </>
+      )}
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
