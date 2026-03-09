@@ -182,21 +182,11 @@ const FuelStationLayout = ({ onLogout }) => {
           </Link>
 
           <Link
-            to="/fuel/notifications"
-            className={`fuel-nav-item ${location.pathname === '/fuel/notifications' ? 'active' : ''}`}
-            onClick={closeMobileMenu}
-          >
-            <span className="fuel-nav-icon">�</span>
-            <span>Notifications</span>
-            {unreadCount > 0 && <span className="fuel-nav-badge">{unreadCount}</span>}
-          </Link>
-
-          <Link
             to="/fuel/transactions"
             className={`fuel-nav-item ${location.pathname === '/fuel/transactions' ? 'active' : ''}`}
             onClick={closeMobileMenu}
           >
-            <span className="fuel-nav-icon">�📜</span>
+            <span className="fuel-nav-icon">📜</span>
             <span>Transactions</span>
           </Link>
         </nav>
