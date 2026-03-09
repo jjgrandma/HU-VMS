@@ -5,10 +5,57 @@ import './fuelstation.css';
 const FuelStationLayout = ({ onLogout }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [fuelOfficerInfo, setFuelOfficerInfo] = useState({
+    name: 'Sarah Mohammed',
+    email: 'sarah.mohammed@university.edu.et',
+    employeeId: 'FS-2024-001',
+    role: 'Fuel Station Officer',
+    fuelStationName: 'Main Campus Fuel Station',
+    avatar: null
+  });
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Load profile photo from localStorage on component mount
+  useEffect(() => {
+    const savedProfilePhoto = localStorage.getItem('fuelStationProfilePhoto');
+    if (savedProfilePhoto) {
+      setFuelOfficerInfo(prev => ({
+        ...prev,
+        avatar: savedProfilePhoto
+      }));
+    }
+
+    // Listen for profile photo updates
+    const handleProfilePhotoUpdate = (event) => {
+      if (event.key === 'fuelStationProfilePhoto') {
+        setFuelOfficerInfo(prev => ({
+          ...prev,
+          avatar: event.newValue
+        }));
+      }
+    };
+
+    window.addEventListener('storage', handleProfilePhotoUpdate);
+
+    // Also listen for custom events from the same page
+    const handleCustomProfileUpdate = (event) => {
+      setFuelOfficerInfo(prev => ({
+        ...prev,
+        avatar: event.detail.profilePhoto
+      }));
+    };
+
+    window.addEventListener('fuelProfilePhotoUpdated', handleCustomProfileUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleProfilePhotoUpdate);
+      window.removeEventListener('fuelProfilePhotoUpdated', handleCustomProfileUpdate);
+    };
+  }, []);
 
   useEffect(() => {
     loadNotifications();
@@ -210,15 +257,40 @@ const FuelStationLayout = ({ onLogout }) => {
             {/* Notification Bell */}
             <button
               className="fuel-notification-bell"
-              onClick={() => setShowNotifications(!showNotifications)}
+              onClick={() => {
+                setShowNotifications(!showNotifications);
+                setShowProfileMenu(false);
+              }}
               title="Notifications"
             >
               🔔
               {unreadCount > 0 && <span className="fuel-notification-badge">{unreadCount}</span>}
             </button>
 
-            <span className="fuel-welcome">Welcome, Fuel Officer</span>
-            <div className="fuel-avatar">F</div>
+            {/* Beautiful Profile Section */}
+            <div
+              className="fuel-header-profile-section"
+              onClick={() => {
+                setShowProfileMenu(!showProfileMenu);
+                setShowNotifications(false);
+              }}
+            >
+              <div className="fuel-header-profile-avatar">
+                {fuelOfficerInfo.avatar ? (
+                  <img src={fuelOfficerInfo.avatar} alt={fuelOfficerInfo.name} />
+                ) : (
+                  <div className="fuel-header-avatar-placeholder">
+                    <div className="fuel-avatar-icon">👤</div>
+                  </div>
+                )}
+              </div>
+              <div className="fuel-header-profile-info">
+                <span className="fuel-header-profile-name">{fuelOfficerInfo.name.split(' ')[0]}</span>
+              </div>
+              <div className="fuel-header-dropdown-arrow">
+                <span className={`fuel-dropdown-icon ${showProfileMenu ? 'rotated' : ''}`}>▼</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -295,6 +367,81 @@ const FuelStationLayout = ({ onLogout }) => {
                   </button>
                 </div>
               )}
+            </div>
+          </>
+        )}
+
+        {/* Profile Dropdown Menu */}
+        {showProfileMenu && (
+          <>
+            <div className="fuel-profile-overlay" onClick={() => setShowProfileMenu(false)}></div>
+            <div className="fuel-profile-dropdown">
+              {/* Profile Header */}
+              <div className="fuel-profile-dropdown-header">
+                <div className="fuel-profile-header-avatar">
+                  {fuelOfficerInfo.avatar ? (
+                    <img src={fuelOfficerInfo.avatar} alt={fuelOfficerInfo.name} />
+                  ) : (
+                    <div className="fuel-profile-avatar-placeholder">
+                      <span>👤</span>
+                    </div>
+                  )}
+                </div>
+                <div className="fuel-profile-header-info">
+                  <h4 className="fuel-profile-header-name">{fuelOfficerInfo.name}</h4>
+                  <p className="fuel-profile-header-email">{fuelOfficerInfo.email}</p>
+                  <span className="fuel-profile-header-id">ID: {fuelOfficerInfo.employeeId}</span>
+                </div>
+              </div>
+
+              {/* Profile Menu Items */}
+              <div className="fuel-profile-menu-items">
+                <button
+                  className="fuel-profile-menu-item"
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    navigate('/fuel/profile');
+                  }}
+                >
+                  <span className="fuel-profile-menu-icon">👤</span>
+                  <span>My Profile</span>
+                </button>
+
+                <button
+                  className="fuel-profile-menu-item"
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    navigate('/fuel/settings');
+                  }}
+                >
+                  <span className="fuel-profile-menu-icon">⚙️</span>
+                  <span>Settings</span>
+                </button>
+
+                <button
+                  className="fuel-profile-menu-item"
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    navigate('/fuel/performance');
+                  }}
+                >
+                  <span className="fuel-profile-menu-icon">📊</span>
+                  <span>My Performance</span>
+                </button>
+
+                <div className="fuel-profile-menu-divider"></div>
+
+                <button
+                  className="fuel-profile-menu-item logout"
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    handleLogout();
+                  }}
+                >
+                  <span className="fuel-profile-menu-icon">🚪</span>
+                  <span>Logout</span>
+                </button>
+              </div>
             </div>
           </>
         )}

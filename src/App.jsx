@@ -58,6 +58,7 @@ import FuelInventory from './pages/fuelStationOfficer/FuelInventory';
 import FuelTransactionHistory from './pages/fuelStationOfficer/FuelTransactionHistory';
 import FuelReports from './pages/fuelStationOfficer/FuelReports';
 import FuelNotifications from './pages/fuelStationOfficer/FuelNotifications';
+import FuelStationProfile from './pages/fuelStationOfficer/FuelStationProfile';
 
 // Gate Security
 import GateSecurityLayout from './pages/gateSecurity/GateSecurityLayout';
@@ -65,6 +66,11 @@ import GateDashboard from './pages/gateSecurity/GateDashboard';
 import ALPRCamera from './pages/gateSecurity/ALPRCamera';
 import VehicleVerification from './pages/gateSecurity/VehicleVerification';
 import GateLogs from './pages/gateSecurity/GateLogs';
+import TripAuthorization from './pages/gateSecurity/TripAuthorization';
+import VehicleInspection from './pages/gateSecurity/VehicleInspection';
+import VehicleMovement from './pages/gateSecurity/VehicleMovement';
+import GateNotifications from './pages/gateSecurity/GateNotifications';
+import GateSecurityProfile from './pages/gateSecurity/GateSecurityProfile';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -279,6 +285,7 @@ function App() {
             <Route path="reports" element={<FuelReports />} />
             <Route path="notifications" element={<FuelNotifications />} />
             <Route path="transactions" element={<FuelTransactionHistory />} />
+            <Route path="profile" element={<FuelStationProfile />} />
           </Route>
         </>
       )}
@@ -291,7 +298,12 @@ function App() {
             <Route path="dashboard" element={<GateDashboard />} />
             <Route path="camera" element={<ALPRCamera />} />
             <Route path="verification" element={<VehicleVerification />} />
+            <Route path="trip-authorization" element={<TripAuthorization />} />
+            <Route path="inspection" element={<VehicleInspection />} />
+            <Route path="movement" element={<VehicleMovement />} />
             <Route path="logs" element={<GateLogs />} />
+            <Route path="notifications" element={<GateNotifications />} />
+            <Route path="profile" element={<GateSecurityProfile />} />
           </Route>
         </>
       )}

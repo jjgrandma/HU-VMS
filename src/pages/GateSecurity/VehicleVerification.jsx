@@ -55,7 +55,7 @@ const VehicleVerification = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    
+
     if (!searchQuery.trim()) {
       alert('Please enter a plate number');
       return;
@@ -82,6 +82,39 @@ const VehicleVerification = () => {
     return <span className={`gate-status-badge ${statusClass}`}>{status}</span>;
   };
 
+  const handleAuthorizeEntry = () => {
+    const timestamp = new Date().toLocaleString();
+    alert(`✅ ENTRY AUTHORIZED\n\nPlate: ${searchResult.plateNumber}\nVehicle: ${searchResult.vehicleModel}\nDriver: ${searchResult.assignedDriver}\nTime: ${timestamp}\n\nVehicle has been granted entry to campus.`);
+
+    // Log the entry
+    console.log('Entry authorized:', {
+      plate: searchResult.plateNumber,
+      time: timestamp,
+      officer: 'Gate Officer'
+    });
+  };
+
+  const handleViewDetails = () => {
+    const details = `
+VEHICLE DETAILS
+═══════════════════════════════════
+
+Plate Number: ${searchResult.plateNumber}
+Vehicle Model: ${searchResult.vehicleModel}
+Department: ${searchResult.department}
+Assigned Driver: ${searchResult.assignedDriver}
+Fuel Type: ${searchResult.fuelType}
+Status: ${searchResult.status}
+
+REGISTRATION INFO
+═══════════════════════════════════
+Registration Date: ${searchResult.registrationDate}
+Last Maintenance: ${searchResult.lastMaintenance}
+Current Mileage: ${searchResult.mileage}
+    `;
+    alert(details);
+  };
+
   return (
     <div className="vehicle-verification-page">
       <div className="gate-page-header">
@@ -102,8 +135,8 @@ const VehicleVerification = () => {
               className="verification-search-input"
             />
             {searchQuery && (
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="search-clear-btn"
                 onClick={handleClearSearch}
               >
@@ -190,10 +223,10 @@ const VehicleVerification = () => {
               </div>
 
               <div className="vehicle-card-actions">
-                <button className="gate-btn-success">
+                <button className="gate-btn-success" onClick={handleAuthorizeEntry}>
                   <span>✓</span> Authorize Entry
                 </button>
-                <button className="gate-btn-info">
+                <button className="gate-btn-info" onClick={handleViewDetails}>
                   <span>📋</span> View Full Details
                 </button>
                 <button className="gate-btn-secondary" onClick={handleClearSearch}>
@@ -211,8 +244,8 @@ const VehicleVerification = () => {
           <h3>Quick Access - Recent Vehicles</h3>
           <div className="quick-access-grid">
             {vehicleDatabase.slice(0, 4).map((vehicle) => (
-              <div 
-                key={vehicle.plateNumber} 
+              <div
+                key={vehicle.plateNumber}
                 className="quick-access-card"
                 onClick={() => {
                   setSearchQuery(vehicle.plateNumber);
