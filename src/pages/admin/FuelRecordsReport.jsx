@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import ExportButton from '../../components/ExportButton';
+import './adminTheme.css';
 import './fuelRecordsReport.css';
 
 const FuelRecordsReport = () => {
@@ -16,6 +17,8 @@ const FuelRecordsReport = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterFuelType, setFilterFuelType] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   const filteredRecords = fuelRecords.filter(record => {
     const matchesSearch = record.plateNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -24,6 +27,31 @@ const FuelRecordsReport = () => {
     const matchesFilter = filterFuelType === 'All' || record.fuelType === filterFuelType;
     return matchesSearch && matchesFilter;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentRecords = filteredRecords.slice(startIndex, endIndex);
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleFilterChange = (e) => {
+    setFilterFuelType(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(Number(e.target.value));
+    setCurrentPage(1);
+  };
 
   const totalFuelCost = fuelRecords.reduce((sum, record) => {
     const cost = parseFloat(record.cost.replace('₱', '').replace(',', ''));
@@ -77,13 +105,13 @@ const FuelRecordsReport = () => {
           type="text"
           placeholder="Search by plate, model, or driver..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleSearchChange}
           className="search-input"
         />
 
         <select
           value={filterFuelType}
-          onChange={(e) => setFilterFuelType(e.target.value)}
+          onChange={handleFilterChange}
           className="filter-select"
         >
           <option value="All">All Fuel Types</option>
@@ -108,7 +136,7 @@ const FuelRecordsReport = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredRecords.map(record => (
+            {currentRecords.map(record => (
               <tr key={record.id}>
                 <td>{record.id}</td>
                 <td>{record.plateNumber}</td>
@@ -129,6 +157,67 @@ const FuelRecordsReport = () => {
 
       {filteredRecords.length === 0 && (
         <div className="no-results">No fuel records found</div>
+      )}
+
+      {/* Compact Pagination */}
+      {filteredRecords.length > 0 && (
+        <div className="pagination-compact">
+          <div className="pagination-info-compact">
+            <span>
+              {startIndex + 1}-{Math.min(endIndex, filteredRecords.length)} of {filteredRecords.length}
+            </span>
+            <select 
+              value={itemsPerPage} 
+              onChange={handleItemsPerPageChange}
+              className="items-per-page-compact"
+            >
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+
+          <div className="pagination-controls-compact">
+            <button
+              className="pagination-btn-compact"
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1}
+              title="First Page"
+            >
+              ⟪
+            </button>
+            <button
+              className="pagination-btn-compact"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              title="Previous Page"
+            >
+              ‹
+            </button>
+
+            <span className="page-indicator-compact">
+              {currentPage} / {totalPages}
+            </span>
+
+            <button
+              className="pagination-btn-compact"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              title="Next Page"
+            >
+              ›
+            </button>
+            <button
+              className="pagination-btn-compact"
+              onClick={() => handlePageChange(totalPages)}
+              disabled={currentPage === totalPages}
+              title="Last Page"
+            >
+              ⟫
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

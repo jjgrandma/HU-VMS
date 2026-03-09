@@ -35,8 +35,8 @@ const AddVehicle = () => {
   };
 
   return (
-    <div className="add-vehicle-container">
-      <h1>Add New Vehicle</h1>
+    <div className="add-vehicle-container" style={{ background: 'white', minHeight: '100vh', padding: '30px' }}>
+      <h1 style={{ color: '#32CD32', fontSize: '32px', marginBottom: '30px', display: 'block' }}>🚗 Add New Vehicle</h1>
 
       <div className="form-card">
         <form onSubmit={handleSubmit}>

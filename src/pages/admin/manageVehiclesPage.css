@@ -1,24 +1,28 @@
 .manage-vehicles-container {
   padding: 30px;
-  background: #0f0f1e;
+  padding-left: 50px;
+  background: white;
   min-height: 100vh;
-  color: #fff;
+  color: #32CD32;
 }
 
 .page-header {
   margin-bottom: 30px;
+  background: white;
+  padding: 20px 30px;
+  border-radius: 12px;
 }
 
 .page-header h1 {
   font-size: 32px;
   margin-bottom: 8px;
-  color: #fff;
+  color: #32CD32;
   font-weight: 700;
 }
 
 .page-subtitle {
   font-size: 14px;
-  color: #aaa;
+  color: #32CD32;
   margin: 0;
 }
 
@@ -32,19 +36,23 @@
 .search-input {
   flex: 1;
   min-width: 300px;
+  padding: 12px 20px;}
+.search-input {
+  flex: 1;
+  min-width: 300px;
   padding: 12px 20px;
-  background: #1a1a2e;
-  border: 1px solid #2a2a3e;
+  background: #f0f0f0;
+  border: 1px solid #32CD32;
   border-radius: 8px;
-  color: #fff;
+  color: #333;
   font-size: 14px;
   outline: none;
   transition: all 0.3s ease;
 }
 
 .search-input:focus {
-  border-color: #0da694;
-  box-shadow: 0 0 0 2px rgba(13, 166, 148, 0.2);
+  border-color: #32CD32;
+  box-shadow: 0 0 0 2px rgba(50, 205, 50, 0.2);
 }
 
 .search-input::placeholder {
@@ -53,10 +61,10 @@
 
 .filter-select {
   padding: 12px 20px;
-  background: #1a1a2e;
-  border: 1px solid #2a2a3e;
+  background: #f0f0f0;
+  border: 1px solid #32CD32;
   border-radius: 8px;
-  color: #fff;
+  color: #333;
   font-size: 14px;
   outline: none;
   cursor: pointer;
@@ -65,16 +73,16 @@
 }
 
 .filter-select:focus {
-  border-color: #0da694;
-  box-shadow: 0 0 0 2px rgba(13, 166, 148, 0.2);
+  border-color: #32CD32;
+  box-shadow: 0 0 0 2px rgba(50, 205, 50, 0.2);
 }
 
 .table-container {
-  background: #1e2139;
+  background: white;
   border-radius: 12px;
   overflow-x: auto;
-  border: 1px solid #2a2a3e;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border: 1px solid #32CD32;
+  box-shadow: 0 4px 20px rgba(50, 205, 50, 0.1);
 }
 
 .vehicles-table {
@@ -87,17 +95,17 @@
 .vehicles-table td:last-child {
   position: sticky;
   right: 0;
-  background: #1e2139;
+  background: white;
   z-index: 10;
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.3);
+  box-shadow: -2px 0 8px rgba(50, 205, 50, 0.1);
 }
 
 .vehicles-table thead {
-  background: linear-gradient(135deg, #252844, #1e2139);
+  background: linear-gradient(135deg, #32CD32, #28a428);
 }
 
 .vehicles-table thead th:last-child {
-  background: linear-gradient(135deg, #252844, #1e2139);
+  background: linear-gradient(135deg, #32CD32, #28a428);
 }
 
 .vehicles-table th {
@@ -106,7 +114,7 @@
   font-weight: 600;
   color: #fff;
   font-size: 13px;
-  border-bottom: 2px solid #2a2a3e;
+  border-bottom: 2px solid #32CD32;
   white-space: nowrap;
 }
 
@@ -117,34 +125,34 @@
 }
 
 .vehicles-table th.sortable:hover {
-  background: rgba(13, 166, 148, 0.1);
-  color: #0da694;
+  background: rgba(50, 205, 50, 0.2);
+  color: #fff;
 }
 
 .vehicles-table tbody tr {
-  border-bottom: 1px solid #2a2a3e;
+  border-bottom: 1px solid #e0e0e0;
   transition: all 0.3s ease;
-  background: #1e2139;
+  background: white;
 }
 
 .vehicles-table tbody tr:hover {
-  background: rgba(13, 166, 148, 0.08);
+  background: #f0f0f0;
   transform: scale(1.001);
 }
 
 .vehicles-table tbody tr:hover td:last-child {
-  background: rgba(13, 166, 148, 0.12);
+  background: #f0f0f0;
 }
 
 .vehicles-table td {
   padding: 16px;
-  color: #e0e0e0;
+  color: #000;
   font-size: 13px;
   white-space: nowrap;
 }
 
 .vehicles-table td strong {
-  color: #0da694;
+  color: #000;
   font-weight: 700;
 }
 
@@ -227,7 +235,7 @@
 }
 
 .table-footer {
-  color: #888;
+  color: #32CD32;
   font-size: 14px;
 }
 
@@ -248,9 +256,9 @@
   height: 40px;
   padding: 0;
   background: #ffffff;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #32CD32;
   border-radius: 4px;
-  color: #333;
+  color: #32CD32;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -263,7 +271,7 @@
 .pagination-arrow {
   font-size: 18px;
   font-weight: 700;
-  color: #666;
+  color: #32CD32;
 }
 
 .pagination-number {
@@ -271,13 +279,14 @@
 }
 
 .pagination-btn:hover:not(:disabled):not(.active) {
-  background: #f5f5f5;
-  border-color: #d0d0d0;
+  background: #32CD32;
+  color: white;
+  border-color: #32CD32;
 }
 
 .pagination-btn.active {
-  background: #10b981;
-  border-color: #10b981;
+  background: #32CD32;
+  border-color: #32CD32;
   color: #fff;
   font-weight: 600;
 }
@@ -285,12 +294,12 @@
 .pagination-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
-  background: #ffffff;
+  background: #f0f0f0;
   color: #999;
 }
 
 .pagination-ellipsis {
-  color: #666;
+  color: #32CD32;
   font-size: 14px;
   font-weight: 700;
   padding: 0 4px;
@@ -304,7 +313,7 @@
 .no-results {
   text-align: center;
   padding: 60px 20px;
-  color: #666;
+  color: #32CD32;
   font-size: 16px;
 }
 

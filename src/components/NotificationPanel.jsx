@@ -73,7 +73,6 @@ const NotificationPanel = ({ isOpen, onClose }) => {
   ]);
 
   const [filter, setFilter] = useState('all');
-  const [roleFilter, setRoleFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedNotif, setExpandedNotif] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -229,10 +228,6 @@ const NotificationPanel = ({ isOpen, onClose }) => {
     filteredNotifications = filteredNotifications.filter(n => n.status === filter);
   }
   
-  if (roleFilter !== 'all') {
-    filteredNotifications = filteredNotifications.filter(n => n.role === roleFilter);
-  }
-  
   if (searchQuery) {
     filteredNotifications = filteredNotifications.filter(n => 
       n.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -259,8 +254,8 @@ const NotificationPanel = ({ isOpen, onClose }) => {
           <button className="close-btn" onClick={onClose}>✕</button>
         </div>
 
-        {/* Search Bar */}
-        <div className="notification-search">
+        {/* Search and Filters Combined */}
+        <div className="notification-controls">
           <input
             type="text"
             placeholder="🔍 Search notifications..."
@@ -268,12 +263,8 @@ const NotificationPanel = ({ isOpen, onClose }) => {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="search-input"
           />
-        </div>
-
-        {/* Filters */}
-        <div className="notification-filters">
-          <div className="filter-group">
-            <label>Status:</label>
+          
+          <div className="filter-buttons">
             <button 
               className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
               onClick={() => setFilter('all')}
@@ -305,34 +296,6 @@ const NotificationPanel = ({ isOpen, onClose }) => {
               Resolved
             </button>
           </div>
-          
-          <div className="filter-group">
-            <label>Role:</label>
-            <button 
-              className={`filter-btn ${roleFilter === 'all' ? 'active' : ''}`}
-              onClick={() => setRoleFilter('all')}
-            >
-              All
-            </button>
-            <button 
-              className={`filter-btn ${roleFilter === 'Driver' ? 'active' : ''}`}
-              onClick={() => setRoleFilter('Driver')}
-            >
-              Driver
-            </button>
-            <button 
-              className={`filter-btn ${roleFilter === 'User' ? 'active' : ''}`}
-              onClick={() => setRoleFilter('User')}
-            >
-              User
-            </button>
-            <button 
-              className={`filter-btn ${roleFilter === 'Transport Officer' ? 'active' : ''}`}
-              onClick={() => setRoleFilter('Transport Officer')}
-            >
-              Officer
-            </button>
-          </div>
         </div>
 
         {/* Notification List */}
@@ -340,220 +303,219 @@ const NotificationPanel = ({ isOpen, onClose }) => {
           {filteredNotifications.map(notif => (
             <div 
               key={notif.id} 
-              className={`notification-card ${notif.status} ${expandedNotif === notif.id ? 'expanded' : ''}`}
+              className={`notification-item ${notif.status} ${expandedNotif === notif.id ? 'expanded' : ''}`}
               style={{ borderLeftColor: getStatusColor(notif.status) }}
             >
-              {/* Card Header */}
-              <div className="card-header">
-                <div className="user-info">
-                  <div className="user-avatar">{notif.avatar}</div>
-                  <div className="user-details">
-                    <div className="user-name">{notif.fullName}</div>
-                    <div className="user-meta">
+              {/* Compact Row View */}
+              <div 
+                className="notification-row"
+                onClick={() => setExpandedNotif(expandedNotif === notif.id ? null : notif.id)}
+              >
+                <div className="row-left">
+                  <div className="user-avatar-small">{notif.avatar}</div>
+                  <div className="row-info">
+                    <span className="row-name">{notif.fullName}</span>
+                    <span className="row-meta">
                       <span 
-                        className="user-role"
+                        className="user-role-small"
                         style={{ backgroundColor: getRoleColor(notif.role) }}
                       >
                         {notif.role}
                       </span>
-                      <span className="user-username">@{notif.username}</span>
-                    </div>
+                      <span className="row-username">@{notif.username}</span>
+                    </span>
                   </div>
                 </div>
-                <div className="card-meta">
-                  <span className="notif-icon">{getIcon(notif.type)}</span>
+                
+                <div className="row-right">
+                  <span className="notif-icon-small">{getIcon(notif.type)}</span>
                   <span 
-                    className="status-badge"
+                    className="status-badge-small"
                     style={{ backgroundColor: getStatusColor(notif.status) }}
                   >
                     {notif.status}
                   </span>
+                  <span className="notif-time-small">⏰ {notif.timestamp}</span>
+                  <span className="expand-icon">{expandedNotif === notif.id ? '▲' : '▼'}</span>
                 </div>
               </div>
 
-              {/* Card Content */}
-              <div className="card-content">
-                <p className="notif-message">{notif.message}</p>
-                <span className="notif-time">⏰ {notif.timestamp}</span>
-              </div>
-
-              {/* Expanded Details */}
+              {/* Expanded Details View */}
               {expandedNotif === notif.id && (
-                <div className="expanded-details">
-                  {/* Access Denied Details */}
-                  {notif.type === 'access_denied' && notif.status === 'pending' && (
-                    <div className="action-section">
-                      <h4>🔒 Account Access Issue</h4>
-                      <p><strong>Username:</strong> {notif.username}</p>
-                      <p><strong>Role:</strong> {notif.role}</p>
-                      <div className="action-buttons">
-                        <button 
-                          className="btn-action btn-unlock"
-                          onClick={() => handleUnlockAccount(notif.id, notif.username)}
-                        >
-                          🔓 Unlock Account
-                        </button>
-                        <button 
-                          className="btn-action btn-reset"
-                          onClick={() => handleResetSession(notif.id, notif.username)}
-                        >
-                          🔄 Reset Session
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                <div className="notification-expanded">
+                  {/* Message Section */}
+                  <div className="expanded-message">
+                    <h4>📩 Message</h4>
+                    <p>{notif.message}</p>
+                  </div>
 
-                  {/* Credential Reset Details */}
-                  {(notif.type === 'password_reset' || notif.type === 'username_reset') && notif.status === 'pending' && (
-                    <div className="action-section">
-                      <h4>🔑 Credential Reset Request</h4>
-                      <p><strong>Username:</strong> {notif.username}</p>
-                      <p><strong>Request Type:</strong> {notif.requestType === 'both' ? 'Username & Password' : notif.requestType}</p>
-                      <div className="action-buttons">
-                        <button 
-                          className="btn-action btn-approve"
-                          onClick={() => handleApproveCredentialReset(notif.id, notif.username, notif.requestType)}
-                        >
-                          ✅ Approve & Reset
-                        </button>
-                        <button 
-                          className="btn-action btn-reject"
-                          onClick={() => setShowRejectInput(notif.id)}
-                        >
-                          ❌ Reject
-                        </button>
-                      </div>
-                      
-                      {showRejectInput === notif.id && (
-                        <div className="reject-section">
-                          <textarea
-                            placeholder="Enter rejection reason..."
-                            value={rejectionReason}
-                            onChange={(e) => setRejectionReason(e.target.value)}
-                            rows="3"
-                          />
+                  {/* Action Section */}
+                  <div className="expanded-actions">
+                    {/* Access Denied Details */}
+                    {notif.type === 'access_denied' && notif.status === 'pending' && (
+                      <div className="action-section">
+                        <h4>🔒 Account Access Issue</h4>
+                        <p><strong>Username:</strong> {notif.username}</p>
+                        <p><strong>Role:</strong> {notif.role}</p>
+                        <div className="action-buttons">
                           <button 
-                            className="btn-submit-reject"
-                            onClick={() => handleRejectWithReason(notif.id)}
+                            className="btn-action btn-unlock"
+                            onClick={() => handleUnlockAccount(notif.id, notif.username)}
                           >
-                            Send Rejection
+                            🔓 Unlock Account
+                          </button>
+                          <button 
+                            className="btn-action btn-reset"
+                            onClick={() => handleResetSession(notif.id, notif.username)}
+                          >
+                            🔄 Reset Session
                           </button>
                         </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Approved Credential Reset - Show Temp Password */}
-                  {notif.status === 'approved' && notif.resolvedData && (
-                    <div className="success-section">
-                      <h4>✅ Request Approved</h4>
-                      <div className="temp-password-box">
-                        <p><strong>Temporary Password:</strong></p>
-                        <code className="temp-password">{notif.resolvedData.tempPassword}</code>
-                        <button 
-                          className="btn-copy"
-                          onClick={() => {
-                            navigator.clipboard.writeText(notif.resolvedData.tempPassword);
-                            alert('Password copied to clipboard!');
-                          }}
-                        >
-                          📋 Copy
-                        </button>
                       </div>
-                      <p className="success-message">✉️ Confirmation sent to user</p>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Report Request Details */}
-                  {notif.type === 'report_request' && notif.status === 'pending' && (
-                    <div className="action-section">
-                      <h4>📊 Report Request</h4>
-                      <p><strong>Report Type:</strong> {notif.reportType?.replace('_', ' ').toUpperCase()}</p>
-                      <p><strong>Requested by:</strong> {notif.fullName} ({notif.role})</p>
-                      <div className="action-buttons">
-                        <button 
-                          className="btn-action btn-generate"
-                          onClick={() => handleGenerateReport(notif.id, notif.reportType)}
-                        >
-                          📄 Generate Report
-                        </button>
-                        <button 
-                          className="btn-action btn-reject"
-                          onClick={() => setShowRejectInput(notif.id)}
-                        >
-                          ❌ Reject Request
-                        </button>
-                      </div>
-                      
-                      {showRejectInput === notif.id && (
-                        <div className="reject-section">
-                          <textarea
-                            placeholder="Enter rejection reason..."
-                            value={rejectionReason}
-                            onChange={(e) => setRejectionReason(e.target.value)}
-                            rows="3"
-                          />
+                    {/* Credential Reset Details */}
+                    {(notif.type === 'password_reset' || notif.type === 'username_reset') && notif.status === 'pending' && (
+                      <div className="action-section">
+                        <h4>🔑 Credential Reset Request</h4>
+                        <p><strong>Username:</strong> {notif.username}</p>
+                        <p><strong>Request Type:</strong> {notif.requestType === 'both' ? 'Username & Password' : notif.requestType}</p>
+                        <div className="action-buttons">
                           <button 
-                            className="btn-submit-reject"
-                            onClick={() => handleRejectWithReason(notif.id)}
+                            className="btn-action btn-approve"
+                            onClick={() => handleApproveCredentialReset(notif.id, notif.username, notif.requestType)}
                           >
-                            Send Rejection
+                            ✅ Approve & Reset
+                          </button>
+                          <button 
+                            className="btn-action btn-reject"
+                            onClick={() => setShowRejectInput(notif.id)}
+                          >
+                            ❌ Reject
                           </button>
                         </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Report Generated - Show Download */}
-                  {notif.status === 'resolved' && notif.resolvedData?.reportUrl && (
-                    <div className="success-section">
-                      <h4>✅ Report Generated</h4>
-                      <p><strong>{notif.resolvedData.reportName}</strong></p>
-                      <div className="action-buttons">
-                        <button 
-                          className="btn-action btn-download"
-                          onClick={() => handleDownloadReport(notif.resolvedData.reportUrl)}
-                        >
-                          📥 Download Report
-                        </button>
-                        <button 
-                          className="btn-action btn-send"
-                          onClick={() => handleSendReport(notif.resolvedData.reportUrl, notif.username)}
-                        >
-                          📧 Send to Officer
-                        </button>
+                        
+                        {showRejectInput === notif.id && (
+                          <div className="reject-section">
+                            <textarea
+                              placeholder="Enter rejection reason..."
+                              value={rejectionReason}
+                              onChange={(e) => setRejectionReason(e.target.value)}
+                              rows="3"
+                            />
+                            <button 
+                              className="btn-submit-reject"
+                              onClick={() => handleRejectWithReason(notif.id)}
+                            >
+                              Send Rejection
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Rejected - Show Reason */}
-                  {notif.status === 'rejected' && notif.rejectionReason && (
-                    <div className="rejected-section">
-                      <h4>❌ Request Rejected</h4>
-                      <p><strong>Reason:</strong></p>
-                      <p className="rejection-reason">{notif.rejectionReason}</p>
-                    </div>
-                  )}
+                    {/* Approved Credential Reset - Show Temp Password */}
+                    {notif.status === 'approved' && notif.resolvedData && (
+                      <div className="success-section">
+                        <h4>✅ Request Approved</h4>
+                        <div className="temp-password-box">
+                          <p><strong>Temporary Password:</strong></p>
+                          <code className="temp-password">{notif.resolvedData.tempPassword}</code>
+                          <button 
+                            className="btn-copy"
+                            onClick={() => {
+                              navigator.clipboard.writeText(notif.resolvedData.tempPassword);
+                              alert('Password copied to clipboard!');
+                            }}
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                        <p className="success-message">✉️ Confirmation sent to user</p>
+                      </div>
+                    )}
 
-                  {/* Resolved - Show Action */}
-                  {notif.status === 'resolved' && notif.resolvedData && !notif.resolvedData.reportUrl && (
-                    <div className="success-section">
-                      <h4>✅ {notif.resolvedData.action}</h4>
-                      <p>{notif.resolvedData.message}</p>
-                    </div>
-                  )}
+                    {/* Report Request Details */}
+                    {notif.type === 'report_request' && notif.status === 'pending' && (
+                      <div className="action-section">
+                        <h4>📊 Report Request</h4>
+                        <p><strong>Report Type:</strong> {notif.reportType?.replace('_', ' ').toUpperCase()}</p>
+                        <p><strong>Requested by:</strong> {notif.fullName} ({notif.role})</p>
+                        <div className="action-buttons">
+                          <button 
+                            className="btn-action btn-generate"
+                            onClick={() => handleGenerateReport(notif.id, notif.reportType)}
+                          >
+                            📄 Generate Report
+                          </button>
+                          <button 
+                            className="btn-action btn-reject"
+                            onClick={() => setShowRejectInput(notif.id)}
+                          >
+                            ❌ Reject Request
+                          </button>
+                        </div>
+                        
+                        {showRejectInput === notif.id && (
+                          <div className="reject-section">
+                            <textarea
+                              placeholder="Enter rejection reason..."
+                              value={rejectionReason}
+                              onChange={(e) => setRejectionReason(e.target.value)}
+                              rows="3"
+                            />
+                            <button 
+                              className="btn-submit-reject"
+                              onClick={() => handleRejectWithReason(notif.id)}
+                            >
+                              Send Rejection
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Report Generated - Show Download */}
+                    {notif.status === 'resolved' && notif.resolvedData?.reportUrl && (
+                      <div className="success-section">
+                        <h4>✅ Report Generated</h4>
+                        <p><strong>{notif.resolvedData.reportName}</strong></p>
+                        <div className="action-buttons">
+                          <button 
+                            className="btn-action btn-download"
+                            onClick={() => handleDownloadReport(notif.resolvedData.reportUrl)}
+                          >
+                            📥 Download Report
+                          </button>
+                          <button 
+                            className="btn-action btn-send"
+                            onClick={() => handleSendReport(notif.resolvedData.reportUrl, notif.username)}
+                          >
+                            📧 Send to Officer
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Rejected - Show Reason */}
+                    {notif.status === 'rejected' && notif.rejectionReason && (
+                      <div className="rejected-section">
+                        <h4>❌ Request Rejected</h4>
+                        <p><strong>Reason:</strong></p>
+                        <p className="rejection-reason">{notif.rejectionReason}</p>
+                      </div>
+                    )}
+
+                    {/* Resolved - Show Action */}
+                    {notif.status === 'resolved' && notif.resolvedData && !notif.resolvedData.reportUrl && (
+                      <div className="success-section">
+                        <h4>✅ {notif.resolvedData.action}</h4>
+                        <p>{notif.resolvedData.message}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
-
-              {/* Card Actions */}
-              <div className="card-actions">
-                <button 
-                  className="btn-expand"
-                  onClick={() => setExpandedNotif(expandedNotif === notif.id ? null : notif.id)}
-                >
-                  {expandedNotif === notif.id ? '▲ Collapse' : '▼ Expand & Take Action'}
-                </button>
-              </div>
             </div>
           ))}
           

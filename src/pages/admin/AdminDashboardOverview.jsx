@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import './adminTheme.css';
 import './adminDashboardOverview.css';
 
 const AdminDashboardOverview = () => {

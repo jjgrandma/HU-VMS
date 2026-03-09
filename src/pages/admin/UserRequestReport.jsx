@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import ExportButton from '../../components/ExportButton';
+import './adminTheme.css';
 import './userRequestReport.css';
 
 const UserRequestReport = () => {
@@ -16,6 +17,8 @@ const UserRequestReport = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch = request.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -24,6 +27,32 @@ const UserRequestReport = () => {
     const matchesFilter = filterStatus === 'All' || request.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentRequests = filteredRequests.slice(startIndex, endIndex);
+
+  // Reset to first page when search or filter changes
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleFilterChange = (e) => {
+    setFilterStatus(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(Number(e.target.value));
+    setCurrentPage(1);
+  };
 
   const getStatusClass = (status) => {
     switch(status) {
@@ -59,13 +88,13 @@ const UserRequestReport = () => {
           type="text"
           placeholder="Search by user, unit, or destination..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleSearchChange}
           className="search-input"
         />
 
         <select
           value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
+          onChange={handleFilterChange}
           className="filter-select"
         >
           <option value="All">All Status</option>
@@ -90,7 +119,7 @@ const UserRequestReport = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredRequests.map(request => (
+            {currentRequests.map(request => (
               <tr key={request.id}>
                 <td>{request.id}</td>
                 <td>{request.userName}</td>
@@ -116,6 +145,67 @@ const UserRequestReport = () => {
 
       {filteredRequests.length === 0 && (
         <div className="no-results">No requests found</div>
+      )}
+
+      {/* Compact Pagination */}
+      {filteredRequests.length > 0 && (
+        <div className="pagination-compact">
+          <div className="pagination-info-compact">
+            <span>
+              {startIndex + 1}-{Math.min(endIndex, filteredRequests.length)} of {filteredRequests.length}
+            </span>
+            <select 
+              value={itemsPerPage} 
+              onChange={handleItemsPerPageChange}
+              className="items-per-page-compact"
+            >
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+
+          <div className="pagination-controls-compact">
+            <button
+              className="pagination-btn-compact"
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1}
+              title="First Page"
+            >
+              ⟪
+            </button>
+            <button
+              className="pagination-btn-compact"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              title="Previous Page"
+            >
+              ‹
+            </button>
+
+            <span className="page-indicator-compact">
+              {currentPage} / {totalPages}
+            </span>
+
+            <button
+              className="pagination-btn-compact"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              title="Next Page"
+            >
+              ›
+            </button>
+            <button
+              className="pagination-btn-compact"
+              onClick={() => handlePageChange(totalPages)}
+              disabled={currentPage === totalPages}
+              title="Last Page"
+            >
+              ⟫
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import ExportButton from '../../components/ExportButton';
+import './adminTheme.css';
 import './driverPerformanceReport.css';
 
 const DriverPerformanceReport = () => {
@@ -15,10 +16,32 @@ const DriverPerformanceReport = () => {
   ]);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   const filteredPerformance = performance.filter(driver =>
     driver.driverName.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredPerformance.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentPerformance = filteredPerformance.slice(startIndex, endIndex);
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(Number(e.target.value));
+    setCurrentPage(1);
+  };
 
   const getRatingClass = (rating) => {
     if (rating >= 4.7) return 'rating-excellent';
@@ -42,7 +65,7 @@ const DriverPerformanceReport = () => {
           type="text"
           placeholder="Search by driver name..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleSearchChange}
           className="search-input"
         />
       </div>
@@ -63,7 +86,7 @@ const DriverPerformanceReport = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredPerformance.map(driver => (
+            {currentPerformance.map(driver => (
               <tr key={driver.id}>
                 <td>{driver.id}</td>
                 <td>{driver.driverName}</td>
@@ -86,6 +109,67 @@ const DriverPerformanceReport = () => {
 
       {filteredPerformance.length === 0 && (
         <div className="no-results">No performance data found</div>
+      )}
+
+      {/* Compact Pagination */}
+      {filteredPerformance.length > 0 && (
+        <div className="pagination-compact">
+          <div className="pagination-info-compact">
+            <span>
+              {startIndex + 1}-{Math.min(endIndex, filteredPerformance.length)} of {filteredPerformance.length}
+            </span>
+            <select 
+              value={itemsPerPage} 
+              onChange={handleItemsPerPageChange}
+              className="items-per-page-compact"
+            >
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+
+          <div className="pagination-controls-compact">
+            <button
+              className="pagination-btn-compact"
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1}
+              title="First Page"
+            >
+              ⟪
+            </button>
+            <button
+              className="pagination-btn-compact"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              title="Previous Page"
+            >
+              ‹
+            </button>
+
+            <span className="page-indicator-compact">
+              {currentPage} / {totalPages}
+            </span>
+
+            <button
+              className="pagination-btn-compact"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              title="Next Page"
+            >
+              ›
+            </button>
+            <button
+              className="pagination-btn-compact"
+              onClick={() => handlePageChange(totalPages)}
+              disabled={currentPage === totalPages}
+              title="Last Page"
+            >
+              ⟫
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

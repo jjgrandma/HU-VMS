@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTheme } from '../../context/ThemeContext';
+import './adminTheme.css';
 import './settings.css';
 
 const Settings = () => {
