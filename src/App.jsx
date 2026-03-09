@@ -57,6 +57,7 @@ import FuelDispenseForm from './pages/fuelStationOfficer/FuelDispenseForm';
 import FuelInventory from './pages/fuelStationOfficer/FuelInventory';
 import FuelTransactionHistory from './pages/fuelStationOfficer/FuelTransactionHistory';
 import FuelReports from './pages/fuelStationOfficer/FuelReports';
+import FuelNotifications from './pages/fuelStationOfficer/FuelNotifications';
 
 // Gate Security
 import GateSecurityLayout from './pages/gateSecurity/GateSecurityLayout';
@@ -276,6 +277,7 @@ function App() {
             <Route path="dispense" element={<FuelDispenseForm />} />
             <Route path="inventory" element={<FuelInventory />} />
             <Route path="reports" element={<FuelReports />} />
+            <Route path="notifications" element={<FuelNotifications />} />
             <Route path="transactions" element={<FuelTransactionHistory />} />
           </Route>
         </>
