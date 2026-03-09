@@ -1,20 +1,24 @@
 .settings-container {
   padding: 30px;
+  padding-left: 50px;
   max-width: 1200px;
   margin: 0 auto;
+  background: var(--admin-bg-primary);
+  min-height: 100vh;
 }
 
 .settings-container h1 {
   font-size: 32px;
   margin-bottom: 30px;
-  color: var(--text-primary);
+  color: var(--admin-primary);
+  font-weight: 600;
 }
 
 .settings-tabs {
   display: flex;
   gap: 12px;
   margin-bottom: 30px;
-  border-bottom: 2px solid var(--border-color);
+  border-bottom: 2px solid var(--admin-border-light);
   padding-bottom: 0;
 }
 
@@ -24,7 +28,7 @@
   padding: 12px 24px;
   font-size: 16px;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--admin-text-secondary);
   cursor: pointer;
   border-bottom: 3px solid transparent;
   transition: all 0.3s ease;
@@ -33,29 +37,30 @@
 }
 
 .tab-btn:hover {
-  color: var(--text-primary);
+  color: var(--admin-text-primary);
 }
 
 .tab-btn.active {
-  color: var(--primary-color);
-  border-bottom-color: var(--primary-color);
+  color: var(--admin-primary);
+  border-bottom-color: var(--admin-primary);
 }
 
 .settings-content {
-  background: var(--card-bg);
+  background: var(--admin-bg-primary);
   border-radius: 16px;
   padding: 30px;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--admin-shadow-md);
+  border: 1px solid var(--admin-border-primary);
 }
 
 .settings-section h2 {
   font-size: 24px;
   margin-bottom: 8px;
-  color: var(--text-primary);
+  color: var(--admin-text-primary);
 }
 
 .section-description {
-  color: var(--text-secondary);
+  color: var(--admin-text-secondary);
   margin-bottom: 30px;
   font-size: 14px;
 }
@@ -68,8 +73,8 @@
 }
 
 .theme-card {
-  background: var(--card-bg-secondary);
-  border: 2px solid var(--border-color);
+  background: var(--admin-bg-primary);
+  border: 2px solid var(--admin-border-light);
   border-radius: 12px;
   padding: 20px;
   cursor: pointer;
@@ -78,12 +83,12 @@
 
 .theme-card:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--admin-shadow-lg);
 }
 
 .theme-card.active {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px var(--primary-color-alpha);
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px rgba(50, 205, 50, 0.2);
 }
 
 .theme-preview {
@@ -120,13 +125,13 @@
 .theme-info h3 {
   font-size: 18px;
   margin-bottom: 8px;
-  color: var(--text-primary);
+  color: var(--admin-text-primary);
 }
 
 .active-badge {
   display: inline-block;
   padding: 4px 12px;
-  background: var(--success-color);
+  background: var(--admin-success);
   color: white;
   border-radius: 12px;
   font-size: 12px;
@@ -140,7 +145,7 @@
 .settings-group h3 {
   font-size: 18px;
   margin-bottom: 16px;
-  color: var(--text-primary);
+  color: var(--admin-text-primary);
 }
 
 .setting-item {
@@ -149,7 +154,7 @@
   gap: 12px;
   padding: 12px 0;
   cursor: pointer;
-  color: var(--text-primary);
+  color: var(--admin-text-primary);
   font-size: 15px;
 }
 
@@ -167,34 +172,34 @@
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--admin-text-primary);
   font-size: 14px;
 }
 
 .form-group input {
   width: 100%;
   padding: 12px 16px;
-  background: var(--input-bg);
-  border: 1px solid var(--border-color);
+  background: var(--admin-bg-primary);
+  border: 1px solid var(--admin-border-primary);
   border-radius: 8px;
-  color: var(--text-primary);
+  color: var(--admin-text-primary);
   font-size: 15px;
   transition: all 0.3s ease;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px var(--primary-color-alpha);
+  border-color: var(--admin-primary);
+  box-shadow: var(--admin-focus-shadow);
 }
 
 .form-group select {
   width: 100%;
   padding: 12px 16px;
-  background: var(--input-bg);
-  border: 1px solid var(--border-color);
+  background: var(--admin-bg-primary);
+  border: 1px solid var(--admin-border-primary);
   border-radius: 8px;
-  color: var(--text-primary);
+  color: var(--admin-text-primary);
   font-size: 15px;
   transition: all 0.3s ease;
   cursor: pointer;
@@ -202,17 +207,17 @@
 
 .form-group select:focus {
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px var(--primary-color-alpha);
+  border-color: var(--admin-primary);
+  box-shadow: var(--admin-focus-shadow);
 }
 
 .form-group textarea {
   width: 100%;
   padding: 12px 16px;
-  background: var(--input-bg);
-  border: 1px solid var(--border-color);
+  background: var(--admin-bg-primary);
+  border: 1px solid var(--admin-border-primary);
   border-radius: 8px;
-  color: var(--text-primary);
+  color: var(--admin-text-primary);
   font-size: 15px;
   transition: all 0.3s ease;
   resize: vertical;
@@ -221,8 +226,8 @@
 
 .form-group textarea:focus {
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px var(--primary-color-alpha);
+  border-color: var(--admin-primary);
+  box-shadow: var(--admin-focus-shadow);
 }
 
 .form-row {
@@ -236,9 +241,9 @@
   gap: 30px;
   align-items: flex-start;
   padding: 20px;
-  background: var(--card-bg-secondary);
+  background: var(--admin-bg-secondary);
   border-radius: 12px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--admin-border-primary);
 }
 
 .current-picture {
@@ -251,21 +256,21 @@
   height: 120px;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid var(--primary-color);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 4px solid var(--admin-primary);
+  box-shadow: 0 4px 12px rgba(50, 205, 50, 0.2);
 }
 
 .online-badge {
   position: absolute;
   bottom: 5px;
   right: 5px;
-  background: var(--success-color);
+  background: var(--admin-success);
   color: white;
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 11px;
   font-weight: 600;
-  border: 2px solid var(--card-bg);
+  border: 2px solid var(--admin-bg-primary);
 }
 
 .picture-actions {
@@ -282,7 +287,7 @@
 
 .help-text {
   font-size: 12px;
-  color: var(--text-secondary);
+  color: var(--admin-text-muted);
   margin: 0;
 }
 
@@ -305,23 +310,24 @@
 }
 
 .btn-primary {
-  background: var(--primary-color);
+  background: var(--admin-primary);
   color: white;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--admin-shadow-lg);
+  background: var(--admin-primary-dark);
 }
 
 .btn-secondary {
-  background: var(--card-bg-secondary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
+  background: var(--admin-bg-secondary);
+  color: var(--admin-text-primary);
+  border: 1px solid var(--admin-border-primary);
 }
 
 .btn-secondary:hover {
-  background: var(--hover-bg);
+  background: var(--admin-hover-bg);
 }
 
 @media (max-width: 768px) {

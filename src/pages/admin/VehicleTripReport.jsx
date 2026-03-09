@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import ExportButton from '../../components/ExportButton';
+import './adminTheme.css';
 import './vehicleTripReport.css';
 
 const VehicleTripReport = () => {
@@ -15,6 +16,8 @@ const VehicleTripReport = () => {
   ]);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   const filteredTrips = trips.filter(trip =>
     trip.plateNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -22,6 +25,26 @@ const VehicleTripReport = () => {
     trip.driver.toLowerCase().includes(searchTerm.toLowerCase()) ||
     trip.route.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredTrips.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentTrips = filteredTrips.slice(startIndex, endIndex);
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(Number(e.target.value));
+    setCurrentPage(1);
+  };
 
   return (
     <div className="vehicle-trip-report-container">
@@ -39,7 +62,7 @@ const VehicleTripReport = () => {
           type="text"
           placeholder="Search by plate, model, driver, or route..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleSearchChange}
           className="search-input"
         />
       </div>
@@ -60,7 +83,7 @@ const VehicleTripReport = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredTrips.map(trip => (
+            {currentTrips.map(trip => (
               <tr key={trip.id}>
                 <td>{trip.id}</td>
                 <td>{trip.plateNumber}</td>
@@ -79,6 +102,67 @@ const VehicleTripReport = () => {
 
       {filteredTrips.length === 0 && (
         <div className="no-results">No trips found</div>
+      )}
+
+      {/* Compact Pagination */}
+      {filteredTrips.length > 0 && (
+        <div className="pagination-compact">
+          <div className="pagination-info-compact">
+            <span>
+              {startIndex + 1}-{Math.min(endIndex, filteredTrips.length)} of {filteredTrips.length}
+            </span>
+            <select 
+              value={itemsPerPage} 
+              onChange={handleItemsPerPageChange}
+              className="items-per-page-compact"
+            >
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+
+          <div className="pagination-controls-compact">
+            <button
+              className="pagination-btn-compact"
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1}
+              title="First Page"
+            >
+              ⟪
+            </button>
+            <button
+              className="pagination-btn-compact"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              title="Previous Page"
+            >
+              ‹
+            </button>
+
+            <span className="page-indicator-compact">
+              {currentPage} / {totalPages}
+            </span>
+
+            <button
+              className="pagination-btn-compact"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              title="Next Page"
+            >
+              ›
+            </button>
+            <button
+              className="pagination-btn-compact"
+              onClick={() => handlePageChange(totalPages)}
+              disabled={currentPage === totalPages}
+              title="Last Page"
+            >
+              ⟫
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

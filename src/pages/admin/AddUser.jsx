@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import './adminTheme.css';
 import './addUser.css';
 
 const AddUser = () => {
@@ -9,6 +10,7 @@ const AddUser = () => {
     password: '',
     confirmPassword: '',
     role: '',
+    department: '',
     unit: '',
     date: ''
   });
@@ -35,6 +37,7 @@ const AddUser = () => {
       password: '',
       confirmPassword: '',
       role: '',
+      department: '',
       unit: '',
       date: ''
     });
@@ -130,6 +133,18 @@ const AddUser = () => {
 
           <div className="form-row">
             <div className="form-group">
+              <label>Department</label>
+              <input
+                type="text"
+                name="department"
+                value={formData.department}
+                onChange={handleChange}
+                placeholder="Computer Science"
+                required
+              />
+            </div>
+
+            <div className="form-group">
               <label>College/Service Unit</label>
               <input
                 type="text"
@@ -140,7 +155,9 @@ const AddUser = () => {
                 required
               />
             </div>
+          </div>
 
+          <div className="form-row">
             <div className="form-group">
               <label>Date</label>
               <input

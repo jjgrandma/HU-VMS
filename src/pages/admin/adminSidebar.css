@@ -6,11 +6,14 @@
   left: 0;
   top: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   border-right: 1px solid rgba(76, 175, 80, 0.2);
   z-index: 100;
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(20px);
   transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Mobile Menu Toggle Button */
@@ -93,6 +96,7 @@
   position: relative;
   background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(33, 150, 243, 0.1));
   backdrop-filter: blur(10px);
+  flex-shrink: 0;
 }
 
 .sidebar-header h2 {
@@ -145,6 +149,27 @@
 .sidebar-nav {
   padding: 20px 0;
   position: relative;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: visible;
+}
+
+/* Custom scrollbar for sidebar-nav */
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #4CAF50, #2196F3);
+  border-radius: 3px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #45a049, #1976D2);
 }
 
 .nav-item {
@@ -202,10 +227,12 @@
 .nav-dropdown {
   margin: 5px 10px;
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
   background: rgba(255, 255, 255, 0.02);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+  z-index: 1;
 }
 
 .dropdown-toggle {
@@ -236,6 +263,8 @@
   background: rgba(15, 15, 30, 0.8);
   backdrop-filter: blur(10px);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+  z-index: 2;
 }
 
 .dropdown-item {
@@ -248,6 +277,8 @@
   font-size: 14px;
   position: relative;
   border-left: 2px solid transparent;
+  cursor: pointer;
+  z-index: 3;
 }
 
 .dropdown-item::before {

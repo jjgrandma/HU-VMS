@@ -22,10 +22,6 @@ const AdminHeader = () => {
             onClick={() => setShowNotifications(true)}
           />
           
-          <Link to="/admin/settings" className="header-settings-icon" title="Settings">
-            ⚙️
-          </Link>
-          
           <div className="header-profile" onClick={() => setShowProfileMenu(!showProfileMenu)}>
             <img src="https://via.placeholder.com/40" alt="Admin" className="header-avatar" />
             <div className="header-profile-info">
