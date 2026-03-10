@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './ALPRCamera.css';
 
 const ALPRCamera = () => {
   const [isDetecting, setIsDetecting] = useState(false);
   const [detectedPlate, setDetectedPlate] = useState(null);
   const [detectionHistory, setDetectionHistory] = useState([]);
+  const [autoDetect, setAutoDetect] = useState(false);
 
   // Mock vehicle database
   const vehicleDatabase = [
@@ -48,18 +49,18 @@ const ALPRCamera = () => {
 
   const simulateDetection = () => {
     setIsDetecting(true);
-    
+
     // Simulate detection delay
     setTimeout(() => {
       // Randomly select a vehicle from database
       const randomVehicle = vehicleDatabase[Math.floor(Math.random() * vehicleDatabase.length)];
-      
+
       const detection = {
         ...randomVehicle,
         detectionTime: new Date().toLocaleString(),
         confidence: (Math.random() * (99 - 85) + 85).toFixed(1) + '%'
       };
-      
+
       setDetectedPlate(detection);
       setDetectionHistory(prev => [detection, ...prev].slice(0, 5));
       setIsDetecting(false);
@@ -75,23 +76,46 @@ const ALPRCamera = () => {
   };
 
   const handleAllowEntry = () => {
-    alert(`Entry approved for ${detectedPlate.plateNumber}`);
+    const timestamp = new Date().toLocaleString();
+    alert(`✅ ENTRY APPROVED\n\nPlate: ${detectedPlate.plateNumber}\nVehicle: ${detectedPlate.vehicleName}\nDriver: ${detectedPlate.driver}\nTime: ${timestamp}\n\nVehicle granted entry to campus.`);
     setDetectedPlate(null);
   };
 
   const handleAllowExit = () => {
-    alert(`Exit approved for ${detectedPlate.plateNumber}`);
+    const timestamp = new Date().toLocaleString();
+    alert(`✅ EXIT APPROVED\n\nPlate: ${detectedPlate.plateNumber}\nVehicle: ${detectedPlate.vehicleName}\nDriver: ${detectedPlate.driver}\nTime: ${timestamp}\n\nVehicle exit recorded.`);
     setDetectedPlate(null);
   };
 
   const handleReject = () => {
-    alert(`Access rejected for ${detectedPlate.plateNumber}`);
+    const timestamp = new Date().toLocaleString();
+    alert(`❌ ACCESS REJECTED\n\nPlate: ${detectedPlate.plateNumber}\nVehicle: ${detectedPlate.vehicleName}\nReason: Unauthorized vehicle\nTime: ${timestamp}\n\nSecurity has been notified.`);
     setDetectedPlate(null);
   };
 
   const handleClearResult = () => {
     setDetectedPlate(null);
   };
+
+  const toggleAutoDetect = () => {
+    setAutoDetect(!autoDetect);
+    if (!autoDetect) {
+      alert('🤖 Auto-detection enabled\n\nCamera will automatically scan for vehicles every 20 seconds.');
+    } else {
+      alert('⏸️ Auto-detection disabled');
+    }
+  };
+
+  // Auto-detection feature
+  useEffect(() => {
+    if (autoDetect && !isDetecting && !detectedPlate) {
+      const interval = setInterval(() => {
+        simulateDetection();
+      }, 20000); // Auto-detect every 20 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [autoDetect, isDetecting, detectedPlate]);
 
   return (
     <div className="alpr-camera-page">
@@ -111,14 +135,14 @@ const ALPRCamera = () => {
                 <div className="grid-line vertical"></div>
                 <div className="grid-line vertical"></div>
               </div>
-              
+
               {isDetecting && (
                 <div className="scanning-animation">
                   <div className="scan-line"></div>
                   <p className="scanning-text">Scanning for license plates...</p>
                 </div>
               )}
-              
+
               {!isDetecting && !detectedPlate && (
                 <div className="camera-placeholder">
                   <span className="camera-icon">📷</span>
@@ -126,7 +150,7 @@ const ALPRCamera = () => {
                   <p className="camera-status">Ready to detect</p>
                 </div>
               )}
-              
+
               {detectedPlate && (
                 <div className="detection-overlay">
                   <div className="detected-plate-box">
@@ -139,19 +163,25 @@ const ALPRCamera = () => {
           </div>
 
           <div className="camera-controls">
-            <button 
+            <button
               className="gate-btn-primary"
               onClick={handleStartDetection}
               disabled={isDetecting}
             >
               <span>▶️</span> Start Detection
             </button>
-            <button 
+            <button
               className="gate-btn-secondary"
               onClick={handleStopDetection}
               disabled={!isDetecting}
             >
               <span>⏹️</span> Stop Detection
+            </button>
+            <button
+              className={`gate-btn-auto ${autoDetect ? 'active' : ''}`}
+              onClick={toggleAutoDetect}
+            >
+              <span>🤖</span> {autoDetect ? 'Auto: ON' : 'Auto: OFF'}
             </button>
           </div>
 

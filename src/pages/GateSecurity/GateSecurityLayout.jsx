@@ -1,11 +1,146 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
 import './GateSecurityLayout.css';
 
 const GateSecurityLayout = ({ onLogout }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [gateOfficerInfo, setGateOfficerInfo] = useState({
+    name: 'Ahmed Hassan',
+    email: 'ahmed.hassan@university.edu.et',
+    employeeId: 'GS-2024-001',
+    role: 'Gate Security Officer',
+    gateLocation: 'Main Gate',
+    avatar: null
+  });
+
+  // Load profile photo from localStorage on component mount
+  useEffect(() => {
+    const savedProfilePhoto = localStorage.getItem('gateSecurityProfilePhoto');
+    if (savedProfilePhoto) {
+      setGateOfficerInfo(prev => ({
+        ...prev,
+        avatar: savedProfilePhoto
+      }));
+    }
+
+    // Listen for profile photo updates
+    const handleProfilePhotoUpdate = (event) => {
+      if (event.key === 'gateSecurityProfilePhoto') {
+        setGateOfficerInfo(prev => ({
+          ...prev,
+          avatar: event.newValue
+        }));
+      }
+    };
+
+    window.addEventListener('storage', handleProfilePhotoUpdate);
+
+    // Also listen for custom events from the same page
+    const handleCustomProfileUpdate = (event) => {
+      setGateOfficerInfo(prev => ({
+        ...prev,
+        avatar: event.detail.profilePhoto
+      }));
+    };
+
+    window.addEventListener('profilePhotoUpdated', handleCustomProfileUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleProfilePhotoUpdate);
+      window.removeEventListener('profilePhotoUpdated', handleCustomProfileUpdate);
+    };
+  }, []);
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    loadNotifications();
+    // Refresh notifications every 30 seconds
+    const interval = setInterval(loadNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadNotifications = () => {
+    // Mock notifications for gate security officer
+    const mockNotifications = [
+      {
+        id: 1,
+        title: 'Unauthorized Vehicle Detected',
+        message: 'Vehicle AA-1234-ET attempted entry without authorization',
+        createdAt: new Date(Date.now() - 5 * 60000).toISOString(),
+        read: false,
+        type: 'alert'
+      },
+      {
+        id: 2,
+        title: 'New Vehicle Entry',
+        message: 'Vehicle HU-2045 has been granted entry to campus',
+        createdAt: new Date(Date.now() - 15 * 60000).toISOString(),
+        read: false,
+        type: 'info'
+      },
+      {
+        id: 3,
+        title: 'Pending Approval',
+        message: 'Vehicle HU-3021 is waiting for gate approval',
+        createdAt: new Date(Date.now() - 30 * 60000).toISOString(),
+        read: false,
+        type: 'request'
+      },
+      {
+        id: 4,
+        title: 'Shift Report Generated',
+        message: 'Your shift report has been generated successfully',
+        createdAt: new Date(Date.now() - 2 * 3600000).toISOString(),
+        read: true,
+        type: 'success'
+      },
+      {
+        id: 5,
+        title: 'System Maintenance',
+        message: 'ALPR camera system maintenance scheduled for tomorrow',
+        createdAt: new Date(Date.now() - 4 * 3600000).toISOString(),
+        read: true,
+        type: 'info'
+      }
+    ];
+
+    setNotifications(mockNotifications);
+    setUnreadCount(mockNotifications.filter(n => !n.read).length);
+  };
+
+  const markAsRead = (notificationId) => {
+    setNotifications(prev =>
+      prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+    );
+    setUnreadCount(prev => Math.max(0, prev - 1));
+  };
+
+  const markAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setUnreadCount(0);
+  };
+
+  const formatNotificationTime = (timestamp) => {
+    const now = new Date();
+    const notificationDate = new Date(timestamp);
+    const diffInMinutes = Math.floor((now - notificationDate) / 60000);
+
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
+
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+
+    return notificationDate.toLocaleDateString();
+  };
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -48,8 +183,8 @@ const GateSecurityLayout = ({ onLogout }) => {
         </div>
 
         <nav className="gate-sidebar-nav">
-          <Link 
-            to="/gate/dashboard" 
+          <Link
+            to="/gate/dashboard"
             className={`gate-nav-item ${location.pathname === '/gate/dashboard' || location.pathname === '/gate' ? 'active' : ''}`}
             onClick={closeMobileMenu}
           >
@@ -57,8 +192,8 @@ const GateSecurityLayout = ({ onLogout }) => {
             <span>Dashboard</span>
           </Link>
 
-          <Link 
-            to="/gate/camera" 
+          <Link
+            to="/gate/camera"
             className={`gate-nav-item ${location.pathname === '/gate/camera' ? 'active' : ''}`}
             onClick={closeMobileMenu}
           >
@@ -66,8 +201,8 @@ const GateSecurityLayout = ({ onLogout }) => {
             <span>ALPR Camera</span>
           </Link>
 
-          <Link 
-            to="/gate/verification" 
+          <Link
+            to="/gate/verification"
             className={`gate-nav-item ${location.pathname === '/gate/verification' ? 'active' : ''}`}
             onClick={closeMobileMenu}
           >
@@ -75,8 +210,35 @@ const GateSecurityLayout = ({ onLogout }) => {
             <span>Vehicle Verification</span>
           </Link>
 
-          <Link 
-            to="/gate/logs" 
+          <Link
+            to="/gate/trip-authorization"
+            className={`gate-nav-item ${location.pathname === '/gate/trip-authorization' ? 'active' : ''}`}
+            onClick={closeMobileMenu}
+          >
+            <span className="gate-nav-icon">✅</span>
+            <span>Trip Authorization</span>
+          </Link>
+
+          <Link
+            to="/gate/inspection"
+            className={`gate-nav-item ${location.pathname === '/gate/inspection' ? 'active' : ''}`}
+            onClick={closeMobileMenu}
+          >
+            <span className="gate-nav-icon">🔧</span>
+            <span>Vehicle Inspection</span>
+          </Link>
+
+          <Link
+            to="/gate/movement"
+            className={`gate-nav-item ${location.pathname === '/gate/movement' ? 'active' : ''}`}
+            onClick={closeMobileMenu}
+          >
+            <span className="gate-nav-icon">📝</span>
+            <span>Vehicle Movement</span>
+          </Link>
+
+          <Link
+            to="/gate/logs"
             className={`gate-nav-item ${location.pathname === '/gate/logs' ? 'active' : ''}`}
             onClick={closeMobileMenu}
           >
@@ -101,10 +263,197 @@ const GateSecurityLayout = ({ onLogout }) => {
             <h1>Gate Security System</h1>
           </div>
           <div className="gate-header-right">
-            <span className="gate-welcome">Welcome, Gate Officer</span>
-            <div className="gate-avatar">G</div>
+            {/* Notification Bell */}
+            <button
+              className="gate-notification-bell"
+              onClick={() => {
+                setShowNotifications(!showNotifications);
+                setShowProfileMenu(false);
+              }}
+              title="Notifications"
+            >
+              🔔
+              {unreadCount > 0 && <span className="gate-notification-badge">{unreadCount}</span>}
+            </button>
+
+            {/* Beautiful Profile Section */}
+            <div
+              className="gate-header-profile-section"
+              onClick={() => {
+                setShowProfileMenu(!showProfileMenu);
+                setShowNotifications(false);
+              }}
+            >
+              <div className="gate-header-profile-avatar">
+                {gateOfficerInfo.avatar ? (
+                  <img src={gateOfficerInfo.avatar} alt={gateOfficerInfo.name} />
+                ) : (
+                  <div className="gate-header-avatar-placeholder">
+                    <div className="gate-avatar-icon">👤</div>
+                  </div>
+                )}
+              </div>
+              <div className="gate-header-profile-info">
+                <span className="gate-header-profile-name">{gateOfficerInfo.name.split(' ')[0]}</span>
+              </div>
+              <div className="gate-header-dropdown-arrow">
+                <span className={`gate-dropdown-icon ${showProfileMenu ? 'rotated' : ''}`}>▼</span>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Notification Dropdown */}
+        {showNotifications && (
+          <>
+            <div className="gate-notification-overlay" onClick={() => setShowNotifications(false)}></div>
+            <div className="gate-notification-dropdown">
+              <div className="gate-notification-dropdown-header">
+                <h3>Notifications</h3>
+                <div className="gate-notification-actions">
+                  {unreadCount > 0 && (
+                    <button
+                      className="gate-mark-all-read"
+                      onClick={markAllAsRead}
+                      title="Mark all as read"
+                    >
+                      ✓ Mark all read
+                    </button>
+                  )}
+                  <button
+                    className="gate-notification-close"
+                    onClick={() => setShowNotifications(false)}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+              <div className="gate-notification-list">
+                {notifications.length === 0 ? (
+                  <div className="gate-no-notifications">
+                    <span className="gate-no-notifications-icon">🔔</span>
+                    <p>No notifications</p>
+                  </div>
+                ) : (
+                  notifications.map(notification => (
+                    <div
+                      key={notification.id}
+                      className={`gate-notification-item ${notification.read ? 'read' : 'unread'} ${notification.type}`}
+                      onClick={() => {
+                        if (!notification.read) {
+                          markAsRead(notification.id);
+                        }
+                      }}
+                    >
+                      <div className="gate-notification-icon">
+                        {notification.type === 'request' && '📋'}
+                        {notification.type === 'alert' && '⚠️'}
+                        {notification.type === 'info' && 'ℹ️'}
+                        {notification.type === 'success' && '✓'}
+                      </div>
+                      <div className="gate-notification-content">
+                        <strong className="gate-notification-title">{notification.title}</strong>
+                        <p className="gate-notification-message">{notification.message}</p>
+                        <span className="gate-notification-time">
+                          {formatNotificationTime(notification.createdAt)}
+                        </span>
+                      </div>
+                      {!notification.read && <div className="gate-notification-unread-dot"></div>}
+                    </div>
+                  ))
+                )}
+              </div>
+              {notifications.length > 0 && (
+                <div className="gate-notification-footer">
+                  <button
+                    className="gate-view-all-notifications"
+                    onClick={() => {
+                      setShowNotifications(false);
+                      navigate('/gate/notifications');
+                    }}
+                  >
+                    View All Notifications
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Profile Dropdown Menu */}
+        {showProfileMenu && (
+          <>
+            <div className="gate-profile-overlay" onClick={() => setShowProfileMenu(false)}></div>
+            <div className="gate-profile-dropdown">
+              {/* Profile Header */}
+              <div className="gate-profile-dropdown-header">
+                <div className="gate-profile-header-avatar">
+                  {gateOfficerInfo.avatar ? (
+                    <img src={gateOfficerInfo.avatar} alt={gateOfficerInfo.name} />
+                  ) : (
+                    <div className="gate-profile-avatar-placeholder">
+                      <span>👤</span>
+                    </div>
+                  )}
+                </div>
+                <div className="gate-profile-header-info">
+                  <h4 className="gate-profile-header-name">{gateOfficerInfo.name}</h4>
+                  <p className="gate-profile-header-email">{gateOfficerInfo.email}</p>
+                  <span className="gate-profile-header-id">ID: {gateOfficerInfo.employeeId}</span>
+                </div>
+              </div>
+
+              {/* Profile Menu Items */}
+              <div className="gate-profile-menu-items">
+                <button
+                  className="gate-profile-menu-item"
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    navigate('/gate/profile');
+                  }}
+                >
+                  <span className="gate-profile-menu-icon">👤</span>
+                  <span>My Profile</span>
+                </button>
+
+                <button
+                  className="gate-profile-menu-item"
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    navigate('/gate/settings');
+                  }}
+                >
+                  <span className="gate-profile-menu-icon">⚙️</span>
+                  <span>Settings</span>
+                </button>
+
+                <button
+                  className="gate-profile-menu-item"
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    navigate('/gate/performance');
+                  }}
+                >
+                  <span className="gate-profile-menu-icon">📊</span>
+                  <span>My Performance</span>
+                </button>
+
+                <div className="gate-profile-menu-divider"></div>
+
+                <button
+                  className="gate-profile-menu-item logout"
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    handleLogout();
+                  }}
+                >
+                  <span className="gate-profile-menu-icon">🚪</span>
+                  <span>Logout</span>
+                </button>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Page Content */}
         <div className="gate-page-content">

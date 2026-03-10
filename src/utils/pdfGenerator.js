@@ -334,6 +334,160 @@ class PDFGenerator {
         return fileName;
     }
 
+    // Generate Fuel Station Report PDF
+    generateFuelStationReport(data, recipient = 'Admin') {
+        const doc = new jsPDF();
+
+        this.addHeader(doc, 'Fuel Station Report', `${data.period} Report - ${data.startDate} to ${data.endDate}`);
+
+        // Recipient Information
+        const recipientInfo = {
+            name: recipient === 'Admin' ? 'Administration Office' :
+                recipient === 'Transport Office' ? 'Transport Office' :
+                    'Administration & Transport Offices',
+            department: recipient === 'Admin' ? 'University Administration' :
+                recipient === 'Transport Office' ? 'Transport Management Department' :
+                    'University Administration & Transport Management'
+        };
+        this.addRecipient(doc, recipientInfo, 50);
+
+        // Report Type Badge
+        doc.setFillColor(...this.primaryColor);
+        doc.roundedRect(20, 82, 60, 10, 2, 2, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text(data.period.toUpperCase() + ' REPORT', 50, 88.5, { align: 'center' });
+
+        let currentY = 100;
+
+        // Summary Statistics Section
+        if (data.includeSummary) {
+            doc.setTextColor(...this.darkColor);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('📊 Summary Statistics', 20, currentY);
+
+            const summaryData = [
+                ['Total Fuel Dispensed', `${data.totalFuel} Liters`],
+                ['Diesel Dispensed', `${data.dieselDispensed} Liters`],
+                ['Petrol Dispensed', `${data.petrolDispensed} Liters`],
+                ['Total Transactions', data.totalTransactions.toString()],
+                ['Completed Transactions', data.completedTransactions.toString()],
+                ['Pending Authorizations', data.pendingAuthorizations.toString()]
+            ];
+
+            doc.autoTable({
+                startY: currentY + 5,
+                body: summaryData,
+                theme: 'striped',
+                headStyles: {
+                    fillColor: this.primaryColor,
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold'
+                },
+                styles: {
+                    fontSize: 10,
+                    cellPadding: 5
+                },
+                columnStyles: {
+                    0: { fontStyle: 'bold', cellWidth: 80 },
+                    1: { cellWidth: 90 }
+                },
+                margin: { left: 20, right: 20 }
+            });
+
+            currentY = doc.lastAutoTable.finalY + 15;
+        }
+
+        // Inventory Status Section
+        if (data.includeInventory) {
+            doc.setTextColor(...this.darkColor);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('📦 Current Inventory Status', 20, currentY);
+
+            const inventoryData = [
+                ['Diesel Available', `${data.dieselAvailable} Liters`],
+                ['Petrol Available', `${data.petrolAvailable} Liters`],
+                ['Total Fuel in Stock', `${data.dieselAvailable + data.petrolAvailable} Liters`]
+            ];
+
+            doc.autoTable({
+                startY: currentY + 5,
+                body: inventoryData,
+                theme: 'striped',
+                styles: {
+                    fontSize: 10,
+                    cellPadding: 5
+                },
+                columnStyles: {
+                    0: { fontStyle: 'bold', cellWidth: 80 },
+                    1: { cellWidth: 90 }
+                },
+                margin: { left: 20, right: 20 }
+            });
+
+            currentY = doc.lastAutoTable.finalY + 15;
+        }
+
+        // Transaction Details Section
+        if (data.includeTransactions) {
+            doc.setTextColor(...this.darkColor);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('💳 Transaction Summary', 20, currentY);
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(...this.textColor);
+            doc.text(`This ${data.period.toLowerCase()} period includes ${data.totalTransactions} total transactions,`, 20, currentY + 7);
+            doc.text(`with ${data.completedTransactions} successfully completed and ${data.pendingAuthorizations} pending authorization.`, 20, currentY + 14);
+
+            currentY += 25;
+        }
+
+        // Report Metadata
+        doc.setFillColor(...this.lightGray);
+        doc.roundedRect(20, currentY, 170, 35, 3, 3, 'F');
+
+        doc.setTextColor(...this.darkColor);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Report Information', 25, currentY + 8);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(...this.textColor);
+        doc.text(`Generated By: ${data.generatedBy}`, 25, currentY + 15);
+        doc.text(`Report Date: ${data.date}`, 25, currentY + 21);
+        doc.text(`Recipient: ${recipient}`, 25, currentY + 27);
+
+        // Signature Section
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const signatureY = pageHeight - 60;
+
+        doc.setDrawColor(...this.primaryColor);
+        doc.line(20, signatureY, 90, signatureY);
+        doc.line(120, signatureY, 190, signatureY);
+
+        doc.setTextColor(...this.textColor);
+        doc.setFontSize(9);
+        doc.text('Fuel Station Officer', 20, signatureY + 5);
+        doc.text('Authorized Signature', 120, signatureY + 5);
+
+        doc.setFontSize(8);
+        doc.text(new Date().toLocaleString(), 20, signatureY + 10);
+
+        this.addFooter(doc, 1, 1);
+
+        // Save PDF
+        const fileName = `Fuel_Station_Report_${data.period}_${new Date().toISOString().split('T')[0]}.pdf`;
+        doc.save(fileName);
+
+        return fileName;
+    }
+
     // Generate Trip Report PDF
     generateTripReport(data, recipient = 'Admin') {
         const doc = new jsPDF();

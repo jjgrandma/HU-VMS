@@ -1,11 +1,129 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
 import './fuelstation.css';
 
 const FuelStationLayout = ({ onLogout }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [fuelOfficerInfo, setFuelOfficerInfo] = useState({
+    name: 'Sarah Mohammed',
+    email: 'sarah.mohammed@university.edu.et',
+    employeeId: 'FS-2024-001',
+    role: 'Fuel Station Officer',
+    fuelStationName: 'Main Campus Fuel Station',
+    avatar: null
+  });
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Load profile photo from localStorage on component mount
+  useEffect(() => {
+    const savedProfilePhoto = localStorage.getItem('fuelStationProfilePhoto');
+    if (savedProfilePhoto) {
+      setFuelOfficerInfo(prev => ({
+        ...prev,
+        avatar: savedProfilePhoto
+      }));
+    }
+
+    // Listen for profile photo updates
+    const handleProfilePhotoUpdate = (event) => {
+      if (event.key === 'fuelStationProfilePhoto') {
+        setFuelOfficerInfo(prev => ({
+          ...prev,
+          avatar: event.newValue
+        }));
+      }
+    };
+
+    window.addEventListener('storage', handleProfilePhotoUpdate);
+
+    // Also listen for custom events from the same page
+    const handleCustomProfileUpdate = (event) => {
+      setFuelOfficerInfo(prev => ({
+        ...prev,
+        avatar: event.detail.profilePhoto
+      }));
+    };
+
+    window.addEventListener('fuelProfilePhotoUpdated', handleCustomProfileUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleProfilePhotoUpdate);
+      window.removeEventListener('fuelProfilePhotoUpdated', handleCustomProfileUpdate);
+    };
+  }, []);
+
+  useEffect(() => {
+    loadNotifications();
+    // Refresh notifications every 30 seconds
+    const interval = setInterval(loadNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadNotifications = () => {
+    // Mock notifications for fuel station officer
+    const mockNotifications = [
+      {
+        id: 1,
+        title: 'New Fuel Request',
+        message: 'Vehicle VH-012 has requested 45L of diesel',
+        createdAt: new Date(Date.now() - 5 * 60000).toISOString(),
+        read: false,
+        type: 'request'
+      },
+      {
+        id: 2,
+        title: 'Low Inventory Alert',
+        message: 'Petrol inventory is below 20% threshold',
+        createdAt: new Date(Date.now() - 15 * 60000).toISOString(),
+        read: false,
+        type: 'alert'
+      },
+      {
+        id: 3,
+        title: 'Authorization Approved',
+        message: 'Fuel request TXN-004 has been authorized by Admin',
+        createdAt: new Date(Date.now() - 30 * 60000).toISOString(),
+        read: false,
+        type: 'info'
+      },
+      {
+        id: 4,
+        title: 'Daily Report Generated',
+        message: 'Your daily fuel report has been generated successfully',
+        createdAt: new Date(Date.now() - 2 * 3600000).toISOString(),
+        read: true,
+        type: 'success'
+      },
+      {
+        id: 5,
+        title: 'Maintenance Reminder',
+        message: 'Fuel pump maintenance scheduled for tomorrow',
+        createdAt: new Date(Date.now() - 4 * 3600000).toISOString(),
+        read: true,
+        type: 'info'
+      }
+    ];
+
+    setNotifications(mockNotifications);
+    setUnreadCount(mockNotifications.filter(n => !n.read).length);
+  };
+
+  const markAsRead = (notificationId) => {
+    setNotifications(prev =>
+      prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+    );
+    setUnreadCount(prev => Math.max(0, prev - 1));
+  };
+
+  const markAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setUnreadCount(0);
+  };
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -20,6 +138,23 @@ const FuelStationLayout = ({ onLogout }) => {
       onLogout();
     }
     navigate('/login');
+  };
+
+  const formatNotificationTime = (timestamp) => {
+    const now = new Date();
+    const notificationDate = new Date(timestamp);
+    const diffInMinutes = Math.floor((now - notificationDate) / 60000);
+
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
+
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+
+    return notificationDate.toLocaleDateString();
   };
 
   return (
@@ -48,8 +183,8 @@ const FuelStationLayout = ({ onLogout }) => {
         </div>
 
         <nav className="fuel-sidebar-nav">
-          <Link 
-            to="/fuel/dashboard" 
+          <Link
+            to="/fuel/dashboard"
             className={`fuel-nav-item ${location.pathname === '/fuel/dashboard' || location.pathname === '/fuel' ? 'active' : ''}`}
             onClick={closeMobileMenu}
           >
@@ -57,8 +192,17 @@ const FuelStationLayout = ({ onLogout }) => {
             <span>Dashboard</span>
           </Link>
 
-          <Link 
-            to="/fuel/dispense" 
+          <Link
+            to="/fuel/requests"
+            className={`fuel-nav-item ${location.pathname === '/fuel/requests' ? 'active' : ''}`}
+            onClick={closeMobileMenu}
+          >
+            <span className="fuel-nav-icon">📋</span>
+            <span>Fuel Requests</span>
+          </Link>
+
+          <Link
+            to="/fuel/dispense"
             className={`fuel-nav-item ${location.pathname === '/fuel/dispense' ? 'active' : ''}`}
             onClick={closeMobileMenu}
           >
@@ -66,8 +210,8 @@ const FuelStationLayout = ({ onLogout }) => {
             <span>Dispense Fuel</span>
           </Link>
 
-          <Link 
-            to="/fuel/inventory" 
+          <Link
+            to="/fuel/inventory"
             className={`fuel-nav-item ${location.pathname === '/fuel/inventory' ? 'active' : ''}`}
             onClick={closeMobileMenu}
           >
@@ -75,12 +219,21 @@ const FuelStationLayout = ({ onLogout }) => {
             <span>Fuel Inventory</span>
           </Link>
 
-          <Link 
-            to="/fuel/transactions" 
+          <Link
+            to="/fuel/reports"
+            className={`fuel-nav-item ${location.pathname === '/fuel/reports' ? 'active' : ''}`}
+            onClick={closeMobileMenu}
+          >
+            <span className="fuel-nav-icon">📄</span>
+            <span>Reports</span>
+          </Link>
+
+          <Link
+            to="/fuel/transactions"
             className={`fuel-nav-item ${location.pathname === '/fuel/transactions' ? 'active' : ''}`}
             onClick={closeMobileMenu}
           >
-            <span className="fuel-nav-icon">📋</span>
+            <span className="fuel-nav-icon">📜</span>
             <span>Transactions</span>
           </Link>
         </nav>
@@ -101,10 +254,197 @@ const FuelStationLayout = ({ onLogout }) => {
             <h1>Fuel Station Management</h1>
           </div>
           <div className="fuel-header-right">
-            <span className="fuel-welcome">Welcome, Fuel Officer</span>
-            <div className="fuel-avatar">F</div>
+            {/* Notification Bell */}
+            <button
+              className="fuel-notification-bell"
+              onClick={() => {
+                setShowNotifications(!showNotifications);
+                setShowProfileMenu(false);
+              }}
+              title="Notifications"
+            >
+              🔔
+              {unreadCount > 0 && <span className="fuel-notification-badge">{unreadCount}</span>}
+            </button>
+
+            {/* Beautiful Profile Section */}
+            <div
+              className="fuel-header-profile-section"
+              onClick={() => {
+                setShowProfileMenu(!showProfileMenu);
+                setShowNotifications(false);
+              }}
+            >
+              <div className="fuel-header-profile-avatar">
+                {fuelOfficerInfo.avatar ? (
+                  <img src={fuelOfficerInfo.avatar} alt={fuelOfficerInfo.name} />
+                ) : (
+                  <div className="fuel-header-avatar-placeholder">
+                    <div className="fuel-avatar-icon">👤</div>
+                  </div>
+                )}
+              </div>
+              <div className="fuel-header-profile-info">
+                <span className="fuel-header-profile-name">{fuelOfficerInfo.name.split(' ')[0]}</span>
+              </div>
+              <div className="fuel-header-dropdown-arrow">
+                <span className={`fuel-dropdown-icon ${showProfileMenu ? 'rotated' : ''}`}>▼</span>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Notification Dropdown */}
+        {showNotifications && (
+          <>
+            <div className="fuel-notification-overlay" onClick={() => setShowNotifications(false)}></div>
+            <div className="fuel-notification-dropdown">
+              <div className="fuel-notification-dropdown-header">
+                <h3>Notifications</h3>
+                <div className="fuel-notification-actions">
+                  {unreadCount > 0 && (
+                    <button
+                      className="fuel-mark-all-read"
+                      onClick={markAllAsRead}
+                      title="Mark all as read"
+                    >
+                      ✓ Mark all read
+                    </button>
+                  )}
+                  <button
+                    className="fuel-notification-close"
+                    onClick={() => setShowNotifications(false)}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+              <div className="fuel-notification-list">
+                {notifications.length === 0 ? (
+                  <div className="fuel-no-notifications">
+                    <span className="fuel-no-notifications-icon">🔔</span>
+                    <p>No notifications</p>
+                  </div>
+                ) : (
+                  notifications.map(notification => (
+                    <div
+                      key={notification.id}
+                      className={`fuel-notification-item ${notification.read ? 'read' : 'unread'} ${notification.type}`}
+                      onClick={() => {
+                        if (!notification.read) {
+                          markAsRead(notification.id);
+                        }
+                      }}
+                    >
+                      <div className="fuel-notification-icon">
+                        {notification.type === 'request' && '📋'}
+                        {notification.type === 'alert' && '⚠️'}
+                        {notification.type === 'info' && 'ℹ️'}
+                        {notification.type === 'success' && '✓'}
+                      </div>
+                      <div className="fuel-notification-content">
+                        <strong className="fuel-notification-title">{notification.title}</strong>
+                        <p className="fuel-notification-message">{notification.message}</p>
+                        <span className="fuel-notification-time">
+                          {formatNotificationTime(notification.createdAt)}
+                        </span>
+                      </div>
+                      {!notification.read && <div className="fuel-notification-unread-dot"></div>}
+                    </div>
+                  ))
+                )}
+              </div>
+              {notifications.length > 0 && (
+                <div className="fuel-notification-footer">
+                  <button
+                    className="fuel-view-all-notifications"
+                    onClick={() => {
+                      setShowNotifications(false);
+                      navigate('/fuel/notifications');
+                    }}
+                  >
+                    View All Notifications
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Profile Dropdown Menu */}
+        {showProfileMenu && (
+          <>
+            <div className="fuel-profile-overlay" onClick={() => setShowProfileMenu(false)}></div>
+            <div className="fuel-profile-dropdown">
+              {/* Profile Header */}
+              <div className="fuel-profile-dropdown-header">
+                <div className="fuel-profile-header-avatar">
+                  {fuelOfficerInfo.avatar ? (
+                    <img src={fuelOfficerInfo.avatar} alt={fuelOfficerInfo.name} />
+                  ) : (
+                    <div className="fuel-profile-avatar-placeholder">
+                      <span>👤</span>
+                    </div>
+                  )}
+                </div>
+                <div className="fuel-profile-header-info">
+                  <h4 className="fuel-profile-header-name">{fuelOfficerInfo.name}</h4>
+                  <p className="fuel-profile-header-email">{fuelOfficerInfo.email}</p>
+                  <span className="fuel-profile-header-id">ID: {fuelOfficerInfo.employeeId}</span>
+                </div>
+              </div>
+
+              {/* Profile Menu Items */}
+              <div className="fuel-profile-menu-items">
+                <button
+                  className="fuel-profile-menu-item"
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    navigate('/fuel/profile');
+                  }}
+                >
+                  <span className="fuel-profile-menu-icon">👤</span>
+                  <span>My Profile</span>
+                </button>
+
+                <button
+                  className="fuel-profile-menu-item"
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    navigate('/fuel/settings');
+                  }}
+                >
+                  <span className="fuel-profile-menu-icon">⚙️</span>
+                  <span>Settings</span>
+                </button>
+
+                <button
+                  className="fuel-profile-menu-item"
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    navigate('/fuel/performance');
+                  }}
+                >
+                  <span className="fuel-profile-menu-icon">📊</span>
+                  <span>My Performance</span>
+                </button>
+
+                <div className="fuel-profile-menu-divider"></div>
+
+                <button
+                  className="fuel-profile-menu-item logout"
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    handleLogout();
+                  }}
+                >
+                  <span className="fuel-profile-menu-icon">🚪</span>
+                  <span>Logout</span>
+                </button>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Page Content */}
         <div className="fuel-page-content">
