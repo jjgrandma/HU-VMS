@@ -31,11 +31,13 @@ import Settings from './pages/admin/Settings';
 
 // Transport Officer
 import TransportOfficerLayout from './pages/transportOfficer/TransportOfficerLayout';
-import OfficerDashboard from './pages/transportOfficer/OfficerDashboard';
-import Requests from './pages/transportOfficer/Requests';
-import Tracking from './pages/transportOfficer/Tracking';
-import Complaints from './pages/transportOfficer/Complaints';
-import ViewReports from './pages/transportOfficer/ViewReports';
+import TransportDashboard from './pages/transportOfficer/TransportDashboard';
+import RequestPool from './pages/transportOfficer/RequestPool';
+import TripManagement from './pages/transportOfficer/TripManagement';
+import VehicleTracking from './pages/transportOfficer/VehicleTracking';
+import DriverCoordination from './pages/transportOfficer/DriverCoordination';
+import TransportComplaints from './pages/transportOfficer/TransportComplaints';
+import TransportReports from './pages/transportOfficer/TransportReports';
 
 // Driver
 import DriverDashboard from './pages/driver/DriverDashboard';
@@ -232,11 +234,13 @@ function App() {
           <>
             <Route path="/transport" element={<Navigate to="/transport/dashboard" replace />} />
             <Route path="/transport" element={<TransportOfficerLayout onLogout={handleLogout} />}>
-              <Route path="dashboard" element={<OfficerDashboard />} />
-              <Route path="requests" element={<Requests />} />
-              <Route path="tracking" element={<Tracking />} />
-              <Route path="complaints" element={<Complaints />} />
-              <Route path="reports" element={<ViewReports />} />
+              <Route path="dashboard" element={<TransportDashboard />} />
+              <Route path="requests" element={<RequestPool />} />
+              <Route path="trips" element={<TripManagement />} />
+              <Route path="tracking" element={<VehicleTracking />} />
+              <Route path="drivers" element={<DriverCoordination />} />
+              <Route path="complaints" element={<TransportComplaints />} />
+              <Route path="reports" element={<TransportReports />} />
             </Route>
           </>
         )}

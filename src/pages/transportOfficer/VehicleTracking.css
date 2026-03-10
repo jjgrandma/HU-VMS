@@ -1,0 +1,361 @@
+@import './transportTheme.css';
+
+/* View Toggle */
+.view-toggle {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 30px;
+  background: var(--bg-gray-light);
+  padding: 8px;
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.toggle-btn {
+  padding: 12px 24px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-medium);
+  transition: all 0.3s ease;
+}
+
+.toggle-btn:hover {
+  background: var(--bg-white);
+  color: var(--text-dark);
+}
+
+.toggle-btn.active {
+  background: var(--primary-lime);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Fleet View */
+.fleet-view {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.fleet-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.stat-card {
+  background: var(--bg-white);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.stat-card.available::before { background: var(--success); }
+.stat-card.in-transit::before { background: var(--warning); }
+.stat-card.maintenance::before { background: var(--error); }
+.stat-card.total::before { background: var(--primary-lime); }
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.stat-icon {
+  font-size: 32px;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-gray-light);
+  border-radius: 12px;
+}
+
+.stat-content h3 {
+  margin: 0 0 4px 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.stat-content p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-medium);
+  font-weight: 600;
+}
+
+/* Vehicles Grid */
+.vehicles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 24px;
+}
+
+.vehicle-card {
+  background: var(--bg-white);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.vehicle-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.vehicle-card.status-available::before { background: var(--success); }
+.vehicle-card.status-in-transit::before { background: var(--warning); }
+.vehicle-card.status-maintenance::before { background: var(--error); }
+.vehicle-card.status-out-of-service::before { background: var(--text-light); }
+
+.vehicle-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.vehicle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.vehicle-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.vehicle-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-row .label {
+  font-size: 14px;
+  color: var(--text-medium);
+  font-weight: 600;
+}
+
+.detail-row .value {
+  font-size: 14px;
+  color: var(--text-dark);
+  font-weight: 500;
+}
+
+.fuel-level {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.fuel-level.fuel-high {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--success);
+}
+
+.fuel-level.fuel-medium {
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--warning);
+}
+
+.fuel-level.fuel-low {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--error);
+}
+
+.vehicle-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-small {
+  padding: 8px 16px;
+  font-size: 12px;
+  flex: 1;
+}
+
+/* Map View */
+.map-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.map-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.map-legend {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-medium);
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.legend-dot.available { background: var(--success); }
+.legend-dot.in-transit { background: var(--warning); }
+.legend-dot.maintenance { background: var(--error); }
+
+.map-container {
+  background: var(--bg-white);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  height: 600px;
+  overflow: hidden;
+}
+
+.map-placeholder {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--bg-gray-light) 0%, var(--bg-white) 100%);
+}
+
+.map-placeholder-content {
+  text-align: center;
+  max-width: 500px;
+  padding: 40px;
+}
+
+.map-icon {
+  font-size: 80px;
+  margin-bottom: 20px;
+}
+
+.map-placeholder-content h3 {
+  margin: 0 0 12px 0;
+  font-size: 28px;
+  color: var(--text-dark);
+  font-weight: 700;
+}
+
+.map-placeholder-content p {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  color: var(--text-medium);
+}
+
+.coordinates {
+  font-family: monospace;
+  background: var(--bg-gray-light);
+  padding: 8px 16px;
+  border-radius: 8px;
+  display: inline-block;
+  margin-bottom: 24px !important;
+  color: var(--primary-lime) !important;
+  font-weight: 600 !important;
+}
+
+.map-features {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 30px;
+  text-align: left;
+}
+
+.feature {
+  font-size: 14px;
+  color: var(--text-medium);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.feature:last-child {
+  border-bottom: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .vehicles-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .fleet-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .map-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .map-legend {
+    justify-content: center;
+  }
+  
+  .vehicle-actions {
+    flex-direction: column;
+  }
+  
+  .view-toggle {
+    width: 100%;
+  }
+  
+  .toggle-btn {
+    flex: 1;
+    text-align: center;
+  }
+}

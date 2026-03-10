@@ -1,28 +1,20 @@
-import { NavLink, Outlet } from "react-router-dom";
-import "./transportOfficerLayout.css";
+import { Outlet } from 'react-router-dom';
+import TransportSidebar from './TransportSidebar';
+import TransportHeader from './TransportHeader';
+import './TransportOfficerLayout.css';
 
-export default function TransportOfficerLayout() {
+const TransportOfficerLayout = ({ onLogout }) => {
   return (
-    <div className="to-layout">
-      
-      {/* SIDEBAR */}
-      <aside className="to-sidebar">
-        <h2>Transport Officer</h2>
-
-        <nav>
-          <NavLink to="dashboard">Dashboard</NavLink>
-          <NavLink to="requests">Requests Pool</NavLink>
-          <NavLink to="tracking">Vehicle Tracking</NavLink>
-          <NavLink to="complaints">Complaints</NavLink>
-          <NavLink to="reports">Reports</NavLink>
-        </nav>
-      </aside>
-
-      {/* MAIN CONTENT */}
-      <main className="to-content">
-        <Outlet />
-      </main>
-
+    <div className="app">
+      <TransportSidebar onLogout={onLogout} />
+      <div className="main-content">
+        <TransportHeader />
+        <main className="content-area">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
-}
+};
+
+export default TransportOfficerLayout;
