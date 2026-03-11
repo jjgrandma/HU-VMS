@@ -7,11 +7,11 @@ import DriverNotifications from './notifications/DriverNotifications';
 import DriverAvailability from './availability/DriverAvailability';
 import UpdateTripStatus from './trip-status/UpdateTripStatus';
 import GPSTracking from './tracking/GPSTracking';
-import FuelReport from './fuel/FuelReport';
 import DriverComplaints from './complaints/DriverComplaints';
 import SubmitComplaint from './submit-complaint/SubmitComplaint';
 import ExitEntryVerification from './gate-verification/ExitEntryVerification';
 import DriverProfile from './profile/DriverProfile';
+import DriverReports from './reports/DriverReports';
 import driverService from '../../services/driverService';
 
 const DriverDashboard = () => {
@@ -124,14 +124,14 @@ const DriverDashboard = () => {
         return <VehicleInfo />;
       case 'notifications':
         return <DriverNotifications />;
-      case 'fuel':
-        return <FuelReport onClose={() => setActiveView('overview')} onSubmit={loadDashboardData} />;
       case 'complaints':
         return <DriverComplaints />;
       case 'submit-complaint':
         return <SubmitComplaint />;
       case 'gate-verification':
         return <ExitEntryVerification />;
+      case 'reports':
+        return <DriverReports />;
       case 'profile':
         return <DriverProfile />;
       case 'tracking':
@@ -286,13 +286,6 @@ const DriverDashboard = () => {
             </>
           )}
           <button
-            className={activeView === 'fuel' ? 'active' : ''}
-            onClick={() => setActiveView('fuel')}
-          >
-            <span className="nav-icon">⛽</span>
-            {sidebarOpen && <span>Fuel Report</span>}
-          </button>
-          <button
             className={activeView === 'complaints' ? 'active' : ''}
             onClick={() => setActiveView('complaints')}
           >
@@ -313,7 +306,21 @@ const DriverDashboard = () => {
             <span className="nav-icon">🚪</span>
             {sidebarOpen && <span>Gate Verification</span>}
           </button>
+          <button
+            className={activeView === 'reports' ? 'active' : ''}
+            onClick={() => setActiveView('reports')}
+          >
+            <span className="nav-icon">📊</span>
+            {sidebarOpen && <span>Reports</span>}
+          </button>
         </nav>
+
+        <div className="sidebar-footer">
+          <button onClick={handleLogout} className="logout-btn">
+            <span className="logout-icon">🚪</span>
+            {sidebarOpen && <span>Logout</span>}
+          </button>
+        </div>
       </aside>
 
       {/* Main Content */}

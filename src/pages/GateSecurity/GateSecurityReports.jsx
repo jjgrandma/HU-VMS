@@ -2,6 +2,11 @@ import { useState } from 'react';
 import pdfGenerator from '../../utils/pdfGenerator';
 import './GateSecurityReports.css';
 
+// UNIVERSITY LOGO INTEGRATION:
+// The PDF generator now automatically includes the Haramaya University logo
+// in the top-right corner of all generated reports. To set the actual logo:
+// pdfGenerator.setHaramayaLogo('data:image/png;base64,YOUR_BASE64_STRING');
+
 const GateSecurityReports = () => {
     const [reportConfig, setReportConfig] = useState({
         reportType: 'daily',

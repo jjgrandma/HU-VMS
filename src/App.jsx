@@ -281,8 +281,8 @@ function App() {
       {/* Fuel Station Officer Routes */}
       {user?.role === 'FUEL_OFFICER' && (
         <>
-          <Route path="/fuel" element={<Navigate to="/fuel/dashboard" replace />} />
           <Route path="/fuel" element={<FuelStationLayout onLogout={handleLogout} />}>
+            <Route index element={<Navigate to="/fuel/dashboard" replace />} />
             <Route path="dashboard" element={<FuelDashboard />} />
             <Route path="requests" element={<FuelRequests />} />
             <Route path="dispense" element={<FuelDispenseForm />} />
