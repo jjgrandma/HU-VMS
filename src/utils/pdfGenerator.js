@@ -563,6 +563,235 @@ class PDFGenerator {
 
         return fileName;
     }
+
+    // Generate Gate Security Report PDF
+    generateGateSecurityReport(data, recipient = 'Admin') {
+        const doc = new jsPDF();
+
+        this.addHeader(doc, 'Gate Security Report', `${data.period} Security Operations Report`);
+
+        // Recipient
+        const recipientInfo = {
+            name: recipient === 'Admin' ? 'Administration Office' :
+                recipient === 'Security Department' ? 'Security Department' :
+                    recipient === 'Transport Office' ? 'Transport Office' : 'All Departments',
+            department: recipient === 'Admin' ? 'University Administration' :
+                recipient === 'Security Department' ? 'Campus Security Department' :
+                    recipient === 'Transport Office' ? 'Transport Management Department' : 'Multiple Departments'
+        };
+        this.addRecipient(doc, recipientInfo, 50);
+
+        // Report Period Badge
+        doc.setFillColor(...this.primaryColor);
+        doc.roundedRect(20, 85, 60, 12, 2, 2, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text(data.period.toUpperCase(), 50, 92.5, { align: 'center' });
+
+        // Report period
+        doc.setTextColor(...this.textColor);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Period: ${data.startDate} to ${data.endDate}`, 85, 92);
+
+        // Vehicle Movement Summary
+        if (data.includeVehicleMovements) {
+            doc.setTextColor(...this.darkColor);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('🚗 Vehicle Movement Summary', 20, 115);
+
+            const movementData = [
+                ['Total Vehicle Entries', data.totalEntries.toString()],
+                ['Total Vehicle Exits', data.totalExits.toString()],
+                ['Pending Vehicles', data.pendingVehicles.toString()],
+                ['ALPR Detections', data.alprDetections.toString()]
+            ];
+
+            doc.autoTable({
+                startY: 120,
+                head: [['Metric', 'Count']],
+                body: movementData,
+                theme: 'striped',
+                headStyles: {
+                    fillColor: this.primaryColor,
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold'
+                },
+                styles: {
+                    fontSize: 10,
+                    cellPadding: 5
+                },
+                columnStyles: {
+                    0: { fontStyle: 'bold', cellWidth: 80 },
+                    1: { cellWidth: 40, halign: 'center' }
+                },
+                margin: { left: 20, right: 20 }
+            });
+        }
+
+        // Trip Authorization Summary
+        if (data.includeAuthorizations) {
+            const startY = data.includeVehicleMovements ? doc.lastAutoTable.finalY + 15 : 120;
+
+            doc.setTextColor(...this.darkColor);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('✅ Trip Authorization Summary', 20, startY);
+
+            const authData = [
+                ['Authorized Trips', data.authorizedTrips.toString()],
+                ['Rejected Trips', data.rejectedTrips.toString()],
+                ['Average Processing Time', `${data.averageProcessingTime} minutes`]
+            ];
+
+            doc.autoTable({
+                startY: startY + 5,
+                head: [['Authorization Metric', 'Value']],
+                body: authData,
+                theme: 'striped',
+                headStyles: {
+                    fillColor: [16, 185, 129], // Green for authorizations
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold'
+                },
+                styles: {
+                    fontSize: 10,
+                    cellPadding: 5
+                },
+                columnStyles: {
+                    0: { fontStyle: 'bold', cellWidth: 80 },
+                    1: { cellWidth: 40, halign: 'center' }
+                },
+                margin: { left: 20, right: 20 }
+            });
+        }
+
+        // Vehicle Inspections
+        if (data.includeInspections) {
+            const startY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 15 : 120;
+
+            doc.setTextColor(...this.darkColor);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('🔧 Vehicle Inspection Summary', 20, startY);
+
+            const inspectionData = [
+                ['Inspections Completed', data.inspectionsCompleted.toString()]
+            ];
+
+            doc.autoTable({
+                startY: startY + 5,
+                head: [['Inspection Metric', 'Count']],
+                body: inspectionData,
+                theme: 'striped',
+                headStyles: {
+                    fillColor: [245, 158, 11], // Orange for inspections
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold'
+                },
+                styles: {
+                    fontSize: 10,
+                    cellPadding: 5
+                },
+                columnStyles: {
+                    0: { fontStyle: 'bold', cellWidth: 80 },
+                    1: { cellWidth: 40, halign: 'center' }
+                },
+                margin: { left: 20, right: 20 }
+            });
+        }
+
+        // Security Incidents
+        if (data.includeSecurityIncidents) {
+            const startY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 15 : 120;
+
+            doc.setTextColor(...this.darkColor);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('⚠️ Security Incidents Summary', 20, startY);
+
+            const securityData = [
+                ['Security Incidents', data.securityIncidents.toString()],
+                ['Unauthorized Attempts', data.unauthorizedAttempts.toString()]
+            ];
+
+            doc.autoTable({
+                startY: startY + 5,
+                head: [['Security Metric', 'Count']],
+                body: securityData,
+                theme: 'striped',
+                headStyles: {
+                    fillColor: [239, 68, 68], // Red for security incidents
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold'
+                },
+                styles: {
+                    fontSize: 10,
+                    cellPadding: 5
+                },
+                columnStyles: {
+                    0: { fontStyle: 'bold', cellWidth: 80 },
+                    1: { cellWidth: 40, halign: 'center' }
+                },
+                margin: { left: 20, right: 20 }
+            });
+        }
+
+        // Summary Section
+        const summaryY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 20 : 180;
+
+        doc.setFillColor(248, 250, 252);
+        doc.roundedRect(20, summaryY, 170, 35, 3, 3, 'F');
+
+        doc.setTextColor(...this.darkColor);
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('📊 Report Summary', 25, summaryY + 10);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(...this.textColor);
+
+        const summaryText = [
+            `This ${data.period.toLowerCase()} security report covers the period from ${data.startDate} to ${data.endDate}.`,
+            `Total vehicle movements: ${data.totalEntries + data.totalExits} (${data.totalEntries} entries, ${data.totalExits} exits)`,
+            `Security status: ${data.securityIncidents} incidents reported, ${data.unauthorizedAttempts} unauthorized attempts`,
+            `Operational efficiency: ${data.authorizedTrips} trips authorized with avg. ${data.averageProcessingTime}min processing time`
+        ];
+
+        let textY = summaryY + 17;
+        summaryText.forEach(line => {
+            doc.text(line, 25, textY);
+            textY += 4;
+        });
+
+        // Officer signature section
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const signatureY = pageHeight - 60;
+
+        doc.setDrawColor(...this.primaryColor);
+        doc.line(20, signatureY, 90, signatureY);
+        doc.line(110, signatureY, 180, signatureY);
+
+        doc.setTextColor(...this.textColor);
+        doc.setFontSize(9);
+        doc.text('Gate Security Officer', 20, signatureY + 5);
+        doc.text('Supervisor Approval', 110, signatureY + 5);
+
+        doc.setFontSize(8);
+        doc.text(data.generatedBy || 'Gate Security Officer', 20, signatureY + 10);
+        doc.text(data.date, 20, signatureY + 15);
+
+        this.addFooter(doc, 1, 1);
+
+        // Save PDF
+        const fileName = `Gate_Security_Report_${data.period}_${data.startDate.replace(/-/g, '')}.pdf`;
+        doc.save(fileName);
+
+        return fileName;
+    }
 }
 
 export default new PDFGenerator();
