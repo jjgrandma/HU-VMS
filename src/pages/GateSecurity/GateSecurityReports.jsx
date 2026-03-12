@@ -1,22 +1,22 @@
 import { useState } from 'react';
 import pdfGenerator from '../../utils/pdfGenerator';
-import './FuelReports.css';
-import './fuelstation.css';
+import './GateSecurityReports.css';
 
 // UNIVERSITY LOGO INTEGRATION:
 // The PDF generator now automatically includes the Haramaya University logo
 // in the top-right corner of all generated reports. To set the actual logo:
 // pdfGenerator.setHaramayaLogo('data:image/png;base64,YOUR_BASE64_STRING');
 
-const FuelReports = () => {
+const GateSecurityReports = () => {
     const [reportConfig, setReportConfig] = useState({
         reportType: 'daily',
         startDate: new Date().toISOString().split('T')[0],
         endDate: new Date().toISOString().split('T')[0],
         recipient: 'Admin',
-        includeTransactions: true,
-        includeInventory: true,
-        includeSummary: true
+        includeVehicleMovements: true,
+        includeSecurityIncidents: true,
+        includeAuthorizations: true,
+        includeInspections: true
     });
 
     const [isGenerating, setIsGenerating] = useState(false);
@@ -25,34 +25,40 @@ const FuelReports = () => {
     // Mock data - replace with actual API calls
     const reportData = {
         daily: {
-            totalFuelDispensed: 203.8,
-            dieselDispensed: 143.0,
-            petrolDispensed: 60.8,
-            totalTransactions: 5,
-            dieselAvailable: 5000,
-            petrolAvailable: 3500,
-            pendingAuthorizations: 2,
-            completedTransactions: 4
+            totalVehicleEntries: 47,
+            totalVehicleExits: 43,
+            pendingVehicles: 4,
+            authorizedTrips: 28,
+            rejectedTrips: 3,
+            securityIncidents: 1,
+            inspectionsCompleted: 15,
+            alprDetections: 52,
+            unauthorizedAttempts: 2,
+            averageProcessingTime: 3.2
         },
         weekly: {
-            totalFuelDispensed: 1059.8,
-            dieselDispensed: 743.6,
-            petrolDispensed: 316.2,
-            totalTransactions: 26,
-            dieselAvailable: 5000,
-            petrolAvailable: 3500,
-            pendingAuthorizations: 3,
-            completedTransactions: 23
+            totalVehicleEntries: 312,
+            totalVehicleExits: 298,
+            pendingVehicles: 14,
+            authorizedTrips: 189,
+            rejectedTrips: 18,
+            securityIncidents: 4,
+            inspectionsCompleted: 98,
+            alprDetections: 356,
+            unauthorizedAttempts: 7,
+            averageProcessingTime: 2.8
         },
         monthly: {
-            totalFuelDispensed: 4523.5,
-            dieselDispensed: 3166.5,
-            petrolDispensed: 1357.0,
-            totalTransactions: 112,
-            dieselAvailable: 5000,
-            petrolAvailable: 3500,
-            pendingAuthorizations: 5,
-            completedTransactions: 107
+            totalVehicleEntries: 1247,
+            totalVehicleExits: 1198,
+            pendingVehicles: 49,
+            authorizedTrips: 756,
+            rejectedTrips: 67,
+            securityIncidents: 12,
+            inspectionsCompleted: 389,
+            alprDetections: 1456,
+            unauthorizedAttempts: 23,
+            averageProcessingTime: 2.5
         }
     };
 
@@ -70,32 +76,36 @@ const FuelReports = () => {
             const data = reportData[reportConfig.reportType];
 
             const pdfData = {
-                reportType: 'fuel_station',
+                reportType: 'gate_security',
                 period: reportConfig.reportType.charAt(0).toUpperCase() + reportConfig.reportType.slice(1),
                 startDate: reportConfig.startDate,
                 endDate: reportConfig.endDate,
-                totalFuel: data.totalFuelDispensed.toFixed(1),
-                dieselDispensed: data.dieselDispensed.toFixed(1),
-                petrolDispensed: data.petrolDispensed.toFixed(1),
-                totalTransactions: data.totalTransactions,
-                completedTransactions: data.completedTransactions,
-                pendingAuthorizations: data.pendingAuthorizations,
-                dieselAvailable: data.dieselAvailable,
-                petrolAvailable: data.petrolAvailable,
+                totalEntries: data.totalVehicleEntries,
+                totalExits: data.totalVehicleExits,
+                pendingVehicles: data.pendingVehicles,
+                authorizedTrips: data.authorizedTrips,
+                rejectedTrips: data.rejectedTrips,
+                securityIncidents: data.securityIncidents,
+                inspectionsCompleted: data.inspectionsCompleted,
+                alprDetections: data.alprDetections,
+                unauthorizedAttempts: data.unauthorizedAttempts,
+                averageProcessingTime: data.averageProcessingTime,
                 recipient: reportConfig.recipient,
-                generatedBy: 'Fuel Station Officer',
+                generatedBy: 'Gate Security Officer',
                 date: new Date().toLocaleDateString(),
-                includeTransactions: reportConfig.includeTransactions,
-                includeInventory: reportConfig.includeInventory,
-                includeSummary: reportConfig.includeSummary
+                includeVehicleMovements: reportConfig.includeVehicleMovements,
+                includeSecurityIncidents: reportConfig.includeSecurityIncidents,
+                includeAuthorizations: reportConfig.includeAuthorizations,
+                includeInspections: reportConfig.includeInspections
             };
 
             // Simulate API call to send report
             await new Promise(resolve => setTimeout(resolve, 1500));
 
-            pdfGenerator.generateFuelStationReport(pdfData, reportConfig.recipient);
+            // Generate PDF report (you'll need to implement this in pdfGenerator)
+            pdfGenerator.generateGateSecurityReport(pdfData, reportConfig.recipient);
 
-            alert(`✅ Report Generated Successfully!\n\n` +
+            alert(`✅ Gate Security Report Generated Successfully!\n\n` +
                 `Report Type: ${reportConfig.reportType.toUpperCase()}\n` +
                 `Recipient: ${reportConfig.recipient}\n` +
                 `Period: ${reportConfig.startDate} to ${reportConfig.endDate}\n\n` +
@@ -115,10 +125,10 @@ const FuelReports = () => {
     };
 
     return (
-        <div className="fuel-reports-page">
-            <div className="fuel-page-header">
-                <h2>Generate Reports</h2>
-                <p>Create and send fuel station reports to administration</p>
+        <div className="gate-reports-page">
+            <div className="gate-page-header">
+                <h2>🚧 Generate Security Reports</h2>
+                <p>Create and send comprehensive gate security reports to administration</p>
             </div>
 
             <div className="reports-container">
@@ -126,7 +136,7 @@ const FuelReports = () => {
                 <div className="report-config-card">
                     <div className="card-header">
                         <h3>📄 Report Configuration</h3>
-                        <p>Configure your report settings</p>
+                        <p>Configure your security report settings</p>
                     </div>
 
                     <div className="report-form">
@@ -142,9 +152,9 @@ const FuelReports = () => {
                                     onChange={(e) => handleInputChange('reportType', e.target.value)}
                                     className="form-select"
                                 >
-                                    <option value="daily">Daily Report</option>
-                                    <option value="weekly">Weekly Report</option>
-                                    <option value="monthly">Monthly Report</option>
+                                    <option value="daily">Daily Security Report</option>
+                                    <option value="weekly">Weekly Security Report</option>
+                                    <option value="monthly">Monthly Security Report</option>
                                 </select>
                             </div>
 
@@ -159,8 +169,9 @@ const FuelReports = () => {
                                     className="form-select"
                                 >
                                     <option value="Admin">Administration Office</option>
+                                    <option value="Security Department">Security Department</option>
                                     <option value="Transport Office">Transport Office</option>
-                                    <option value="Both">Both Offices</option>
+                                    <option value="All Departments">All Departments</option>
                                 </select>
                             </div>
                         </div>
@@ -204,26 +215,34 @@ const FuelReports = () => {
                                 <label className="checkbox-label">
                                     <input
                                         type="checkbox"
-                                        checked={reportConfig.includeSummary}
-                                        onChange={(e) => handleInputChange('includeSummary', e.target.checked)}
+                                        checked={reportConfig.includeVehicleMovements}
+                                        onChange={(e) => handleInputChange('includeVehicleMovements', e.target.checked)}
                                     />
-                                    <span>Summary Statistics</span>
+                                    <span>Vehicle Movement Logs</span>
                                 </label>
                                 <label className="checkbox-label">
                                     <input
                                         type="checkbox"
-                                        checked={reportConfig.includeTransactions}
-                                        onChange={(e) => handleInputChange('includeTransactions', e.target.checked)}
+                                        checked={reportConfig.includeAuthorizations}
+                                        onChange={(e) => handleInputChange('includeAuthorizations', e.target.checked)}
                                     />
-                                    <span>Transaction Details</span>
+                                    <span>Trip Authorizations</span>
                                 </label>
                                 <label className="checkbox-label">
                                     <input
                                         type="checkbox"
-                                        checked={reportConfig.includeInventory}
-                                        onChange={(e) => handleInputChange('includeInventory', e.target.checked)}
+                                        checked={reportConfig.includeInspections}
+                                        onChange={(e) => handleInputChange('includeInspections', e.target.checked)}
                                     />
-                                    <span>Inventory Status</span>
+                                    <span>Vehicle Inspections</span>
+                                </label>
+                                <label className="checkbox-label">
+                                    <input
+                                        type="checkbox"
+                                        checked={reportConfig.includeSecurityIncidents}
+                                        onChange={(e) => handleInputChange('includeSecurityIncidents', e.target.checked)}
+                                    />
+                                    <span>Security Incidents</span>
                                 </label>
                             </div>
                         </div>
@@ -268,48 +287,80 @@ const FuelReports = () => {
 
                         <div className="preview-content">
                             <div className="preview-header">
-                                <h4>Fuel Station Report</h4>
+                                <h4>🚧 Gate Security Report</h4>
                                 <p className="preview-period">{reportConfig.reportType.toUpperCase()} REPORT</p>
                                 <p className="preview-date">
                                     Period: {reportConfig.startDate} to {reportConfig.endDate}
                                 </p>
                             </div>
 
-                            {reportConfig.includeSummary && (
+                            {reportConfig.includeVehicleMovements && (
                                 <div className="preview-section">
-                                    <h5>📈 Summary Statistics</h5>
+                                    <h5>🚗 Vehicle Movement Statistics</h5>
                                     <div className="preview-stats">
                                         <div className="preview-stat">
-                                            <span className="stat-label">Total Fuel Dispensed</span>
-                                            <span className="stat-value">{getCurrentData().totalFuelDispensed}L</span>
+                                            <span className="stat-label">Total Vehicle Entries</span>
+                                            <span className="stat-value">{getCurrentData().totalVehicleEntries}</span>
                                         </div>
                                         <div className="preview-stat">
-                                            <span className="stat-label">Diesel Dispensed</span>
-                                            <span className="stat-value">{getCurrentData().dieselDispensed}L</span>
+                                            <span className="stat-label">Total Vehicle Exits</span>
+                                            <span className="stat-value">{getCurrentData().totalVehicleExits}</span>
                                         </div>
                                         <div className="preview-stat">
-                                            <span className="stat-label">Petrol Dispensed</span>
-                                            <span className="stat-value">{getCurrentData().petrolDispensed}L</span>
+                                            <span className="stat-label">Pending Vehicles</span>
+                                            <span className="stat-value">{getCurrentData().pendingVehicles}</span>
                                         </div>
                                         <div className="preview-stat">
-                                            <span className="stat-label">Total Transactions</span>
-                                            <span className="stat-value">{getCurrentData().totalTransactions}</span>
+                                            <span className="stat-label">ALPR Detections</span>
+                                            <span className="stat-value">{getCurrentData().alprDetections}</span>
                                         </div>
                                     </div>
                                 </div>
                             )}
 
-                            {reportConfig.includeInventory && (
+                            {reportConfig.includeAuthorizations && (
                                 <div className="preview-section">
-                                    <h5>📦 Current Inventory</h5>
+                                    <h5>✅ Trip Authorization Summary</h5>
                                     <div className="preview-stats">
                                         <div className="preview-stat">
-                                            <span className="stat-label">Diesel Available</span>
-                                            <span className="stat-value">{getCurrentData().dieselAvailable}L</span>
+                                            <span className="stat-label">Authorized Trips</span>
+                                            <span className="stat-value">{getCurrentData().authorizedTrips}</span>
                                         </div>
                                         <div className="preview-stat">
-                                            <span className="stat-label">Petrol Available</span>
-                                            <span className="stat-value">{getCurrentData().petrolAvailable}L</span>
+                                            <span className="stat-label">Rejected Trips</span>
+                                            <span className="stat-value">{getCurrentData().rejectedTrips}</span>
+                                        </div>
+                                        <div className="preview-stat">
+                                            <span className="stat-label">Avg Processing Time</span>
+                                            <span className="stat-value">{getCurrentData().averageProcessingTime} min</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {reportConfig.includeInspections && (
+                                <div className="preview-section">
+                                    <h5>🔧 Vehicle Inspection Summary</h5>
+                                    <div className="preview-stats">
+                                        <div className="preview-stat">
+                                            <span className="stat-label">Inspections Completed</span>
+                                            <span className="stat-value">{getCurrentData().inspectionsCompleted}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {reportConfig.includeSecurityIncidents && (
+                                <div className="preview-section">
+                                    <h5>⚠️ Security Incidents</h5>
+                                    <div className="preview-stats">
+                                        <div className="preview-stat">
+                                            <span className="stat-label">Security Incidents</span>
+                                            <span className="stat-value">{getCurrentData().securityIncidents}</span>
+                                        </div>
+                                        <div className="preview-stat">
+                                            <span className="stat-label">Unauthorized Attempts</span>
+                                            <span className="stat-value">{getCurrentData().unauthorizedAttempts}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -317,7 +368,7 @@ const FuelReports = () => {
 
                             <div className="preview-footer">
                                 <p><strong>Recipient:</strong> {reportConfig.recipient}</p>
-                                <p><strong>Generated By:</strong> Fuel Station Officer</p>
+                                <p><strong>Generated By:</strong> Gate Security Officer</p>
                                 <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
                             </div>
                         </div>
@@ -327,26 +378,34 @@ const FuelReports = () => {
                 {/* Quick Stats */}
                 <div className="quick-stats-grid">
                     <div className="quick-stat-card">
-                        <div className="stat-icon">📊</div>
+                        <div className="stat-icon">🚗</div>
                         <div className="stat-info">
-                            <div className="stat-value">{getCurrentData().totalFuelDispensed}L</div>
-                            <div className="stat-label">Total Fuel</div>
+                            <div className="stat-value">{getCurrentData().totalVehicleEntries}</div>
+                            <div className="stat-label">Vehicle Entries</div>
                         </div>
                     </div>
 
                     <div className="quick-stat-card">
                         <div className="stat-icon">✅</div>
                         <div className="stat-info">
-                            <div className="stat-value">{getCurrentData().completedTransactions}</div>
-                            <div className="stat-label">Completed</div>
+                            <div className="stat-value">{getCurrentData().authorizedTrips}</div>
+                            <div className="stat-label">Authorized</div>
                         </div>
                     </div>
 
                     <div className="quick-stat-card">
-                        <div className="stat-icon">⏳</div>
+                        <div className="stat-icon">🔧</div>
                         <div className="stat-info">
-                            <div className="stat-value">{getCurrentData().pendingAuthorizations}</div>
-                            <div className="stat-label">Pending</div>
+                            <div className="stat-value">{getCurrentData().inspectionsCompleted}</div>
+                            <div className="stat-label">Inspections</div>
+                        </div>
+                    </div>
+
+                    <div className="quick-stat-card">
+                        <div className="stat-icon">⚠️</div>
+                        <div className="stat-info">
+                            <div className="stat-value">{getCurrentData().securityIncidents}</div>
+                            <div className="stat-label">Incidents</div>
                         </div>
                     </div>
                 </div>
@@ -355,4 +414,4 @@ const FuelReports = () => {
     );
 };
 
-export default FuelReports;
+export default GateSecurityReports;

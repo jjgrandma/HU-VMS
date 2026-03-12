@@ -245,6 +245,15 @@ const GateSecurityLayout = ({ onLogout }) => {
             <span className="gate-nav-icon">📋</span>
             <span>Gate Logs</span>
           </Link>
+
+          <Link
+            to="/gate/reports"
+            className={`gate-nav-item ${location.pathname === '/gate/reports' ? 'active' : ''}`}
+            onClick={closeMobileMenu}
+          >
+            <span className="gate-nav-icon">📊</span>
+            <span>Reports</span>
+          </Link>
         </nav>
 
         <div className="gate-sidebar-footer">

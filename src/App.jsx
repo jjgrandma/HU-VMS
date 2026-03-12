@@ -73,6 +73,7 @@ import VehicleInspection from './pages/gateSecurity/VehicleInspection';
 import VehicleMovement from './pages/gateSecurity/VehicleMovement';
 import GateNotifications from './pages/gateSecurity/GateNotifications';
 import GateSecurityProfile from './pages/gateSecurity/GateSecurityProfile';
+import GateSecurityReports from './pages/gateSecurity/GateSecurityReports';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -280,8 +281,8 @@ function App() {
       {/* Fuel Station Officer Routes */}
       {user?.role === 'FUEL_OFFICER' && (
         <>
-          <Route path="/fuel" element={<Navigate to="/fuel/dashboard" replace />} />
           <Route path="/fuel" element={<FuelStationLayout onLogout={handleLogout} />}>
+            <Route index element={<Navigate to="/fuel/dashboard" replace />} />
             <Route path="dashboard" element={<FuelDashboard />} />
             <Route path="requests" element={<FuelRequests />} />
             <Route path="dispense" element={<FuelDispenseForm />} />
@@ -306,6 +307,7 @@ function App() {
             <Route path="inspection" element={<VehicleInspection />} />
             <Route path="movement" element={<VehicleMovement />} />
             <Route path="logs" element={<GateLogs />} />
+            <Route path="reports" element={<GateSecurityReports />} />
             <Route path="notifications" element={<GateNotifications />} />
             <Route path="profile" element={<GateSecurityProfile />} />
           </Route>
