@@ -1,104 +1,104 @@
-import { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Search, Bell, ChevronDown, Menu, Settings, User, LogOut } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import './TransportHeader.css';
 
-const TransportHeader = () => {
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const location = useLocation();
+const TransportHeader = ({ title, onLogout, toggleSidebar, isSidebarOpen }) => {
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const dropdownRef = useRef(null);
 
-  const getPageTitle = () => {
-    const path = location.pathname;
-    const titles = {
-      '/transport/dashboard': 'Transport Officer Dashboard',
-      '/transport/requests': 'Request Pool',
-      '/transport/trips': 'Trip Management',
-      '/transport/tracking': 'Vehicle Tracking',
-      '/transport/drivers': 'Driver Coordination',
-      '/transport/complaints': 'Complaints',
-      '/transport/reports': 'Reports'
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowProfileDropdown(false);
+      }
     };
-    return titles[path] || 'Transport Officer Dashboard';
-  };
 
-  const getPageSubtitle = () => {
-    const path = location.pathname;
-    const subtitles = {
-      '/transport/dashboard': 'Monitor and manage university transport operations',
-      '/transport/requests': 'Review and manage trip requests',
-      '/transport/trips': 'Plan and schedule trips',
-      '/transport/tracking': 'Track vehicles in real-time',
-      '/transport/drivers': 'Manage driver assignments',
-      '/transport/complaints': 'Handle transport complaints',
-      '/transport/reports': 'Generate transport reports'
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
     };
-    return subtitles[path] || '';
-  };
+  }, []);
 
   return (
-    <header className="transport-header">
+    <div className="transport-header">
       <div className="header-left">
-        <h1 className="page-title">{getPageTitle()}</h1>
-        {getPageSubtitle() && (
-          <p className="page-subtitle">{getPageSubtitle()}</p>
-        )}
-      </div>
-
-      <div className="header-right">
-        {/* Notification Bell */}
-        <button className="notification-btn">
-          <span className="notification-icon">🔔</span>
-          <span className="notification-badge">3</span>
-        </button>
-
-        {/* Profile Menu */}
-        <div className="profile-menu-container">
-          <button 
-            className="profile-btn"
-            onClick={() => setShowProfileMenu(!showProfileMenu)}
-          >
-            <div className="profile-avatar">TO</div>
-            <div className="profile-info">
-              <span className="profile-name">Transport Officer</span>
-              <span className="profile-role">Officer</span>
-            </div>
-            <span className="dropdown-arrow">▼</span>
+        {!isSidebarOpen && (
+          <button className="menu-toggle-btn" onClick={toggleSidebar}>
+            <Menu size={20} />
           </button>
+        )}
+        <h1 className="page-title">{title}</h1>
+      </div>
+      
+      <div className="header-right">
+        <div className="search-container">
+          <Search size={18} className="search-icon" />
+          <input type="text" placeholder="Search..." className="search-input" />
+        </div>
 
-          {showProfileMenu && (
-            <div className="profile-dropdown">
-              <ul className="dropdown-menu">
-                <li>
-                  <button className="dropdown-item">
-                    <span className="item-icon">👤</span>
-                    My Profile
-                  </button>
-                </li>
-                <li>
-                  <button className="dropdown-item">
-                    <span className="item-icon">⚙️</span>
-                    Settings
-                  </button>
-                </li>
-                <li>
-                  <button className="dropdown-item logout-item">
-                    <span className="item-icon">🚪</span>
-                    Logout
-                  </button>
-                </li>
-              </ul>
+        <div className="header-actions">
+          <button className="icon-btn notification-btn">
+            <Bell size={20} />
+            <span className="notification-badge">3</span>
+          </button>
+          
+          <div className="profile-menu-container" ref={dropdownRef}>
+            <div 
+              className={`profile-menu ${showProfileDropdown ? 'active' : ''}`}
+              onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+            >
+              <div className="profile-avatar">
+                <img src="https://ui-avatars.com/api/?name=Transport+Officer&background=84cc16&color=fff" alt="User" />
+              </div>
+              <div className="profile-info">
+                <span className="profile-name">Officer</span>
+                <span className="profile-role">Admin</span>
+              </div>
+              <ChevronDown size={16} className="profile-chevron" />
             </div>
-          )}
+
+            {showProfileDropdown && (
+              <div className="profile-dropdown">
+                <div className="dropdown-header">
+                  <div className="dropdown-avatar">
+                    <img src="https://ui-avatars.com/api/?name=Transport+Officer&background=84cc16&color=fff" alt="User" />
+                  </div>
+                  <div className="dropdown-info">
+                    <h4>Officer</h4>
+                    <p>Administrator</p>
+                    <span className="user-email">transport.officer@haramaya.edu.et</span>
+                  </div>
+                </div>
+                
+                <div className="dropdown-divider"></div>
+                
+                <div className="dropdown-menu">
+                  <button className="dropdown-item">
+                    <User size={16} />
+                    <span>My Profile</span>
+                  </button>
+                  <button className="dropdown-item">
+                    <Settings size={16} />
+                    <span>Account Settings</span>
+                  </button>
+                  <button className="dropdown-item">
+                    <Bell size={16} />
+                    <span>Notification Settings</span>
+                  </button>
+                </div>
+                
+                <div className="dropdown-divider"></div>
+                
+                <button className="dropdown-item logout-item" onClick={onLogout}>
+                  <LogOut size={16} />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
-      {/* Click outside to close dropdown */}
-      {showProfileMenu && (
-        <div 
-          className="dropdown-overlay"
-          onClick={() => setShowProfileMenu(false)}
-        />
-      )}
-    </header>
+    </div>
   );
 };
 

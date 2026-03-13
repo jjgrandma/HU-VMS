@@ -32,7 +32,7 @@ import Settings from './pages/admin/Settings';
 // Transport Officer
 import TransportOfficerLayout from './pages/transportOfficer/TransportOfficerLayout';
 import TransportDashboard from './pages/transportOfficer/TransportDashboard';
-import RequestPool from './pages/transportOfficer/RequestPool';
+import Requests from './pages/transportOfficer/Requests';
 import TripManagement from './pages/transportOfficer/TripManagement';
 import VehicleTracking from './pages/transportOfficer/VehicleTracking';
 import DriverCoordination from './pages/transportOfficer/DriverCoordination';
@@ -76,7 +76,8 @@ import GateSecurityProfile from './pages/gateSecurity/GateSecurityProfile';
 import GateSecurityReports from './pages/gateSecurity/GateSecurityReports';
 
 function App() {
-  const [user, setUser] = useState(null);
+  // For testing Transport Officer - temporarily set default user
+  const [user, setUser] = useState({ role: 'TRANSPORT', name: 'Test Transport Officer' });
 
   const handleLogin = (userData) => {
     setUser(userData);
@@ -242,16 +243,17 @@ function App() {
       {/* Transport Officer Routes */}
       {user?.role === 'TRANSPORT' && (
         <>
-          <Route path="/transport" element={<Navigate to="/transport/dashboard" replace />} />
-          <Route path="/transport" element={<TransportOfficerLayout onLogout={handleLogout} />}>
+          <Route path="/transport/*" element={<TransportOfficerLayout onLogout={handleLogout} />}>
             <Route path="dashboard" element={<TransportDashboard />} />
-            <Route path="requests" element={<RequestPool />} />
+            <Route path="requests" element={<Requests />} />
             <Route path="trips" element={<TripManagement />} />
             <Route path="tracking" element={<VehicleTracking />} />
             <Route path="drivers" element={<DriverCoordination />} />
             <Route path="complaints" element={<TransportComplaints />} />
             <Route path="reports" element={<TransportReports />} />
+            <Route index element={<Navigate to="dashboard" replace />} />
           </Route>
+          <Route path="*" element={<Navigate to="/transport/dashboard" replace />} />
         </>
       )}
 

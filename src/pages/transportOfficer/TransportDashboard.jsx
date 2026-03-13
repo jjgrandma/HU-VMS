@@ -1,164 +1,191 @@
-import { useState, useEffect } from 'react';
-import './transportTheme.css';
+import { useState } from 'react';
+import { 
+  ClipboardList, 
+  MapPin, 
+  Car, 
+  Users, 
+  AlertTriangle,
+  FileCheck,
+  CheckCircle,
+  Clock,
+  ArrowRight,
+  TrendingUp,
+  TrendingDown
+} from 'lucide-react';
 import './TransportDashboard.css';
 
 const TransportDashboard = () => {
-  const [stats, setStats] = useState({
-    totalRequests: 24,
-    activeTrips: 12,
-    availableVehicles: 18,
-    activeDrivers: 15
+  const [dashboardData] = useState({
+    pendingRequests: { value: 12, trend: 8, isUp: true },
+    activeTrips: { value: 7, trend: 15, isUp: true },
+    availableVehicles: { value: 18, trend: 2, isUp: false },
+    driversOnDuty: { value: 9, trend: 0, isUp: true },
+    complaints: { value: 3, trend: 50, isUp: false } // decreasing complaints is good
   });
 
-  const [recentActivities] = useState([
-    { id: 1, type: 'request', message: 'New transport request from Medical College', time: '5 min ago', priority: 'high' },
-    { id: 2, type: 'trip', message: 'Trip to Engineering Campus completed', time: '12 min ago', priority: 'normal' },
-    { id: 3, type: 'vehicle', message: 'Vehicle HU-001 maintenance scheduled', time: '25 min ago', priority: 'medium' },
-    { id: 4, type: 'driver', message: 'Driver Ahmed reported for duty', time: '1 hour ago', priority: 'normal' },
-    { id: 5, type: 'complaint', message: 'New complaint received - Trip delay', time: '2 hours ago', priority: 'high' }
-  ]);
+  const summaryCards = [
+    {
+      title: 'Pending Requests',
+      value: dashboardData.pendingRequests.value,
+      trend: `${dashboardData.pendingRequests.trend}%`,
+      isUp: dashboardData.pendingRequests.isUp,
+      icon: <ClipboardList size={28} />,
+      color: 'var(--status-pending)'
+    },
+    {
+      title: 'Active Trips',
+      value: dashboardData.activeTrips.value,
+      trend: `${dashboardData.activeTrips.trend}%`,
+      isUp: dashboardData.activeTrips.isUp,
+      icon: <MapPin size={28} />,
+      color: 'var(--status-in-trip)'
+    },
+    {
+      title: 'Available Vehicles',
+      value: dashboardData.availableVehicles.value,
+      trend: `${dashboardData.availableVehicles.trend}%`,
+      isUp: dashboardData.availableVehicles.isUp,
+      icon: <Car size={28} />,
+      color: 'var(--status-available)'
+    },
+    {
+      title: 'Drivers On Duty',
+      value: dashboardData.driversOnDuty.value,
+      trend: `${dashboardData.driversOnDuty.trend}%`,
+      isUp: dashboardData.driversOnDuty.isUp,
+      icon: <Users size={28} />,
+      color: 'var(--status-driver)'
+    },
+    {
+      title: 'Complaints',
+      value: dashboardData.complaints.value,
+      trend: `${dashboardData.complaints.trend}%`,
+      isUp: dashboardData.complaints.isUp,
+      icon: <AlertTriangle size={28} />,
+      color: 'var(--status-complaint)'
+    }
+  ];
 
-  const [quickActions] = useState([
-    { id: 1, title: 'New Request', icon: '📋', action: 'create-request', color: 'lime' },
-    { id: 2, title: 'Assign Driver', icon: '👨‍✈️', action: 'assign-driver', color: 'blue' },
-    { id: 3, title: 'Track Vehicle', icon: '🗺️', action: 'track-vehicle', color: 'green' },
-    { id: 4, title: 'Emergency Alert', icon: '🚨', action: 'emergency', color: 'red' }
-  ]);
-
-  const getActivityIcon = (type) => {
-    const icons = {
-      request: '📋',
-      trip: '🚗',
-      vehicle: '🔧',
-      driver: '👨‍✈️',
-      complaint: '📝'
-    };
-    return icons[type] || '📌';
-  };
-
-  const getPriorityClass = (priority) => {
-    return `priority-${priority}`;
-  };
+  const recentActivity = [
+    {
+      id: 1,
+      type: 'request',
+      title: 'New trip request from Engineering Dept',
+      time: '2 min ago',
+      icon: <FileCheck size={18} color="var(--status-pending)" />
+    },
+    {
+      id: 2,
+      type: 'completion',
+      title: 'Trip HU-001 completed successfully',
+      time: '15 min ago',
+      icon: <CheckCircle size={18} color="var(--status-available)" />
+    },
+    {
+      id: 3,
+      type: 'assignment',
+      title: 'Vehicle HU-VH-003 assigned to driver',
+      time: '1 hour ago',
+      icon: <Car size={18} color="var(--status-in-trip)" />
+    },
+    {
+      id: 4,
+      type: 'complaint',
+      title: 'Complaint recorded for HU-VH-012',
+      time: '2 hours ago',
+      icon: <AlertTriangle size={18} color="var(--status-complaint)" />
+    }
+  ];
 
   return (
-    <div className="transport-container">
+    <div className="transport-dashboard">
       <div className="dashboard-header">
-        <div className="header-content">
-          <h1>🚛 Transport Officer Dashboard</h1>
-          <p className="header-subtitle">Monitor and manage university transport operations</p>
-        </div>
-        <div className="header-actions">
-          <button className="btn-primary btn-large">
-            📊 Generate Report
-          </button>
-        </div>
+        <h1>Dashboard Overview</h1>
+        <p>Transport Officer operational summary and metrics</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="stats-grid">
-        <div className="stat-card requests">
-          <div className="stat-icon">📋</div>
-          <div className="stat-content">
-            <h3>{stats.totalRequests}</h3>
-            <p>Total Requests</p>
-            <span className="stat-change">+3 today</span>
+      <div className="summary-cards">
+        {summaryCards.map((card, index) => (
+          <div key={index} className="summary-card">
+            <div className="card-header">
+              <div className="card-icon-wrapper" style={{ color: card.color, backgroundColor: `${card.color}15` }}>
+                {card.icon}
+              </div>
+              <div className={`trend-indicator ${card.isUp ? 'positive' : 'negative'}`}>
+                {card.isUp ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                <span>{card.trend}</span>
+              </div>
+            </div>
+            <div className="card-content">
+              <h3>{card.value}</h3>
+              <p>{card.title}</p>
+            </div>
           </div>
-        </div>
-
-        <div className="stat-card trips">
-          <div className="stat-icon">🚗</div>
-          <div className="stat-content">
-            <h3>{stats.activeTrips}</h3>
-            <p>Active Trips</p>
-            <span className="stat-change">+2 ongoing</span>
-          </div>
-        </div>
-
-        <div className="stat-card vehicles">
-          <div className="stat-icon">🚛</div>
-          <div className="stat-content">
-            <h3>{stats.availableVehicles}</h3>
-            <p>Available Vehicles</p>
-            <span className="stat-change">Ready for dispatch</span>
-          </div>
-        </div>
-
-        <div className="stat-card drivers">
-          <div className="stat-icon">👨‍✈️</div>
-          <div className="stat-content">
-            <h3>{stats.activeDrivers}</h3>
-            <p>Active Drivers</p>
-            <span className="stat-change">On duty now</span>
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Quick Actions */}
-      <div className="quick-actions-section">
-        <h2>Quick Actions</h2>
-        <div className="quick-actions-grid">
-          {quickActions.map(action => (
-            <button key={action.id} className={`quick-action-card ${action.color}`}>
-              <span className="action-icon">{action.icon}</span>
-              <span className="action-title">{action.title}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Main Content Grid */}
       <div className="dashboard-grid">
-        {/* Recent Activities */}
-        <div className="dashboard-section">
-          <div className="section-header">
-            <h2>Recent Activities</h2>
-            <button className="btn-secondary">View All</button>
+        <div className="dashboard-panel timeline-panel">
+          <div className="panel-header">
+            <h3>Recent Activity Timeline</h3>
+            <button className="view-all-btn">View All</button>
           </div>
-          <div className="activities-list">
-            {recentActivities.map(activity => (
-              <div key={activity.id} className={`activity-item ${getPriorityClass(activity.priority)}`}>
-                <div className="activity-icon">
-                  {getActivityIcon(activity.type)}
+          <div className="activity-timeline">
+            {recentActivity.map((activity, index) => (
+              <div key={activity.id} className="timeline-item">
+                <div className="timeline-marker">
+                  <div className="timeline-icon-bg">{activity.icon}</div>
+                  {index < recentActivity.length - 1 && <div className="timeline-connector"></div>}
                 </div>
-                <div className="activity-content">
-                  <p className="activity-message">{activity.message}</p>
-                  <span className="activity-time">{activity.time}</span>
-                </div>
-                <div className={`activity-priority ${activity.priority}`}>
-                  {activity.priority}
+                <div className="timeline-content">
+                  <p className="timeline-title">{activity.title}</p>
+                  <div className="timeline-meta">
+                    <Clock size={12} />
+                    <span>{activity.time}</span>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* System Status */}
-        <div className="dashboard-section">
-          <div className="section-header">
-            <h2>System Status</h2>
-            <span className="status-indicator online">● All Systems Online</span>
+        <div className="dashboard-panel actions-panel">
+          <div className="panel-header">
+            <h3>Quick Actions</h3>
           </div>
-          <div className="status-list">
-            <div className="status-item">
-              <span className="status-label">GPS Tracking</span>
-              <span className="status-value online">● Online</span>
-            </div>
-            <div className="status-item">
-              <span className="status-label">Request Service</span>
-              <span className="status-value online">● Online</span>
-            </div>
-            <div className="status-item">
-              <span className="status-label">Driver Communication</span>
-              <span className="status-value online">● Online</span>
-            </div>
-            <div className="status-item">
-              <span className="status-label">Vehicle Monitoring</span>
-              <span className="status-value online">● Online</span>
-            </div>
-            <div className="status-item">
-              <span className="status-label">Database Connection</span>
-              <span className="status-value online">● Online</span>
-            </div>
+          <div className="quick-actions-grid">
+            <button className="action-card primary">
+              <div className="action-icon">
+                <ClipboardList size={24} />
+              </div>
+              <div className="action-text">
+                <span className="title">Review Requests</span>
+                <span className="subtitle">12 pending approvals</span>
+              </div>
+              <ArrowRight size={20} className="action-arrow" />
+            </button>
+            
+            <button className="action-card secondary">
+              <div className="action-icon">
+                <Car size={24} />
+              </div>
+              <div className="action-text">
+                <span className="title">Assign Vehicle</span>
+                <span className="subtitle">Allocate fleet resources</span>
+              </div>
+              <ArrowRight size={20} className="action-arrow" />
+            </button>
+            
+            <button className="action-card tertiary">
+              <div className="action-icon">
+                <MapPin size={24} />
+              </div>
+              <div className="action-text">
+                <span className="title">Track Fleet</span>
+                <span className="subtitle">View live GPS map</span>
+              </div>
+              <ArrowRight size={20} className="action-arrow" />
+            </button>
           </div>
         </div>
       </div>

@@ -1,280 +1,449 @@
 import { useState } from 'react';
-import './transportTheme.css';
+import { 
+  Search, 
+  Filter, 
+  MessageSquare, 
+  AlertCircle, 
+  CheckCircle2, 
+  Clock, 
+  ArrowUpRight,
+  ShieldAlert,
+  Car,
+  Route,
+  User,
+  MoreVertical
+} from 'lucide-react';
 import './TransportComplaints.css';
 
 const TransportComplaints = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(3);
-  const [filterStatus, setFilterStatus] = useState('All');
-
   const [complaints, setComplaints] = useState([
     {
-      id: 1,
-      title: "Driver Late Arrival",
-      complainant: "Dr. Ahmed Hassan",
-      department: "Medical College",
-      description: "The assigned driver arrived 30 minutes late for the scheduled trip to the hospital, causing delays in patient transport.",
-      date: "2024-03-15",
-      priority: "High",
-      status: "Pending",
-      category: "Driver Conduct"
+      id: 'COMP-001',
+      submittedBy: 'Dr. Ahmed Hassan',
+      type: 'Vehicle Issue',
+      description: 'Air conditioning not working properly in HU-VH-001.',
+      date: '2024-03-14',
+      status: 'Open',
+      priority: 'Medium',
+      assignedTo: 'Maintenance Team'
     },
     {
-      id: 2,
-      title: "Vehicle Maintenance Issue",
-      complainant: "Prof. Fatima Ali",
-      department: "Engineering College",
-      description: "The vehicle had a strange noise during the trip and the air conditioning was not working properly.",
-      date: "2024-03-14",
-      priority: "Medium",
-      status: "Approved",
-      category: "Vehicle Condition"
+      id: 'COMP-002',
+      submittedBy: 'Ato Mulugeta (Driver)',
+      type: 'Route Issue',
+      description: 'Road construction causing significant delays on Dire Dawa route.',
+      date: '2024-03-13',
+      status: 'In Progress',
+      priority: 'High',
+      assignedTo: 'Transport Officer'
     },
     {
-      id: 3,
-      title: "Unprofessional Behavior",
-      complainant: "Mohammed Said",
-      department: "Agriculture Unit",
-      description: "The driver was using mobile phone while driving and did not follow the designated route.",
-      date: "2024-03-13",
-      priority: "High",
-      status: "Pending",
-      category: "Driver Conduct"
+      id: 'COMP-003',
+      submittedBy: 'Prof. Sarah Johnson',
+      type: 'Service Quality',
+      description: 'Driver was late for scheduled pickup without notification.',
+      date: '2024-03-12',
+      status: 'Resolved',
+      priority: 'Low',
+      assignedTo: 'HR Department'
     },
     {
-      id: 4,
-      title: "Fuel Shortage During Trip",
-      complainant: "Aisha Omar",
-      department: "Business School",
-      description: "The vehicle ran out of fuel during the trip, causing significant delays and inconvenience.",
-      date: "2024-03-12",
-      priority: "Medium",
-      status: "Rejected",
-      category: "Vehicle Management"
-    },
-    {
-      id: 5,
-      title: "Route Deviation",
-      complainant: "Ibrahim Yusuf",
-      department: "Law School",
-      description: "Driver took a longer route without explanation, resulting in extra travel time and fuel consumption.",
-      date: "2024-03-11",
-      priority: "Low",
-      status: "Approved",
-      category: "Route Management"
-    },
-    {
-      id: 6,
-      title: "Vehicle Cleanliness",
-      complainant: "Maryam Ahmed",
-      department: "Medical College",
-      description: "The vehicle interior was not clean and had an unpleasant odor, which is unacceptable for medical transport.",
-      date: "2024-03-10",
-      priority: "Medium",
-      status: "Pending",
-      category: "Vehicle Condition"
+      id: 'COMP-004',
+      submittedBy: 'W/ro Hanan (Driver)',
+      type: 'Safety Concern',
+      description: 'Brake system needs immediate attention in HU-VH-002.',
+      date: '2024-03-11',
+      status: 'Escalated',
+      priority: 'Critical',
+      assignedTo: 'Admin'
     }
   ]);
 
-  const handleStatusChange = (id, newStatus) => {
-    setComplaints(prev => 
-      prev.map(complaint => 
-        complaint.id === id ? { ...complaint, status: newStatus } : complaint
-      )
-    );
-  };
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [typeFilter, setTypeFilter] = useState('All');
+  const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [response, setResponse] = useState('');
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
-  const filteredComplaints = complaints.filter(complaint => 
-    filterStatus === 'All' || complaint.status === filterStatus
-  );
+  const filteredComplaints = complaints.filter(complaint => {
+    const matchesSearch = complaint.submittedBy.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         complaint.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         complaint.id.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'All' || complaint.status === statusFilter;
+    const matchesType = typeFilter === 'All' || complaint.type === typeFilter;
+    
+    return matchesSearch && matchesStatus && matchesType;
+  });
 
-  // Pagination calculations
   const totalPages = Math.ceil(filteredComplaints.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentComplaints = filteredComplaints.slice(startIndex, endIndex);
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  const handleFilterChange = (status) => {
-    setFilterStatus(status);
+  const handleFilterChange = (filterType, value) => {
     setCurrentPage(1);
+    if (filterType === 'status') setStatusFilter(value);
+    if (filterType === 'type') setTypeFilter(value);
+    if (filterType === 'search') setSearchTerm(value);
   };
 
-  const getStatusClass = (status) => {
-    const classes = {
-      'Pending': 'status-pending',
-      'Approved': 'status-approved',
-      'Rejected': 'status-rejected'
-    };
-    return classes[status] || 'status-pending';
+  const handleResolve = (complaintId) => {
+    setComplaints(complaints.map(comp => 
+      comp.id === complaintId ? { ...comp, status: 'Resolved' } : comp
+    ));
   };
 
-  const getPriorityClass = (priority) => {
-    const classes = {
-      'High': 'priority-high',
-      'Medium': 'priority-medium',
-      'Low': 'priority-low'
-    };
-    return classes[priority] || 'priority-medium';
+  const handleEscalate = (complaintId) => {
+    setComplaints(complaints.map(comp => 
+      comp.id === complaintId ? { ...comp, status: 'Escalated', assignedTo: 'Admin', priority: 'Critical' } : comp
+    ));
+  };
+
+  const openResponseModal = (complaint) => {
+    setSelectedComplaint(complaint);
+    setShowModal(true);
+  };
+
+  const handleRespond = () => {
+    if (response.trim()) {
+      setComplaints(complaints.map(comp => 
+        comp.id === selectedComplaint.id ? { 
+          ...comp, 
+          status: 'In Progress',
+          response: response,
+          responseDate: new Date().toISOString().split('T')[0]
+        } : comp
+      ));
+      setResponse('');
+      setShowModal(false);
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Open': return 'var(--text-secondary)';
+      case 'In Progress': return 'var(--status-pending)';
+      case 'Resolved': return 'var(--primary-color)';
+      case 'Escalated': return 'var(--status-complaint)';
+      default: return 'var(--text-secondary)';
+    }
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'Critical': return '#dc2626';
+      case 'High': return '#f97316';
+      case 'Medium': return '#eab308';
+      case 'Low': return '#22c55e';
+      default: return '#6b7280';
+    }
+  };
+
+  const getTypeIcon = (type) => {
+    switch (type) {
+      case 'Vehicle Issue': return <Car size={16} />;
+      case 'Route Issue': return <Route size={16} />;
+      case 'Service Quality': return <User size={16} />;
+      case 'Safety Concern': return <ShieldAlert size={16} />;
+      default: return <MessageSquare size={16} />;
+    }
+  };
+
+  const stats = {
+    total: complaints.length,
+    open: complaints.filter(c => c.status === 'Open').length,
+    inProgress: complaints.filter(c => c.status === 'In Progress').length,
+    resolved: complaints.filter(c => c.status === 'Resolved').length,
+    escalated: complaints.filter(c => c.status === 'Escalated').length
   };
 
   return (
-    <div className="transport-container">
+    <div className="transport-complaints-page">
       <div className="page-header">
-        <h1>📝 Complaints Management</h1>
-        <p>Handle and resolve transport-related complaints efficiently</p>
+        <div>
+          <h1>Issues & Feedback</h1>
+          <p>Monitor and resolve transport complaints</p>
+        </div>
+        <button className="btn btn-primary">
+          + Log Issue
+        </button>
       </div>
 
-      {/* Compact Summary Cards */}
-      <div className="summary-cards-compact">
-        <div className="summary-card-compact total">
-          <div className="card-icon-compact">📝</div>
-          <div className="card-content-compact">
-            <h4>{complaints.length}</h4>
-            <span>Total</span>
+      <div className="complaints-stats-grid">
+        <div className="stat-card">
+          <div className="stat-icon total"><MessageSquare size={20} /></div>
+          <div className="stat-info">
+            <span className="stat-label">Total Logs</span>
+            <span className="stat-value">{stats.total}</span>
           </div>
         </div>
-        <div className="summary-card-compact pending">
-          <div className="card-icon-compact">⏳</div>
-          <div className="card-content-compact">
-            <h4>{complaints.filter(c => c.status === 'Pending').length}</h4>
-            <span>Pending</span>
+        <div className="stat-card">
+          <div className="stat-icon open"><AlertCircle size={20} /></div>
+          <div className="stat-info">
+            <span className="stat-label">Needs Action</span>
+            <span className="stat-value">{stats.open}</span>
           </div>
         </div>
-        <div className="summary-card-compact approved">
-          <div className="card-icon-compact">✅</div>
-          <div className="card-content-compact">
-            <h4>{complaints.filter(c => c.status === 'Approved').length}</h4>
-            <span>Approved</span>
+        <div className="stat-card">
+          <div className="stat-icon progress"><Clock size={20} /></div>
+          <div className="stat-info">
+            <span className="stat-label">In Progress</span>
+            <span className="stat-value">{stats.inProgress}</span>
           </div>
         </div>
-        <div className="summary-card-compact rejected">
-          <div className="card-icon-compact">❌</div>
-          <div className="card-content-compact">
-            <h4>{complaints.filter(c => c.status === 'Rejected').length}</h4>
-            <span>Rejected</span>
+        <div className="stat-card">
+          <div className="stat-icon escalated"><ShieldAlert size={20} /></div>
+          <div className="stat-info">
+            <span className="stat-label">Escalated</span>
+            <span className="stat-value">{stats.escalated}</span>
           </div>
         </div>
-      </div>
-
-      {/* Filters */}
-      <div className="filters-section">
-        <div className="filter-group">
-          <label>Filter by Status:</label>
-          <select 
-            className="input-field"
-            value={filterStatus}
-            onChange={(e) => handleFilterChange(e.target.value)}
-          >
-            <option value="All">All Status</option>
-            <option value="Pending">Pending</option>
-            <option value="Approved">Approved</option>
-            <option value="Rejected">Rejected</option>
-          </select>
+        <div className="stat-card">
+          <div className="stat-icon resolved"><CheckCircle2 size={20} /></div>
+          <div className="stat-info">
+            <span className="stat-label">Resolved</span>
+            <span className="stat-value">{stats.resolved}</span>
+          </div>
         </div>
       </div>
 
-      {/* Complaints List */}
-      <div className="complaints-list">
-        {currentComplaints.map(complaint => (
-          <div key={complaint.id} className={`complaint-card ${getPriorityClass(complaint.priority)}`}>
-            <div className="complaint-header">
-              <div className="complaint-title">
-                <h3>{complaint.title}</h3>
-                <span className={`priority-badge ${getPriorityClass(complaint.priority)}`}>
-                  {complaint.priority}
-                </span>
-              </div>
-              <span className={`status-badge ${getStatusClass(complaint.status)}`}>
-                {complaint.status}
-              </span>
+      <div className="table-workspace">
+        <div className="table-toolbar">
+          <div className="search-bar">
+            <Search size={16} className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search by ID, name, or keyword..."
+              value={searchTerm}
+              onChange={(e) => handleFilterChange('search', e.target.value)}
+            />
+          </div>
+          
+          <div className="filter-group">
+            <div className="filter-select">
+              <Filter size={16} className="filter-icon" />
+              <select 
+                value={statusFilter} 
+                onChange={(e) => handleFilterChange('status', e.target.value)}
+              >
+                <option value="All">All Statuses</option>
+                <option value="Open">Open</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Resolved">Resolved</option>
+                <option value="Escalated">Escalated</option>
+              </select>
             </div>
-
-            <div className="complaint-details">
-              <div className="detail-row">
-                <span className="label">Complainant:</span>
-                <span className="value">{complaint.complainant}</span>
-              </div>
-              <div className="detail-row">
-                <span className="label">Department:</span>
-                <span className="value">{complaint.department}</span>
-              </div>
-              <div className="detail-row">
-                <span className="label">Category:</span>
-                <span className="value">{complaint.category}</span>
-              </div>
-              <div className="detail-row">
-                <span className="label">Date:</span>
-                <span className="value">{complaint.date}</span>
-              </div>
+            <div className="filter-select">
+              <select 
+                value={typeFilter} 
+                onChange={(e) => handleFilterChange('type', e.target.value)}
+              >
+                <option value="All">All Categories</option>
+                <option value="Vehicle Issue">Vehicle Issue</option>
+                <option value="Route Issue">Route Issue</option>
+                <option value="Service Quality">Service Quality</option>
+                <option value="Safety Concern">Safety Concern</option>
+              </select>
             </div>
-
-            <div className="complaint-description">
-              <h4>Description:</h4>
-              <p>{complaint.description}</p>
-            </div>
-
-            {complaint.status === 'Pending' && (
-              <div className="complaint-actions">
-                <button 
-                  className="btn-primary btn-large"
-                  onClick={() => handleStatusChange(complaint.id, 'Approved')}
-                >
-                  ✅ Approve
-                </button>
-                <button 
-                  className="btn-secondary btn-large"
-                  onClick={() => handleStatusChange(complaint.id, 'Rejected')}
-                >
-                  ❌ Reject
-                </button>
-              </div>
-            )}
           </div>
-        ))}
-      </div>
+        </div>
 
-      {/* Smart Pagination */}
-      {filteredComplaints.length > itemsPerPage && (
-        <div className="pagination-compact">
-          <div className="pagination-info">
-            <span>
-              {startIndex + 1}-{Math.min(endIndex, filteredComplaints.length)} of {filteredComplaints.length}
+        <div className="table-container">
+          <table className="modern-table">
+            <thead>
+              <tr>
+                <th>Issue Details</th>
+                <th>Category</th>
+                <th>Priority</th>
+                <th>Timeline</th>
+                <th>Status</th>
+                <th className="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentComplaints.map((complaint) => (
+                <tr key={complaint.id}>
+                  <td>
+                    <div className="td-content">
+                      <span className="text-primary-bold">{complaint.id}</span>
+                      <span className="text-desc" title={complaint.description}>
+                        {complaint.description.length > 45 
+                          ? `${complaint.description.substring(0, 45)}...` 
+                          : complaint.description}
+                      </span>
+                      <span className="text-sub">From: {complaint.submittedBy}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="category-tag">
+                      <span className="cat-icon">{getTypeIcon(complaint.type)}</span>
+                      <span>{complaint.type}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span 
+                      className="priority-dot-badge"
+                      style={{ color: getPriorityColor(complaint.priority) }}
+                    >
+                      <span className="dot" style={{ backgroundColor: getPriorityColor(complaint.priority) }}></span>
+                      {complaint.priority}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="td-content">
+                      <span className="text-standard">{complaint.date}</span>
+                      <span className="text-sub mt-1">Assignee: {complaint.assignedTo}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span 
+                      className="status-pill"
+                      style={{ 
+                        backgroundColor: `${getStatusColor(complaint.status)}15`,
+                        color: getStatusColor(complaint.status)
+                      }}
+                    >
+                      {complaint.status}
+                    </span>
+                  </td>
+                  <td className="text-right">
+                    <div className="action-buttons">
+                      {complaint.status === 'Open' && (
+                        <>
+                          <button 
+                            className="btn-text primary"
+                            onClick={() => openResponseModal(complaint)}
+                          >
+                            Respond
+                          </button>
+                          <button 
+                            className="btn-text danger"
+                            onClick={() => handleEscalate(complaint.id)}
+                            title="Escalate Issue"
+                          >
+                            <ArrowUpRight size={16} />  
+                          </button>
+                        </>
+                      )}
+                      {(complaint.status === 'Open' || complaint.status === 'In Progress') && (
+                        <button 
+                          className="btn-icon check"
+                          onClick={() => handleResolve(complaint.id)}
+                          title="Mark as Resolved"
+                        >
+                          <CheckCircle2 size={16} />
+                        </button>
+                      )}
+                      <button className="btn-icon ghost">
+                        <MoreVertical size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {currentComplaints.length === 0 && (
+                <tr>
+                  <td colSpan="6" className="empty-state">
+                    <CheckCircle2 size={32} />
+                    <p>No complaints found matching your criteria.</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {totalPages > 1 && (
+          <div className="pagination-bar">
+            <span className="pagination-info">
+              Showing <span className="fw-600">{startIndex + 1}</span> to <span className="fw-600">{Math.min(endIndex, filteredComplaints.length)}</span> of <span className="fw-600">{filteredComplaints.length}</span> issues
             </span>
+            <div className="pagination-controls">
+              <button 
+                className="btn-page"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </button>
+              
+              <div className="page-numbers">
+                {[...Array(totalPages)].map((_, index) => {
+                  const pageNum = index + 1;
+                  return (
+                    <button
+                      key={pageNum}
+                      className={`btn-page-num ${currentPage === pageNum ? 'active' : ''}`}
+                      onClick={() => setCurrentPage(pageNum)}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              
+              <button 
+                className="btn-page"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </button>
+            </div>
           </div>
+        )}
+      </div>
 
-          <div className="pagination-controls">
-            <button
-              className="pagination-btn"
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              ‹ Previous
-            </button>
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Respond to Issue</h3>
+            <div className="issue-summary-box">
+              <div className="isb-row">
+                <span className="isb-label">ID</span>
+                <span className="isb-val text-primary-bold">{selectedComplaint?.id}</span>
+              </div>
+              <div className="isb-row">
+                <span className="isb-label">Reporter</span>
+                <span className="isb-val">{selectedComplaint?.submittedBy}</span>
+              </div>
+              <div className="isb-row desc">
+                <span className="isb-label">Description</span>
+                <span className="isb-val">{selectedComplaint?.description}</span>
+              </div>
+            </div>
             
-            <span className="page-indicator">
-              Page {currentPage} of {totalPages}
-            </span>
-
-            <button
-              className="pagination-btn"
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              Next ›
-            </button>
+            <div className="modal-form">
+              <label>Your Response</label>
+              <textarea
+                placeholder="Detail action taken or message to reporter..."
+                value={response}
+                onChange={(e) => setResponse(e.target.value)}
+                rows={4}
+              />
+            </div>
+            
+            <div className="modal-actions">
+              <button 
+                className="btn btn-secondary"
+                onClick={() => setShowModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn-primary"
+                onClick={handleRespond}
+                disabled={!response.trim()}
+              >
+                Submit Response
+              </button>
+            </div>
           </div>
-        </div>
-      )}
-
-      {filteredComplaints.length === 0 && (
-        <div className="no-results">
-          <div className="no-results-icon">📝</div>
-          <h3>No complaints found</h3>
-          <p>No complaints match your current filter criteria.</p>
         </div>
       )}
     </div>
