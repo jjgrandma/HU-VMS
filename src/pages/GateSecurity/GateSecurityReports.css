@@ -621,3 +621,299 @@
 .quick-stat-card:nth-child(4) {
     animation-delay: 0.4s;
 }
+
+/* Beautiful Roman Typography Enhancement for Gate Security Reports */
+.gate-security-reports-page {
+    font-family: 'Times New Roman', 'Georgia', 'Garamond', 'Book Antiqua', serif !important;
+    letter-spacing: 0.3px;
+    line-height: 1.6;
+}
+
+.gate-security-header h2 {
+    font-family: 'Times New Roman', 'Georgia', 'Garamond', serif !important;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    font-style: italic;
+}
+
+.gate-security-header p {
+    font-family: 'Times New Roman', 'Georgia', serif !important;
+    font-style: italic;
+    letter-spacing: 0.5px;
+}
+
+/* Gate Security Report Cards Roman Style */
+.gate-report-card h3,
+.gate-report-card label,
+.gate-report-card button {
+    font-family: 'Times New Roman', 'Georgia', 'Garamond', serif !important;
+    letter-spacing: 0.3px;
+}
+
+.gate-report-card h3 {
+    font-weight: 700;
+    font-style: italic;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.gate-report-card label {
+    font-weight: 600;
+    font-style: normal;
+}
+
+.gate-report-card input,
+.gate-report-card select,
+.gate-report-card textarea {
+    font-family: 'Times New Roman', 'Georgia', serif !important;
+    letter-spacing: 0.2px;
+    line-height: 1.5;
+}
+
+.gate-report-card button {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-size: 13px;
+}
+
+/* Gate Security Stats Roman Style */
+.gate-stats-grid .gate-stat-card h4 {
+    font-family: 'Times New Roman', 'Georgia', serif !important;
+    font-weight: 700;
+    font-style: italic;
+    letter-spacing: 0.3px;
+}
+
+.gate-stats-grid .gate-stat-card p {
+    font-family: 'Times New Roman', 'Georgia', serif !important;
+    font-style: normal;
+    letter-spacing: 0.2px;
+}
+
+/* Gate Security Table Roman Style */
+.gate-table th {
+    font-family: 'Times New Roman', 'Georgia', serif !important;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-size: 12px;
+}
+
+.gate-table td {
+    font-family: 'Times New Roman', 'Georgia', serif !important;
+    letter-spacing: 0.2px;
+    line-height: 1.4;
+}
+
+/* Beautiful Roman Headings for Gate Security */
+.gate-security-page h1,
+.gate-security-page h2,
+.gate-security-page h3,
+.gate-security-page h4,
+.gate-security-page h5,
+.gate-security-page h6 {
+    font-family: 'Times New Roman', 'Georgia', 'Garamond', serif !important;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Elegant Body Text for Gate Security */
+.gate-security-page p,
+.gate-security-page span,
+.gate-security-page div,
+.gate-security-page label,
+.gate-security-page input,
+.gate-security-page select,
+.gate-security-page textarea,
+.gate-security-page button {
+    font-family: 'Times New Roman', 'Georgia', serif !important;
+    letter-spacing: 0.2px;
+    line-height: 1.5;
+}
+
+/* Gate Security Roman Title */
+.gate-roman-title {
+    font-family: 'Times New Roman', serif !important;
+    font-weight: 700;
+    font-style: italic;
+    letter-spacing: 1px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    position: relative;
+    color: #6366f1;
+}
+
+.gate-roman-title::before {
+    content: "🚪";
+    position: absolute;
+    left: -30px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    opacity: 0.7;
+}
+
+.gate-roman-title::after {
+    content: "🚪";
+    position: absolute;
+    right: -30px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    opacity: 0.7;
+}
+
+/* Gate Security Roman Decorative Dividers */
+.gate-roman-divider {
+    text-align: center;
+    margin: 32px 0;
+    position: relative;
+}
+
+.gate-roman-divider::before {
+    content: "🚪 ❦ 🚪";
+    font-size: 16px;
+    color: #6366f1;
+    background: #f8f9fa;
+    padding: 0 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.gate-roman-divider::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #6366f1, transparent);
+    z-index: 0;
+}
+
+/* Security Badge Roman Style */
+.security-badge {
+    font-family: 'Times New Roman', serif !important;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.security-badge::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.security-badge:hover::before {
+    left: 100%;
+}
+
+/* Vehicle Entry Roman Style */
+.vehicle-entry-card {
+    font-family: 'Times New Roman', serif !important;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 24px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.vehicle-entry-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6, #6366f1);
+    border-radius: 12px 12px 0 0;
+}
+
+/* Authorization Status Roman Style */
+.authorization-status {
+    font-family: 'Times New Roman', serif !important;
+    font-weight: 700;
+    font-style: italic;
+    letter-spacing: 0.3px;
+    padding: 8px 16px;
+    border-radius: 25px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.authorization-status.approved {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+    border: 2px solid #6ee7b7;
+}
+
+.authorization-status.pending {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+    border: 2px solid #fcd34d;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.authorization-status.denied {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+    border: 2px solid #fca5a5;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: scale(1.02);
+    }
+}
+
+
+/* Dark Theme Support */
+[data-theme="dark"] .gate-reports-container {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: #ffffff;
+}
+
+[data-theme="dark"] .report-card,
+[data-theme="dark"] .report-filters,
+[data-theme="dark"] .report-table {
+    background: #2d2d2d;
+    border-color: #404040;
+}
+
+[data-theme="dark"] .report-row {
+    background: #1a1a1a;
+    border-color: #404040;
+}
+
+[data-theme="dark"] .report-row:hover {
+    background: #333333;
+}
+
+[data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3 {
+    color: #ffffff;
+}
+
+[data-theme="dark"] p {
+    color: #b0b0b0;
+}

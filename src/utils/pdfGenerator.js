@@ -1,234 +1,43 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-// Professional PDF Generator for HU-VMS Reports
-// 
-// UNIVERSITY LOGO INTEGRATION:
-// To add the actual Haramaya University logo to PDFs:
-// 1. Convert your logo image to base64 format
-// 2. Call: pdfGenerator.setUniversityLogo('data:image/png;base64,YOUR_BASE64_STRING')
-// 3. The logo will automatically appear in the top-right corner of all PDF reports
-//
-// Current implementation uses a professional placeholder that resembles a university seal
+// Professional PDF Generator for HU-VMS Reports with Beautiful Roman Typography
 class PDFGenerator {
     constructor() {
-        this.primaryColor = [74, 144, 226]; // #4a90e2
-        this.secondaryColor = [53, 122, 189]; // #357abd
-        this.darkColor = [30, 60, 114]; // #1e3c72
+        this.primaryColor = [74, 144, 226];
+        this.secondaryColor = [53, 122, 189];
+        this.darkColor = [30, 60, 114];
         this.textColor = [51, 51, 51];
         this.lightGray = [240, 240, 240];
-
-        // University logo data (base64 encoded image would go here)
-        this.universityLogo = null; // Will be set if logo image is available
-
-        // Try to load the university logo
-        this.loadUniversityLogo();
+        this.universityLogo = null;
     }
 
-    // Method to load university logo from assets
-    loadUniversityLogo() {
-        try {
-            // Try to load the university logo from public folder
-            this.loadLogoFromPublicFolder();
-            console.log('University logo loading system ready');
-        } catch (error) {
-            console.log('University logo not available, using placeholder');
-        }
-    }
-
-    // Load logo from public folder (image.png)
-    async loadLogoFromPublicFolder() {
-        try {
-            // Load the logo from public/Haramaya-768x576.png
-            const logoPath = '/Haramaya-768x576.png';
-            const response = await fetch(logoPath);
-
-            if (response.ok) {
-                const blob = await response.blob();
-                const reader = new FileReader();
-
-                reader.onload = (e) => {
-                    this.universityLogo = e.target.result;
-                    console.log('✅ Haramaya University logo loaded from public/Haramaya-768x576.png');
-                };
-
-                reader.readAsDataURL(blob);
-            } else {
-                console.log('Logo not found at public/Haramaya-768x576.png, using detailed placeholder');
-            }
-        } catch (error) {
-            console.log('Could not load logo from public folder:', error.message);
-        }
-    }
-
-    // Method to set university logo
-    setUniversityLogo(logoBase64) {
-        this.universityLogo = logoBase64;
-    }
-
-    // Example method to demonstrate logo usage
-    // Call this method with your base64 encoded logo string
-    setHaramayaLogo(base64String) {
-        if (base64String && base64String.startsWith('data:image/')) {
-            this.universityLogo = base64String;
-            console.log('Haramaya University logo loaded successfully');
-        } else {
-            console.warn('Invalid logo format. Please provide a valid base64 image string starting with "data:image/"');
-        }
-    }
-
-    // Method to load logo from a file input or URL
-    async loadLogoFromFile(file) {
-        return new Promise((resolve, reject) => {
-            if (!file) {
-                reject('No file provided');
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const base64String = e.target.result;
-                this.setHaramayaLogo(base64String);
-                resolve(base64String);
-            };
-            reader.onerror = (error) => {
-                reject(error);
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-
-    // Method to load logo from URL (for web usage)
-    async loadLogoFromUrl(imageUrl) {
-        try {
-            const response = await fetch(imageUrl);
-            const blob = await response.blob();
-
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const base64String = e.target.result;
-                    this.setHaramayaLogo(base64String);
-                    resolve(base64String);
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-            });
-        } catch (error) {
-            console.error('Failed to load logo from URL:', error);
-            throw error;
-        }
+    // Set Haramaya University logo
+    setHaramayaLogo(logoData) {
+        this.universityLogo = logoData;
     }
 
     // Add university logo to PDF
     addUniversityLogo(doc, x, y, size = 30) {
         try {
             if (this.universityLogo) {
-                // If we have the actual logo image, use it
                 doc.addImage(this.universityLogo, 'PNG', x - size / 2, y - size / 2, size, size);
             } else {
-                // Create a detailed representation of the Haramaya University logo
-                // Based on the circular seal design with colors and elements
-
-                // Outer white circle (seal background)
+                // Simple university logo placeholder
                 doc.setFillColor(255, 255, 255);
                 doc.circle(x, y, size / 2, 'F');
-
-                // Outer border (dark)
                 doc.setDrawColor(0, 0, 0);
                 doc.setLineWidth(1.5);
                 doc.circle(x, y, size / 2, 'S');
 
-                // Inner border
-                doc.setLineWidth(0.8);
-                doc.circle(x, y, size / 2 - 2, 'S');
-
-                // Top section - Orange/Yellow sky with sun
-                doc.setFillColor(255, 165, 0); // Orange
-                // Create arc for top section
-                doc.arc(x, y, size / 3, 0, Math.PI, 'F');
-
-                // Sun rays (simplified yellow lines)
-                doc.setDrawColor(255, 215, 0); // Gold
-                doc.setLineWidth(1);
-                for (let i = 0; i < 6; i++) {
-                    const angle = (i * Math.PI / 5) - Math.PI + Math.PI / 6;
-                    const startX = x + Math.cos(angle) * (size / 5);
-                    const startY = y + Math.sin(angle) * (size / 5);
-                    const endX = x + Math.cos(angle) * (size / 3.5);
-                    const endY = y + Math.sin(angle) * (size / 3.5);
-                    if (startY < y - size / 12) { // Only top rays
-                        doc.line(startX, startY, endX, endY);
-                    }
-                }
-
-                // Middle section - Blue sky
-                doc.setFillColor(65, 105, 225); // Royal Blue
-                doc.rect(x - size / 3, y - size / 8, size * 2 / 3, size / 8, 'F');
-
-                // Bottom section - Green land
-                doc.setFillColor(34, 139, 34); // Forest Green
-                doc.rect(x - size / 3, y, size * 2 / 3, size / 3, 'F');
-
-                // Central emblem - Yellow/Orange circle
-                doc.setFillColor(255, 200, 0); // Golden Yellow
-                doc.circle(x, y + size / 16, size / 7, 'F');
-
-                // Central emblem border
-                doc.setDrawColor(200, 100, 0);
-                doc.setLineWidth(0.5);
-                doc.circle(x, y + size / 16, size / 7, 'S');
-
-                // Atomic/flower symbol in center (simplified)
-                doc.setDrawColor(0, 0, 0);
-                doc.setLineWidth(0.8);
-                // Central dot
-                doc.setFillColor(0, 0, 0);
-                doc.circle(x, y + size / 16, 1, 'F');
-
-                // Petals/electron orbits (simplified as lines)
-                for (let i = 0; i < 6; i++) {
-                    const angle = (i * Math.PI * 2) / 6;
-                    const petalX = x + Math.cos(angle) * (size / 12);
-                    const petalY = y + size / 16 + Math.sin(angle) * (size / 12);
-                    doc.line(x, y + size / 16, petalX, petalY);
-                    // Small circles at petal ends
-                    doc.setFillColor(0, 0, 0);
-                    doc.circle(petalX, petalY, 0.5, 'F');
-                }
-
-                // Trees on the green section (black triangular shapes)
-                doc.setFillColor(0, 0, 0);
-                const treePositions = [-size / 4, -size / 8, size / 8, size / 4];
-                treePositions.forEach(pos => {
-                    // Tree trunk (small rectangle)
-                    doc.rect(x + pos - 0.5, y + size / 6, 1, size / 12, 'F');
-                    // Tree top (triangle) - using lines to create triangle
-                    const treeTopX = x + pos;
-                    const treeTopY = y + size / 12;
-                    const treeBaseY = y + size / 6;
-                    const treeWidth = size / 20;
-
-                    // Draw triangle using lines
-                    doc.line(treeTopX, treeTopY, treeTopX - treeWidth, treeBaseY);
-                    doc.line(treeTopX, treeTopY, treeTopX + treeWidth, treeBaseY);
-                    doc.line(treeTopX - treeWidth, treeBaseY, treeTopX + treeWidth, treeBaseY);
-                });
-
-                // University name text around the circle (simplified)
                 doc.setTextColor(0, 0, 0);
                 doc.setFontSize(size / 12);
                 doc.setFont('helvetica', 'bold');
-
-                // Top text
                 doc.text('HARAMAYA', x, y - size / 2.5, { align: 'center' });
-                // Bottom text  
                 doc.text('UNIVERSITY', x, y + size / 2.2, { align: 'center' });
             }
-
         } catch (error) {
             console.log('University logo rendering error:', error);
-            // Fallback: simple text
             doc.setTextColor(...this.primaryColor);
             doc.setFontSize(8);
             doc.setFont('helvetica', 'bold');
@@ -236,210 +45,1213 @@ class PDFGenerator {
             doc.text('UNIVERSITY', x, y + 4, { align: 'center' });
         }
     }
-
-    // Add professional header with logo and title
+    // Add beautiful professional header with Roman typography
     addHeader(doc, title, subtitle = '') {
         const pageWidth = doc.internal.pageSize.getWidth();
 
-        // Header background
-        doc.setFillColor(...this.primaryColor);
-        doc.rect(0, 0, pageWidth, 40, 'F');
+        // Elegant header background with gradient effect
+        doc.setFillColor(248, 250, 252);
+        doc.rect(0, 0, pageWidth, 55, 'F');
 
-        // Add Haramaya University Logo (top right)
-        this.addUniversityLogo(doc, pageWidth - 25, 20, 24);
+        // Sophisticated top border with Roman blue
+        doc.setFillColor(41, 98, 165);
+        doc.rect(0, 0, pageWidth, 4, 'F');
 
-        // Title
-        doc.setTextColor(255, 255, 255);
+        // Add university logo with professional positioning (moved further left to prevent overlap)
+        this.addUniversityLogo(doc, pageWidth - 45, 28, 32);
+
+        // Main title with classical Roman typography
+        doc.setTextColor(25, 55, 95);
+        doc.setFontSize(28);
+        doc.setFont('times', 'bold');
+        doc.text('HU-VMS', 20, 22);
+
+        // Classical decorative flourish
+        doc.setTextColor(41, 98, 165);
         doc.setFontSize(20);
-        doc.setFont('helvetica', 'bold');
-        doc.text('HU-VMS', 20, 18);
+        doc.text('❦', 68, 22);
 
-        doc.setFontSize(14);
-        doc.text(title, 20, 28);
+        // Report title with elegant Roman styling
+        doc.setTextColor(25, 55, 95);
+        doc.setFontSize(18);
+        doc.setFont('times', 'bolditalic');
+        doc.text(title, 20, 36);
 
+        // Subtitle with refined typography
         if (subtitle) {
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.text(subtitle, 20, 35);
+            doc.setFontSize(12);
+            doc.setFont('times', 'italic');
+            doc.setTextColor(85, 85, 85);
+            doc.text(subtitle, 20, 46);
         }
 
-        // Date on right (positioned to not overlap with logo)
-        doc.setFontSize(9);
+        // Date and time with Roman numerals style - positioned to avoid logo overlap
+        doc.setFontSize(10);
+        doc.setFont('times', 'normal');
+        doc.setTextColor(70, 70, 70);
         const dateStr = new Date().toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
             day: 'numeric'
         });
-        doc.text(dateStr, pageWidth - 80, 12, { align: 'right' });
-        doc.text(new Date().toLocaleTimeString('en-US'), pageWidth - 80, 18, { align: 'right' });
+        const timeStr = new Date().toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+
+        // Position date/time with proper spacing from logo (logo ends at pageWidth - 13, so text starts at pageWidth - 55)
+        const dateTimeX = pageWidth - 55;
+        doc.text(`${dateStr}`, dateTimeX, 18, { align: 'right' });
+        doc.text(`${timeStr}`, dateTimeX, 26, { align: 'right' });
+
+        // Professional separator line between date/time and logo
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.5);
+        doc.line(pageWidth - 50, 12, pageWidth - 50, 32);
+
+        // Elegant bottom border with Roman styling
+        doc.setDrawColor(41, 98, 165);
+        doc.setLineWidth(1.2);
+        doc.line(20, 52, pageWidth - 20, 52);
+
+        // Decorative corner elements
+        doc.setFillColor(41, 98, 165);
+        doc.circle(25, 52, 1.5, 'F');
+        doc.circle(pageWidth - 25, 52, 1.5, 'F');
     }
 
-    // Add professional footer
+    // Add beautiful section header with icon and styling
+    addSectionHeader(doc, title, y, icon = '❦') {
+        // Section background with gradient effect
+        doc.setFillColor(248, 250, 255);
+        doc.roundedRect(20, y - 8, 170, 18, 4, 4, 'F');
+
+        // Section border with Roman blue
+        doc.setDrawColor(41, 98, 165);
+        doc.setLineWidth(1);
+        doc.roundedRect(20, y - 8, 170, 18, 4, 4, 'S');
+
+        // Icon background circle
+        doc.setFillColor(41, 98, 165);
+        doc.circle(30, y + 1, 6, 'F');
+
+        // Icon
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(12);
+        doc.text(icon, 30, y + 3, { align: 'center' });
+
+        // Section title
+        doc.setTextColor(25, 55, 95);
+        doc.setFontSize(16);
+        doc.setFont('times', 'bolditalic');
+        doc.text(title, 42, y + 3);
+
+        // Decorative line
+        doc.setDrawColor(218, 165, 32);
+        doc.setLineWidth(2);
+        doc.line(42, y + 6, 42 + doc.getTextWidth(title), y + 6);
+    }
+
+    // Add beautiful footer with Roman elegance
     addFooter(doc, pageNumber, totalPages) {
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
 
-        doc.setDrawColor(...this.primaryColor);
-        doc.setLineWidth(0.5);
-        doc.line(20, pageHeight - 20, pageWidth - 20, pageHeight - 20);
+        // Elegant top border for footer
+        doc.setDrawColor(41, 98, 165);
+        doc.setLineWidth(1.2);
+        doc.line(20, pageHeight - 28, pageWidth - 20, pageHeight - 28);
 
-        doc.setTextColor(...this.textColor);
-        doc.setFontSize(8);
-        doc.text('Haramaya University - Vehicle Management System', 20, pageHeight - 12);
-        doc.text(`Page ${pageNumber} of ${totalPages}`, pageWidth - 20, pageHeight - 12, { align: 'right' });
-        doc.text('Generated by HU-VMS Driver Portal', pageWidth / 2, pageHeight - 12, { align: 'center' });
-    }
+        // Decorative corner elements
+        doc.setFillColor(41, 98, 165);
+        doc.circle(25, pageHeight - 28, 1.5, 'F');
+        doc.circle(pageWidth - 25, pageHeight - 28, 1.5, 'F');
 
-    // Add recipient information
-    addRecipient(doc, recipient, yPos = 50) {
-        doc.setFillColor(...this.lightGray);
-        doc.roundedRect(20, yPos, 170, 25, 3, 3, 'F');
-
-        doc.setTextColor(...this.darkColor);
+        // Institution name with Roman styling
+        doc.setTextColor(70, 70, 70);
         doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('TO:', 25, yPos + 8);
+        doc.setFont('times', 'italic');
+        doc.text('HARAMAYA UNIVERSITY', 25, pageHeight - 20);
+        doc.setFont('times', 'normal');
+        doc.text('• Vehicle Management System •', 25, pageHeight - 15);
 
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(11);
-        doc.text(recipient.name, 25, yPos + 15);
-        doc.setFontSize(9);
-        doc.text(recipient.department, 25, yPos + 21);
+        // Page numbering with Roman numerals style
+        doc.setFont('times', 'normal');
+        doc.setTextColor(85, 85, 85);
+        doc.text(`Page ${pageNumber} of ${totalPages}`, pageWidth - 25, pageHeight - 20, { align: 'right' });
+
+        // Classical footer flourish
+        doc.setFont('times', 'italic');
+        doc.setTextColor(41, 98, 165);
+        doc.setFontSize(12);
+        doc.text('❦ OFFICIUM DOCUMENTUM ❦', pageWidth / 2, pageHeight - 10, { align: 'center' });
     }
 
-    // Generate Fuel Report PDF
-    generateFuelReport(data, recipient = 'Admin') {
+    // Add recipient information with Roman elegance
+    addRecipient(doc, recipient, yPos = 65) {
+        // Elegant background with subtle gradient effect
+        doc.setFillColor(250, 252, 255);
+        doc.roundedRect(25, yPos, 165, 35, 6, 6, 'F');
+
+        // Sophisticated border with Roman blue
+        doc.setDrawColor(41, 98, 165);
+        doc.setLineWidth(1.5);
+        doc.roundedRect(25, yPos, 165, 35, 6, 6, 'S');
+
+        // Classical "TO" label with Roman styling
+        doc.setTextColor(25, 55, 95);
+        doc.setFontSize(12);
+        doc.setFont('times', 'bold');
+        doc.text('DESTINATARIUS:', 32, yPos + 12);
+
+        // Recipient name with elegant typography
+        doc.setFont('times', 'bolditalic');
+        doc.setFontSize(14);
+        doc.setTextColor(35, 35, 35);
+        const recipientName = recipient.name || recipient;
+        doc.text(recipientName, 32, yPos + 22);
+
+        // Department with refined styling
+        if (recipient.department) {
+            doc.setFontSize(10);
+            doc.setFont('times', 'italic');
+            doc.setTextColor(85, 85, 85);
+            doc.text(recipient.department, 32, yPos + 30);
+        }
+
+        // Decorative corner flourish
+        doc.setTextColor(41, 98, 165);
+        doc.setFontSize(10);
+        doc.text('❦', 175, yPos + 8);
+    }
+    // Helper method for driver performance rating
+    getDriverRating(completionRate) {
+        if (completionRate >= 95) return { rating: 'Excellent', color: [76, 175, 80] };
+        if (completionRate >= 85) return { rating: 'Good', color: [74, 144, 226] };
+        if (completionRate >= 70) return { rating: 'Average', color: [255, 152, 0] };
+        return { rating: 'Needs Improvement', color: [244, 67, 54] };
+    }
+
+    // Helper method for recommendations
+    getDriverRecommendations(data) {
+        const recommendations = [];
+        const completionRate = (data.completedTrips / data.totalTrips) * 100;
+
+        if (completionRate < 85) {
+            recommendations.push('Focus on improving trip completion rate');
+        }
+        if (data.fuelEfficiency && data.fuelEfficiency < 8) {
+            recommendations.push('Consider fuel-efficient driving techniques');
+        }
+        if (data.maintenanceIssues > 2) {
+            recommendations.push('Schedule regular vehicle maintenance checks');
+        }
+        if (recommendations.length === 0) {
+            recommendations.push('Continue maintaining excellent performance standards');
+        }
+
+        return recommendations;
+    }
+
+    // Helper method for security assessment
+    getSecurityAssessment(data) {
+        const totalIncidents = (data.unauthorizedEntries || 0) + (data.securityBreaches || 0);
+
+        if (totalIncidents === 0) return { level: 'Excellent', color: [76, 175, 80] };
+        if (totalIncidents <= 2) return { level: 'Good', color: [74, 144, 226] };
+        if (totalIncidents <= 5) return { level: 'Moderate', color: [255, 152, 0] };
+        return { level: 'High Risk', color: [244, 67, 54] };
+    }
+    // Generate Driver Report PDF with Sophisticated Roman Typography
+    generateDriverReport(data, recipient = 'Admin') {
         const doc = new jsPDF();
+        this.addHeader(doc, 'DRIVER PERFORMANCE REPORT', `${data.period} Performance Analysis • Haramaya University`);
 
-        this.addHeader(doc, 'Fuel Report', 'Driver Fuel Management');
-
-        // Recipient
         const recipientInfo = {
             name: recipient === 'Admin' ? 'Administration Office' : 'Transport Office',
             department: recipient === 'Admin' ? 'University Administration' : 'Transport Management Department'
         };
-        this.addRecipient(doc, recipientInfo, 50);
+        this.addRecipient(doc, recipientInfo, 65);
 
-        // Report Details
-        doc.setTextColor(...this.darkColor);
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Report Details', 20, 90);
+        let currentY = 110;
 
-        // Report Type Badge
-        const reportType = data.reportType === 'refill' ? 'FUEL REFILL' : 'FUEL CONSUMPTION';
-        doc.setFillColor(...this.primaryColor);
-        doc.roundedRect(20, 95, 50, 10, 2, 2, 'F');
+        // Enhanced report period badge with gradient effect
+        doc.setFillColor(41, 98, 165);
+        doc.roundedRect(20, currentY, 170, 22, 8, 8, 'F');
+
+        // Inner gradient effect
+        doc.setFillColor(51, 108, 175);
+        doc.roundedRect(22, currentY + 2, 166, 18, 6, 6, 'F');
+
+        // Golden accent border
+        doc.setDrawColor(218, 165, 32);
+        doc.setLineWidth(1.5);
+        doc.roundedRect(20, currentY, 170, 22, 8, 8, 'S');
+
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text(reportType, 45, 101.5, { align: 'center' });
+        doc.setFontSize(14);
+        doc.setFont('times', 'bolditalic');
+        doc.text(`❦ ${data.period.toUpperCase()} PERFORMANCE ANALYSIS ❦`, 105, currentY + 14, { align: 'center' });
 
-        // Details Table
-        const tableData = [
-            ['Date', data.date || new Date().toLocaleDateString()],
-            ['Amount', `${data.amount} Liters`],
-            ['Odometer Reading', `${data.odometer} km`]
+        currentY += 35;
+
+        // Driver Information Section with enhanced Roman elegance
+        this.addSectionHeader(doc, 'I. CONDUCTOR INFORMATIO', currentY, '👤');
+        currentY += 20;
+
+        const driverInfo = [
+            ['Nomen Conductoris', data.driverName || 'Johannes Doe'],
+            ['Numerus Laboratoris', data.employeeId || 'EMP-001'],
+            ['Numerus Licentiae', data.licenseNumber || 'LIC-123456'],
+            ['Vehiculum Assignatum', data.vehicleId || 'VEH-001'],
+            ['Tempus Relationis', data.period || 'Mensilis'],
+            ['Status Conductoris', 'Activus']
         ];
 
-        if (data.reportType === 'refill') {
-            tableData.push(['Cost', `${data.cost} ETB`]);
-            if (data.station) {
-                tableData.push(['Gas Station', data.station]);
-            }
-        }
-
-        tableData.push(['Driver Name', data.driverName || 'John Doe']);
-        tableData.push(['Vehicle ID', data.vehicleId || 'VEH-001']);
-        tableData.push(['License Plate', data.licensePlate || 'ABC-1234']);
-
         doc.autoTable({
-            startY: 110,
-            head: [],
-            body: tableData,
-            theme: 'striped',
-            headStyles: {
-                fillColor: this.primaryColor,
-                textColor: [255, 255, 255],
-                fontStyle: 'bold'
-            },
+            startY: currentY,
+            body: driverInfo,
+            theme: 'grid',
             styles: {
-                fontSize: 10,
-                cellPadding: 5
+                font: 'times',
+                fontSize: 11,
+                cellPadding: 10,
+                lineColor: [41, 98, 165],
+                lineWidth: 0.8,
+                textColor: [35, 35, 35],
+                letterSpacing: 0.4,
+                lineHeight: 1.6
             },
             columnStyles: {
-                0: { fontStyle: 'bold', cellWidth: 60 },
-                1: { cellWidth: 110 }
+                0: {
+                    fontStyle: 'bolditalic',
+                    cellWidth: 80,
+                    fillColor: [248, 250, 255],
+                    textColor: [25, 55, 95]
+                },
+                1: {
+                    cellWidth: 90,
+                    fontStyle: 'normal',
+                    fillColor: [255, 255, 255]
+                }
             },
-            margin: { left: 20, right: 20 }
+            margin: { left: 25, right: 25 },
+            headStyles: {
+                fillColor: [41, 98, 165],
+                textColor: [255, 255, 255],
+                fontStyle: 'bolditalic'
+            }
         });
 
-        // Notes section
-        if (data.notes) {
-            const finalY = doc.lastAutoTable.finalY + 15;
-            doc.setTextColor(...this.darkColor);
-            doc.setFontSize(11);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Additional Notes:', 20, finalY);
+        currentY = doc.lastAutoTable.finalY + 30;
 
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            doc.setTextColor(...this.textColor);
-            const splitNotes = doc.splitTextToSize(data.notes, 170);
-            doc.text(splitNotes, 20, finalY + 7);
+        // Trip Performance Section with enhanced styling
+        if (data.includeTripSummary) {
+            this.addSectionHeader(doc, 'II. CURSUS PERFORMANCE ANALYSIS', currentY, '🚗');
+            currentY += 20;
+
+            const completionRate = data.totalTrips > 0 ? ((data.completedTrips / data.totalTrips) * 100).toFixed(1) : 0;
+            const rating = this.getDriverRating(completionRate);
+
+            // Performance indicator badge
+            const badgeColor = completionRate >= 90 ? [34, 197, 94] : completionRate >= 75 ? [251, 191, 36] : [239, 68, 68];
+            doc.setFillColor(...badgeColor);
+            doc.roundedRect(140, currentY - 15, 45, 12, 4, 4, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(9);
+            doc.setFont('times', 'bold');
+            doc.text(`${completionRate}% SUCCESS`, 162.5, currentY - 8, { align: 'center' });
+
+            const tripData = [
+                ['Totalis Cursus Assignatus', data.totalTrips?.toString() || '0', '📋'],
+                ['Feliciter Completus', data.completedTrips?.toString() || '0', '✅'],
+                ['Cancellatus/Incompletus', data.cancelledTrips?.toString() || '0', '❌'],
+                ['Totalis Distantia', `${data.totalDistance || 0} km`, '📏'],
+                ['Media Cursus Distantia', `${data.totalTrips > 0 ? (data.totalDistance / data.totalTrips).toFixed(1) : 0} km`, '📊'],
+                ['Ratio Completionis', `${completionRate}%`, '🎯'],
+                ['Gradus Performance', rating.rating, '⭐']
+            ];
+
+            doc.autoTable({
+                startY: currentY,
+                body: tripData.map(row => [row[2] + ' ' + row[0], row[1]]),
+                theme: 'striped',
+                styles: {
+                    font: 'times',
+                    fontSize: 11,
+                    cellPadding: 10,
+                    lineColor: [41, 98, 165],
+                    lineWidth: 0.8,
+                    textColor: [35, 35, 35],
+                    letterSpacing: 0.4,
+                    lineHeight: 1.6
+                },
+                columnStyles: {
+                    0: {
+                        fontStyle: 'bolditalic',
+                        cellWidth: 100,
+                        fillColor: [248, 250, 255],
+                        textColor: [25, 55, 95]
+                    },
+                    1: {
+                        cellWidth: 70,
+                        fontStyle: 'bold',
+                        textColor: [41, 98, 165],
+                        halign: 'center'
+                    }
+                },
+                margin: { left: 25, right: 25 },
+                alternateRowStyles: {
+                    fillColor: [252, 252, 252]
+                }
+            });
+
+            currentY = doc.lastAutoTable.finalY + 25;
         }
 
-        // Signature section
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const signatureY = pageHeight - 60;
+        // Financial Summary Section with enhanced Roman elegance
+        if (data.includeFinancialSummary) {
+            this.addSectionHeader(doc, 'III. SUMMA FINANCIALIS', currentY, '💰');
+            currentY += 20;
 
-        doc.setDrawColor(...this.primaryColor);
-        doc.line(20, signatureY, 90, signatureY);
-        doc.setTextColor(...this.textColor);
-        doc.setFontSize(9);
-        doc.text('Driver Signature', 20, signatureY + 5);
+            const totalCosts = (data.fuelCosts || 0) + (data.maintenanceCosts || 0);
+            const costPerKm = data.totalDistance > 0 ? (totalCosts / data.totalDistance).toFixed(2) : 0;
+
+            // Cost efficiency indicator
+            const efficiencyColor = costPerKm <= 5 ? [34, 197, 94] : costPerKm <= 10 ? [251, 191, 36] : [239, 68, 68];
+            doc.setFillColor(...efficiencyColor);
+            doc.roundedRect(140, currentY - 15, 45, 12, 4, 4, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(9);
+            doc.setFont('times', 'bold');
+            doc.text(`${costPerKm} ETB/KM`, 162.5, currentY - 8, { align: 'center' });
+
+            const financialData = [
+                ['💧 Sumptus Combustibilis', `${data.fuelCosts || 0} ETB`],
+                ['🔧 Sumptus Conservationis', `${data.maintenanceCosts || 0} ETB`],
+                ['📊 Totalis Sumptus Operandi', `${totalCosts} ETB`],
+                ['📈 Sumptus per Kilometrum', `${costPerKm} ETB/km`],
+                ['💡 Efficentia Index', totalCosts > 0 ? ((data.totalDistance || 0) / totalCosts * 100).toFixed(1) + ' km/100ETB' : 'N/A']
+            ];
+
+            doc.autoTable({
+                startY: currentY,
+                body: financialData,
+                theme: 'striped',
+                styles: {
+                    font: 'times',
+                    fontSize: 11,
+                    cellPadding: 10,
+                    lineColor: [41, 98, 165],
+                    lineWidth: 0.8,
+                    textColor: [35, 35, 35],
+                    letterSpacing: 0.4,
+                    lineHeight: 1.6
+                },
+                columnStyles: {
+                    0: {
+                        fontStyle: 'bolditalic',
+                        cellWidth: 100,
+                        fillColor: [248, 250, 255],
+                        textColor: [25, 55, 95]
+                    },
+                    1: {
+                        cellWidth: 70,
+                        fontStyle: 'bold',
+                        textColor: [41, 98, 165],
+                        halign: 'center'
+                    }
+                },
+                margin: { left: 25, right: 25 },
+                alternateRowStyles: {
+                    fillColor: [252, 252, 252]
+                }
+            });
+
+            currentY = doc.lastAutoTable.finalY + 25;
+        }
+
+        // Enhanced Recommendations Section
+        const recommendations = this.getDriverRecommendations(data);
+        this.addSectionHeader(doc, 'IV. COMMENDATIONES ET CONSILIUM', currentY, '💡');
+        currentY += 20;
+
+        // Recommendation cards with icons
+        const recIcons = ['🎯', '📈', '⚡', '🛡️', '🌟'];
+        recommendations.forEach((rec, index) => {
+            // Card background
+            doc.setFillColor(248, 250, 255);
+            doc.roundedRect(25, currentY - 5, 160, 15, 3, 3, 'F');
+
+            // Card border
+            doc.setDrawColor(41, 98, 165);
+            doc.setLineWidth(0.5);
+            doc.roundedRect(25, currentY - 5, 160, 15, 3, 3, 'S');
+
+            doc.setTextColor(25, 55, 95);
+            doc.setFontSize(11);
+            doc.setFont('times', 'bold');
+            doc.text(`${recIcons[index] || '•'}`, 30, currentY + 3);
+
+            doc.setFont('times', 'normal');
+            doc.setTextColor(35, 35, 35);
+            const wrappedText = doc.splitTextToSize(rec, 140);
+            doc.text(wrappedText, 40, currentY + 3);
+            currentY += 20;
+        });
+
+        // Professional Signature Section with enhanced Roman elegance
+        currentY += 15;
+
+        // Decorative separator with gradient effect
+        doc.setFillColor(41, 98, 165);
+        doc.rect(25, currentY, 160, 3, 'F');
+        doc.setFillColor(218, 165, 32);
+        doc.rect(25, currentY + 3, 160, 1, 'F');
+
+        // Decorative corner elements
+        doc.setFillColor(218, 165, 32);
+        doc.circle(30, currentY + 1.5, 3, 'F');
+        doc.circle(180, currentY + 1.5, 3, 'F');
+
+        // Inner circles
+        doc.setFillColor(41, 98, 165);
+        doc.circle(30, currentY + 1.5, 1.5, 'F');
+        doc.circle(180, currentY + 1.5, 1.5, 'F');
+
+        currentY += 18;
+
+        // Enhanced signature section
+        doc.setTextColor(25, 55, 95);
+        doc.setFontSize(14);
+        doc.setFont('times', 'bolditalic');
+        doc.text('❦ DOCUMENTUM OFFICIALE HU-VMS ❦', 105, currentY, { align: 'center' });
+
+        doc.setFontSize(10);
+        doc.setFont('times', 'italic');
+        doc.setTextColor(70, 70, 70);
+        const currentDate = new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        const currentTime = new Date().toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+        doc.text(`Datum: ${currentDate} • Tempus: ${currentTime}`, 105, currentY + 12, { align: 'center' });
+
+        // Authentication seal
+        doc.setDrawColor(218, 165, 32);
+        doc.setLineWidth(2);
+        doc.circle(105, currentY + 25, 15, 'S');
+        doc.setTextColor(218, 165, 32);
         doc.setFontSize(8);
-        doc.text(new Date().toLocaleString(), 20, signatureY + 10);
+        doc.setFont('times', 'bold');
+        doc.text('HARAMAYA', 105, currentY + 22, { align: 'center' });
+        doc.text('UNIVERSITY', 105, currentY + 28, { align: 'center' });
 
         this.addFooter(doc, 1, 1);
 
-        // Save PDF
-        const fileName = `Fuel_Report_${data.reportType}_${new Date().toISOString().split('T')[0]}.pdf`;
+        const fileName = `HU-VMS_Driver_Report_${data.period}_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(fileName);
-
         return fileName;
     }
+    // Generate Fuel Station Report PDF with Sophisticated Roman Typography
+    generateFuelStationReport(data, recipient = 'Admin') {
+        const doc = new jsPDF();
+        this.addHeader(doc, 'FUEL STATION OPERATIONS REPORT', `${data.period} Fuel Management Analysis • Haramaya University`);
 
+        const recipientInfo = {
+            name: recipient === 'Admin' ? 'Administration Office' : 'Transport Office',
+            department: recipient === 'Admin' ? 'University Administration' : 'Transport Management Department'
+        };
+        this.addRecipient(doc, recipientInfo, 65);
+
+        let currentY = 110;
+
+        // Enhanced report period badge with gradient effect
+        doc.setFillColor(184, 134, 11);
+        doc.roundedRect(20, currentY, 170, 22, 8, 8, 'F');
+
+        // Inner gradient effect
+        doc.setFillColor(194, 144, 21);
+        doc.roundedRect(22, currentY + 2, 166, 18, 6, 6, 'F');
+
+        // Golden accent border
+        doc.setDrawColor(218, 165, 32);
+        doc.setLineWidth(1.5);
+        doc.roundedRect(20, currentY, 170, 22, 8, 8, 'S');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.setFont('times', 'bolditalic');
+        doc.text(`⛽ ${data.period.toUpperCase()} COMBUSTIBILIS ANALYSIS ⛽`, 105, currentY + 14, { align: 'center' });
+
+        currentY += 35;
+
+        // Station Information Section with enhanced Roman elegance
+        this.addSectionHeader(doc, 'I. STATIO COMBUSTIBILIS INFORMATIO', currentY, '⛽');
+        currentY += 20;
+
+        const stationInfo = [
+            ['Nomen Stationis', data.stationName || 'HU Principalis Statio Combustibilis'],
+            ['Numerus Stationis', data.stationId || 'FS-001'],
+            ['Nomen Officialis', data.officerName || 'Officialis Combustibilis'],
+            ['Tempus Relationis', data.period || 'Mensilis'],
+            ['Datum Relationis', new Date().toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            })],
+            ['Status Operandi', 'Activus']
+        ];
+
+        doc.autoTable({
+            startY: currentY,
+            body: stationInfo,
+            theme: 'grid',
+            styles: {
+                font: 'times',
+                fontSize: 11,
+                cellPadding: 10,
+                lineColor: [184, 134, 11],
+                lineWidth: 0.8,
+                textColor: [35, 35, 35],
+                letterSpacing: 0.4,
+                lineHeight: 1.6
+            },
+            columnStyles: {
+                0: {
+                    fontStyle: 'bolditalic',
+                    cellWidth: 80,
+                    fillColor: [255, 251, 235],
+                    textColor: [25, 55, 95]
+                },
+                1: {
+                    cellWidth: 90,
+                    fontStyle: 'normal',
+                    fillColor: [255, 255, 255]
+                }
+            },
+            margin: { left: 25, right: 25 },
+            alternateRowStyles: {
+                fillColor: [252, 252, 252]
+            }
+        });
+
+        currentY = doc.lastAutoTable.finalY + 30;
+
+        // Fuel Dispensing Statistics with enhanced styling
+        if (data.includeSummary) {
+            this.addSectionHeader(doc, 'II. STATISTICAE DISPENSATIONIS COMBUSTIBILIS', currentY, '📊');
+            currentY += 20;
+
+            const successRate = data.totalTransactions > 0 ? ((data.completedTransactions / data.totalTransactions) * 100).toFixed(1) : 0;
+
+            // Success rate indicator badge
+            const badgeColor = successRate >= 95 ? [34, 197, 94] : successRate >= 85 ? [251, 191, 36] : [239, 68, 68];
+            doc.setFillColor(...badgeColor);
+            doc.roundedRect(140, currentY - 15, 45, 12, 4, 4, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(9);
+            doc.setFont('times', 'bold');
+            doc.text(`${successRate}% SUCCESS`, 162.5, currentY - 8, { align: 'center' });
+
+            const summaryData = [
+                ['⛽ Totalis Combustibilis Dispensatus', `${data.totalFuel || 0} Litri`],
+                ['🚛 Diesel Dispensatus', `${data.dieselDispensed || 0} Litri`],
+                ['🚗 Benzinum Dispensatum', `${data.petrolDispensed || 0} Litri`],
+                ['📋 Totales Transactiones', (data.totalTransactions || 0).toString()],
+                ['✅ Transactiones Completae', (data.completedTransactions || 0).toString()],
+                ['📊 Media per Transactionem', `${data.totalTransactions > 0 ? (data.totalFuel / data.totalTransactions).toFixed(1) : 0} L`],
+                ['🎯 Ratio Successus', `${successRate}%`],
+                ['⏱️ Tempus Medius Dispensationis', `${data.avgDispenseTime || 5} min`]
+            ];
+
+            doc.autoTable({
+                startY: currentY,
+                body: summaryData,
+                theme: 'striped',
+                styles: {
+                    font: 'times',
+                    fontSize: 11,
+                    cellPadding: 10,
+                    lineColor: [184, 134, 11],
+                    lineWidth: 0.8,
+                    textColor: [35, 35, 35],
+                    letterSpacing: 0.4,
+                    lineHeight: 1.6
+                },
+                columnStyles: {
+                    0: {
+                        fontStyle: 'bolditalic',
+                        cellWidth: 100,
+                        fillColor: [255, 251, 235],
+                        textColor: [25, 55, 95]
+                    },
+                    1: {
+                        cellWidth: 70,
+                        fontStyle: 'bold',
+                        textColor: [184, 134, 11],
+                        halign: 'center'
+                    }
+                },
+                margin: { left: 25, right: 25 },
+                alternateRowStyles: {
+                    fillColor: [252, 252, 252]
+                }
+            });
+
+            currentY = doc.lastAutoTable.finalY + 25;
+        }
+
+        // Financial Summary Section with enhanced Roman elegance
+        if (data.includeFinancialSummary) {
+            this.addSectionHeader(doc, 'III. SUMMA FINANCIALIS', currentY, '💰');
+            currentY += 20;
+
+            const dieselCost = (data.dieselDispensed || 0) * (data.dieselPrice || 45);
+            const petrolCost = (data.petrolDispensed || 0) * (data.petrolPrice || 50);
+            const totalRevenue = dieselCost + petrolCost;
+            const netProfit = totalRevenue - (data.operatingCosts || 0);
+            const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : 0;
+
+            // Profit margin indicator
+            const marginColor = profitMargin >= 20 ? [34, 197, 94] : profitMargin >= 10 ? [251, 191, 36] : [239, 68, 68];
+            doc.setFillColor(...marginColor);
+            doc.roundedRect(140, currentY - 15, 45, 12, 4, 4, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(9);
+            doc.setFont('times', 'bold');
+            doc.text(`${profitMargin}% MARGIN`, 162.5, currentY - 8, { align: 'center' });
+
+            const financialData = [
+                ['💧 Reditus Diesel', `${dieselCost.toFixed(2)} ETB`],
+                ['⛽ Reditus Benzini', `${petrolCost.toFixed(2)} ETB`],
+                ['📊 Totalis Reditus', `${totalRevenue.toFixed(2)} ETB`],
+                ['💸 Sumptus Operandi', `${data.operatingCosts || 0} ETB`],
+                ['💰 Lucrum Nettum', `${netProfit.toFixed(2)} ETB`],
+                ['📈 Margo Lucri', `${profitMargin}%`],
+                ['💡 Reditus per Litrum', `${data.totalFuel > 0 ? (totalRevenue / data.totalFuel).toFixed(2) : 0} ETB/L`]
+            ];
+
+            doc.autoTable({
+                startY: currentY,
+                body: financialData,
+                theme: 'striped',
+                styles: {
+                    font: 'times',
+                    fontSize: 11,
+                    cellPadding: 10,
+                    lineColor: [184, 134, 11],
+                    lineWidth: 0.8,
+                    textColor: [35, 35, 35],
+                    letterSpacing: 0.4,
+                    lineHeight: 1.6
+                },
+                columnStyles: {
+                    0: {
+                        fontStyle: 'bolditalic',
+                        cellWidth: 100,
+                        fillColor: [255, 251, 235],
+                        textColor: [25, 55, 95]
+                    },
+                    1: {
+                        cellWidth: 70,
+                        fontStyle: 'bold',
+                        textColor: [184, 134, 11],
+                        halign: 'center'
+                    }
+                },
+                margin: { left: 25, right: 25 },
+                alternateRowStyles: {
+                    fillColor: [252, 252, 252]
+                }
+            });
+
+            currentY = doc.lastAutoTable.finalY + 25;
+        }
+
+        // Enhanced Recommendations Section
+        const fuelRecommendations = [
+            'Optimizare dispensationis processus pro efficientiam',
+            'Monitorare inventarium combustibilis regulariter',
+            'Implementare systema qualitatis combustibilis',
+            'Conservare equipmentum dispensationis',
+            'Augere securitatem stationis combustibilis'
+        ];
+
+        this.addSectionHeader(doc, 'IV. COMMENDATIONES OPERANDI', currentY, '💡');
+        currentY += 20;
+
+        // Recommendation cards with icons
+        const recIcons = ['🎯', '📊', '🔧', '🛡️', '⚡'];
+        fuelRecommendations.forEach((rec, index) => {
+            // Card background
+            doc.setFillColor(255, 251, 235);
+            doc.roundedRect(25, currentY - 5, 160, 15, 3, 3, 'F');
+
+            // Card border
+            doc.setDrawColor(184, 134, 11);
+            doc.setLineWidth(0.5);
+            doc.roundedRect(25, currentY - 5, 160, 15, 3, 3, 'S');
+
+            doc.setTextColor(25, 55, 95);
+            doc.setFontSize(11);
+            doc.setFont('times', 'bold');
+            doc.text(`${recIcons[index] || '•'}`, 30, currentY + 3);
+
+            doc.setFont('times', 'normal');
+            doc.setTextColor(35, 35, 35);
+            const wrappedText = doc.splitTextToSize(rec, 140);
+            doc.text(wrappedText, 40, currentY + 3);
+            currentY += 20;
+        });
+
+        // Professional Signature Section with enhanced Roman elegance
+        currentY += 15;
+
+        // Decorative separator with gradient effect
+        doc.setFillColor(184, 134, 11);
+        doc.rect(25, currentY, 160, 3, 'F');
+        doc.setFillColor(218, 165, 32);
+        doc.rect(25, currentY + 3, 160, 1, 'F');
+
+        // Decorative corner elements
+        doc.setFillColor(218, 165, 32);
+        doc.circle(30, currentY + 1.5, 3, 'F');
+        doc.circle(180, currentY + 1.5, 3, 'F');
+
+        // Inner circles
+        doc.setFillColor(184, 134, 11);
+        doc.circle(30, currentY + 1.5, 1.5, 'F');
+        doc.circle(180, currentY + 1.5, 1.5, 'F');
+
+        currentY += 18;
+
+        // Enhanced signature section
+        doc.setTextColor(25, 55, 95);
+        doc.setFontSize(14);
+        doc.setFont('times', 'bolditalic');
+        doc.text('⛽ DOCUMENTUM STATIONIS COMBUSTIBILIS HU-VMS ⛽', 105, currentY, { align: 'center' });
+
+        doc.setFontSize(10);
+        doc.setFont('times', 'italic');
+        doc.setTextColor(70, 70, 70);
+        const currentDate = new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        const currentTime = new Date().toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+        doc.text(`Datum: ${currentDate} • Tempus: ${currentTime}`, 105, currentY + 12, { align: 'center' });
+
+        // Authentication seal
+        doc.setDrawColor(218, 165, 32);
+        doc.setLineWidth(2);
+        doc.circle(105, currentY + 25, 15, 'S');
+        doc.setTextColor(218, 165, 32);
+        doc.setFontSize(8);
+        doc.setFont('times', 'bold');
+        doc.text('HARAMAYA', 105, currentY + 22, { align: 'center' });
+        doc.text('FUEL STATION', 105, currentY + 28, { align: 'center' });
+
+        this.addFooter(doc, 1, 1);
+        const fileName = `HU-VMS_Fuel_Station_Report_${data.period}_${new Date().toISOString().split('T')[0]}.pdf`;
+        doc.save(fileName);
+        return fileName;
+    }
+    // Generate Gate Security Report PDF with Sophisticated Roman Typography
+    generateGateSecurityReport(data, recipient = 'Admin') {
+        const doc = new jsPDF();
+        this.addHeader(doc, 'GATE SECURITY OPERATIONS REPORT', `${data.period} Security Analysis • Haramaya University`);
+
+        const recipientInfo = {
+            name: recipient === 'Admin' ? 'Administration Office' : 'Security Department',
+            department: recipient === 'Admin' ? 'University Administration' : 'Campus Security Department'
+        };
+        this.addRecipient(doc, recipientInfo, 65);
+
+        let currentY = 110;
+
+        // Enhanced report period badge with gradient effect
+        doc.setFillColor(153, 27, 27);
+        doc.roundedRect(20, currentY, 170, 22, 8, 8, 'F');
+
+        // Inner gradient effect
+        doc.setFillColor(163, 37, 37);
+        doc.roundedRect(22, currentY + 2, 166, 18, 6, 6, 'F');
+
+        // Golden accent border
+        doc.setDrawColor(218, 165, 32);
+        doc.setLineWidth(1.5);
+        doc.roundedRect(20, currentY, 170, 22, 8, 8, 'S');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.setFont('times', 'bolditalic');
+        doc.text(`🚪 ${data.period.toUpperCase()} SECURITAS ANALYSIS 🚪`, 105, currentY + 14, { align: 'center' });
+
+        currentY += 35;
+
+        // Security Officer Information with enhanced Roman elegance
+        this.addSectionHeader(doc, 'I. OFFICIALIS SECURITATIS INFORMATIO', currentY, '🛡️');
+        currentY += 20;
+
+        const officerInfo = [
+            ['Nomen Officialis', data.officerName || 'Officialis Securitatis'],
+            ['Numerus Insignis', data.badgeNumber || 'SEC-001'],
+            ['Statio Portae', data.gateStation || 'Porta Principalis'],
+            ['Tempus Vigiliae', data.shiftPeriod || 'Vigilia Diurna'],
+            ['Tempus Relationis', data.period || 'Mensilis'],
+            ['Status Securitatis', 'Activus']
+        ];
+
+        doc.autoTable({
+            startY: currentY,
+            body: officerInfo,
+            theme: 'grid',
+            styles: {
+                font: 'times',
+                fontSize: 11,
+                cellPadding: 10,
+                lineColor: [153, 27, 27],
+                lineWidth: 0.8,
+                textColor: [35, 35, 35],
+                letterSpacing: 0.4,
+                lineHeight: 1.6
+            },
+            columnStyles: {
+                0: {
+                    fontStyle: 'bolditalic',
+                    cellWidth: 80,
+                    fillColor: [254, 242, 242],
+                    textColor: [25, 55, 95]
+                },
+                1: {
+                    cellWidth: 90,
+                    fontStyle: 'normal',
+                    fillColor: [255, 255, 255]
+                }
+            },
+            margin: { left: 25, right: 25 },
+            alternateRowStyles: {
+                fillColor: [252, 252, 252]
+            }
+        });
+
+        currentY = doc.lastAutoTable.finalY + 30;
+
+        // Vehicle Movement Statistics with enhanced styling
+        this.addSectionHeader(doc, 'II. STATISTICAE MOTUS VEHICULORUM', currentY, '🚗');
+        currentY += 20;
+
+        const authRate = data.totalEntries > 0 ? ((data.authorizedEntries / data.totalEntries) * 100).toFixed(1) : 0;
+
+        // Authorization rate indicator badge
+        const badgeColor = authRate >= 95 ? [34, 197, 94] : authRate >= 85 ? [251, 191, 36] : [239, 68, 68];
+        doc.setFillColor(...badgeColor);
+        doc.roundedRect(140, currentY - 15, 45, 12, 4, 4, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(9);
+        doc.setFont('times', 'bold');
+        doc.text(`${authRate}% AUTH`, 162.5, currentY - 8, { align: 'center' });
+
+        const movementData = [
+            ['🚪 Totales Ingressus Vehiculorum', (data.totalEntries || 0).toString()],
+            ['🚗 Totales Egressus Vehiculorum', (data.totalExits || 0).toString()],
+            ['✅ Ingressus Auctorizati', (data.authorizedEntries || 0).toString()],
+            ['❌ Conatus Non Auctorizati', (data.unauthorizedEntries || 0).toString()],
+            ['🏢 Vehicula Nunc Intus', (data.vehiclesInside || 0).toString()],
+            ['📊 Media Trafficus Diurnus', `${data.totalEntries && data.period === 'Monthly' ? Math.round(data.totalEntries / 30) : data.totalEntries || 0} vehicula`],
+            ['🎯 Ratio Successus Auctorizationis', `${authRate}%`],
+            ['⏱️ Tempus Medius Processus', `${data.avgProcessTime || 3} min`]
+        ];
+
+        doc.autoTable({
+            startY: currentY,
+            body: movementData,
+            theme: 'striped',
+            styles: {
+                font: 'times',
+                fontSize: 11,
+                cellPadding: 10,
+                lineColor: [153, 27, 27],
+                lineWidth: 0.8,
+                textColor: [35, 35, 35],
+                letterSpacing: 0.4,
+                lineHeight: 1.6
+            },
+            columnStyles: {
+                0: {
+                    fontStyle: 'bolditalic',
+                    cellWidth: 100,
+                    fillColor: [254, 242, 242],
+                    textColor: [25, 55, 95]
+                },
+                1: {
+                    cellWidth: 70,
+                    fontStyle: 'bold',
+                    textColor: [153, 27, 27],
+                    halign: 'center'
+                }
+            },
+            margin: { left: 25, right: 25 },
+            alternateRowStyles: {
+                fillColor: [252, 252, 252]
+            }
+        });
+
+        currentY = doc.lastAutoTable.finalY + 25;
+
+        // Security Incidents Analysis with enhanced styling
+        this.addSectionHeader(doc, 'III. ANALYSIS INCIDENTIUM SECURITATIS', currentY, '🚨');
+        currentY += 20;
+
+        const securityAssessment = this.getSecurityAssessment(data);
+        const totalIncidents = (data.securityBreaches || 0) + (data.unauthorizedEntries || 0) + (data.falseAlarms || 0) + (data.equipmentIssues || 0);
+
+        // Security level indicator
+        const levelColor = securityAssessment.level === 'EXCELLENS' ? [34, 197, 94] :
+            securityAssessment.level === 'BONUS' ? [251, 191, 36] : [239, 68, 68];
+        doc.setFillColor(...levelColor);
+        doc.roundedRect(140, currentY - 15, 45, 12, 4, 4, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(9);
+        doc.setFont('times', 'bold');
+        doc.text(securityAssessment.level, 162.5, currentY - 8, { align: 'center' });
+
+        const incidentData = [
+            ['🚨 Violationes Securitatis', (data.securityBreaches || 0).toString()],
+            ['🚫 Ingressus Non Auctorizati', (data.unauthorizedEntries || 0).toString()],
+            ['⚠️ Alarma Falsa', (data.falseAlarms || 0).toString()],
+            ['🔧 Malfunctiones Instrumentorum', (data.equipmentIssues || 0).toString()],
+            ['📊 Totalia Incidentia', totalIncidents.toString()],
+            ['🛡️ Aestimatio Gradus Securitatis', securityAssessment.level],
+            ['⏱️ Tempus Responsionis Medius', `${data.avgResponseTime || 5} minuta`],
+            ['📈 Index Securitatis', `${totalIncidents === 0 ? 100 : Math.max(0, 100 - (totalIncidents * 5))}%`]
+        ];
+
+        doc.autoTable({
+            startY: currentY,
+            body: incidentData,
+            theme: 'striped',
+            styles: {
+                font: 'times',
+                fontSize: 11,
+                cellPadding: 10,
+                lineColor: [153, 27, 27],
+                lineWidth: 0.8,
+                textColor: [35, 35, 35],
+                letterSpacing: 0.4,
+                lineHeight: 1.6
+            },
+            columnStyles: {
+                0: {
+                    fontStyle: 'bolditalic',
+                    cellWidth: 100,
+                    fillColor: [254, 242, 242],
+                    textColor: [25, 55, 95]
+                },
+                1: {
+                    cellWidth: 70,
+                    fontStyle: 'bold',
+                    textColor: [153, 27, 27],
+                    halign: 'center'
+                }
+            },
+            margin: { left: 25, right: 25 },
+            alternateRowStyles: {
+                fillColor: [252, 252, 252]
+            }
+        });
+
+        currentY = doc.lastAutoTable.finalY + 25;
+
+        // Enhanced Security Recommendations Section
+        const recommendations = [];
+        if ((data.unauthorizedEntries || 0) > 0) {
+            recommendations.push('Proceduras verificandi accessum controllem augere');
+        }
+        if ((data.equipmentIssues || 0) > 2) {
+            recommendations.push('Conservationem instrumentorum comprehensivam ordinare');
+        }
+        if ((data.falseAlarms || 0) > 5) {
+            recommendations.push('Sensitivitatem alarmorum calibrare');
+        }
+        if ((data.avgResponseTime || 5) > 10) {
+            recommendations.push('Tempus responsionis incidentium optimizare');
+        }
+        if (recommendations.length === 0) {
+            recommendations.push('Standards excellentes securitatis continuare');
+            recommendations.push('Inspectiones regulares instrumentorum et disciplinam personalem');
+        }
+
+        this.addSectionHeader(doc, 'IV. COMMENDATIONES SECURITATIS', currentY, '💡');
+        currentY += 20;
+
+        // Recommendation cards with icons
+        const recIcons = ['🎯', '🔧', '⚡', '🛡️', '📊'];
+        recommendations.forEach((rec, index) => {
+            // Card background
+            doc.setFillColor(254, 242, 242);
+            doc.roundedRect(25, currentY - 5, 160, 15, 3, 3, 'F');
+
+            // Card border
+            doc.setDrawColor(153, 27, 27);
+            doc.setLineWidth(0.5);
+            doc.roundedRect(25, currentY - 5, 160, 15, 3, 3, 'S');
+
+            doc.setTextColor(25, 55, 95);
+            doc.setFontSize(11);
+            doc.setFont('times', 'bold');
+            doc.text(`${recIcons[index] || '•'}`, 30, currentY + 3);
+
+            doc.setFont('times', 'normal');
+            doc.setTextColor(35, 35, 35);
+            const wrappedText = doc.splitTextToSize(rec, 140);
+            doc.text(wrappedText, 40, currentY + 3);
+            currentY += 20;
+        });
+
+        // Professional Signature Section with enhanced Roman elegance
+        currentY += 15;
+
+        // Decorative separator with gradient effect
+        doc.setFillColor(153, 27, 27);
+        doc.rect(25, currentY, 160, 3, 'F');
+        doc.setFillColor(218, 165, 32);
+        doc.rect(25, currentY + 3, 160, 1, 'F');
+
+        // Decorative corner elements
+        doc.setFillColor(218, 165, 32);
+        doc.circle(30, currentY + 1.5, 3, 'F');
+        doc.circle(180, currentY + 1.5, 3, 'F');
+
+        // Inner circles
+        doc.setFillColor(153, 27, 27);
+        doc.circle(30, currentY + 1.5, 1.5, 'F');
+        doc.circle(180, currentY + 1.5, 1.5, 'F');
+
+        currentY += 18;
+
+        // Enhanced signature section
+        doc.setTextColor(25, 55, 95);
+        doc.setFontSize(14);
+        doc.setFont('times', 'bolditalic');
+        doc.text('🚪 DOCUMENTUM SECURITATIS HU-VMS 🚪', 105, currentY, { align: 'center' });
+
+        doc.setFontSize(10);
+        doc.setFont('times', 'italic');
+        doc.setTextColor(70, 70, 70);
+        const currentDate = new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        const currentTime = new Date().toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+        doc.text(`Datum: ${currentDate} • Tempus: ${currentTime}`, 105, currentY + 12, { align: 'center' });
+
+        // Authentication seal
+        doc.setDrawColor(218, 165, 32);
+        doc.setLineWidth(2);
+        doc.circle(105, currentY + 25, 15, 'S');
+        doc.setTextColor(218, 165, 32);
+        doc.setFontSize(8);
+        doc.setFont('times', 'bold');
+        doc.text('HARAMAYA', 105, currentY + 22, { align: 'center' });
+        doc.text('SECURITY', 105, currentY + 28, { align: 'center' });
+
+        this.addFooter(doc, 1, 1);
+        const fileName = `HU-VMS_Gate_Security_Report_${data.period}_${new Date().toISOString().split('T')[0]}.pdf`;
+        doc.save(fileName);
+        return fileName;
+    }
+    // Generate Fuel Report PDF
+    generateFuelReport(data, recipient = 'Admin') {
+        const doc = new jsPDF();
+        this.addHeader(doc, 'Fuel Report', 'Driver Fuel Management');
+
+        const recipientInfo = {
+            name: recipient === 'Admin' ? 'Administration Office' : 'Transport Office',
+            department: recipient === 'Admin' ? 'University Administration' : 'Transport Management Department'
+        };
+        this.addRecipient(doc, recipientInfo, 60);
+
+        // Report type badge
+        const reportType = data.reportType === 'refill' ? 'FUEL REFILL' : 'FUEL CONSUMPTION';
+        doc.setFillColor(74, 144, 226);
+        doc.roundedRect(20, 95, 80, 15, 4, 4, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(11);
+        doc.setFont('times', 'bolditalic');
+        doc.text(reportType, 60, 104, { align: 'center' });
+
+        // Details table
+        const tableData = [
+            ['Date', data.date || new Date().toLocaleDateString()],
+            ['Amount', `${data.amount} Liters`],
+            ['Odometer Reading', `${data.odometer} km`],
+            ['Driver Name', data.driverName || 'John Doe'],
+            ['Vehicle ID', data.vehicleId || 'VEH-001'],
+            ['License Plate', data.licensePlate || 'ABC-1234']
+        ];
+
+        if (data.reportType === 'refill' && data.cost) {
+            tableData.splice(3, 0, ['Cost', `${data.cost} ETB`]);
+        }
+        if (data.station) {
+            tableData.push(['Gas Station', data.station]);
+        }
+
+        doc.autoTable({
+            startY: 120,
+            body: tableData,
+            theme: 'grid',
+            styles: { font: 'times', fontSize: 10, cellPadding: 6, lineColor: [74, 144, 226], lineWidth: 0.3, textColor: [51, 51, 51] },
+            columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 }, 1: { cellWidth: 110 } },
+            margin: { left: 20, right: 20 }
+        });
+
+        this.addFooter(doc, 1, 1);
+        const fileName = `HU-VMS_Fuel_Report_${data.reportType}_${new Date().toISOString().split('T')[0]}.pdf`;
+        doc.save(fileName);
+        return fileName;
+    }
     // Generate Vehicle Issue Report PDF
     generateVehicleIssueReport(data, recipient = 'Admin') {
         const doc = new jsPDF();
-
         this.addHeader(doc, 'Vehicle Issue Report', 'Maintenance & Issue Reporting');
 
         const recipientInfo = {
             name: recipient === 'Admin' ? 'Administration Office' : 'Transport Office',
             department: recipient === 'Admin' ? 'University Administration' : 'Transport Management Department'
         };
-        this.addRecipient(doc, recipientInfo, 50);
+        this.addRecipient(doc, recipientInfo, 60);
 
-        // Issue Priority Badge
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Issue Report', 20, 90);
-
-        const priorityColors = {
-            low: [76, 175, 80],
-            medium: [255, 152, 0],
-            high: [244, 67, 54]
-        };
+        // Priority badge
         const priority = data.priority || 'medium';
-        doc.setFillColor(...priorityColors[priority]);
-        doc.roundedRect(20, 95, 45, 10, 2, 2, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(9);
-        doc.text(priority.toUpperCase() + ' PRIORITY', 42.5, 101.5, { align: 'center' });
+        const priorityColors = { low: [76, 175, 80], medium: [255, 152, 0], high: [244, 67, 54] };
 
-        // Issue Details
+        doc.setFillColor(...priorityColors[priority]);
+        doc.roundedRect(20, 95, 80, 15, 4, 4, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(11);
+        doc.setFont('times', 'bolditalic');
+        doc.text(`${priority.toUpperCase()} PRIORITY`, 60, 104, { align: 'center' });
+
+        // Issue details table
         const tableData = [
             ['Report Date', data.date || new Date().toLocaleDateString()],
             ['Issue Type', data.issueType || 'Mechanical'],
@@ -451,67 +1263,31 @@ class PDFGenerator {
         ];
 
         doc.autoTable({
-            startY: 110,
+            startY: 120,
             body: tableData,
-            theme: 'striped',
-            styles: { fontSize: 10, cellPadding: 5 },
-            columnStyles: {
-                0: { fontStyle: 'bold', cellWidth: 60 },
-                1: { cellWidth: 110 }
-            },
+            theme: 'grid',
+            styles: { font: 'times', fontSize: 10, cellPadding: 6, lineColor: [74, 144, 226], lineWidth: 0.3, textColor: [51, 51, 51] },
+            columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 }, 1: { cellWidth: 110 } },
             margin: { left: 20, right: 20 }
         });
 
-        // Issue Description
-        const descY = doc.lastAutoTable.finalY + 15;
-        doc.setTextColor(...this.darkColor);
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Issue Description:', 20, descY);
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(...this.textColor);
-        const splitDesc = doc.splitTextToSize(data.description || 'No description provided', 170);
-        doc.text(splitDesc, 20, descY + 7);
-
-        // Signature
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const signatureY = pageHeight - 60;
-
-        doc.setDrawColor(...this.primaryColor);
-        doc.line(20, signatureY, 90, signatureY);
-        doc.setTextColor(...this.textColor);
-        doc.setFontSize(9);
-        doc.text('Driver Signature', 20, signatureY + 5);
-        doc.setFontSize(8);
-        doc.text(new Date().toLocaleString(), 20, signatureY + 10);
-
         this.addFooter(doc, 1, 1);
-
-        const fileName = `Vehicle_Issue_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+        const fileName = `HU-VMS_Vehicle_Issue_Report_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(fileName);
-
         return fileName;
     }
-
     // Generate Complaint Report PDF
     generateComplaintReport(data, recipient = 'Admin') {
         const doc = new jsPDF();
-
         this.addHeader(doc, 'Complaint Report', 'Driver Complaint Submission');
 
         const recipientInfo = {
             name: recipient === 'Admin' ? 'Administration Office' : 'Transport Office',
             department: recipient === 'Admin' ? 'University Administration' : 'Transport Management Department'
         };
-        this.addRecipient(doc, recipientInfo, 50);
+        this.addRecipient(doc, recipientInfo, 60);
 
-        doc.setTextColor(...this.darkColor);
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Complaint Details', 20, 90);
-
+        // Complaint details table
         const tableData = [
             ['Submission Date', data.date || new Date().toLocaleDateString()],
             ['Complaint Type', data.type || 'General'],
@@ -521,222 +1297,34 @@ class PDFGenerator {
         ];
 
         doc.autoTable({
-            startY: 95,
+            startY: 100,
             body: tableData,
-            theme: 'striped',
-            styles: { fontSize: 10, cellPadding: 5 },
-            columnStyles: {
-                0: { fontStyle: 'bold', cellWidth: 60 },
-                1: { cellWidth: 110 }
-            },
+            theme: 'grid',
+            styles: { font: 'times', fontSize: 10, cellPadding: 6, lineColor: [74, 144, 226], lineWidth: 0.3, textColor: [51, 51, 51] },
+            columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 }, 1: { cellWidth: 110 } },
             margin: { left: 20, right: 20 }
         });
 
-        const descY = doc.lastAutoTable.finalY + 15;
-        doc.setTextColor(...this.darkColor);
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Complaint Description:', 20, descY);
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(...this.textColor);
-        const splitDesc = doc.splitTextToSize(data.description || 'No description provided', 170);
-        doc.text(splitDesc, 20, descY + 7);
-
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const signatureY = pageHeight - 60;
-
-        doc.setDrawColor(...this.primaryColor);
-        doc.line(20, signatureY, 90, signatureY);
-        doc.setTextColor(...this.textColor);
-        doc.setFontSize(9);
-        doc.text('Driver Signature', 20, signatureY + 5);
-        doc.setFontSize(8);
-        doc.text(new Date().toLocaleString(), 20, signatureY + 10);
-
         this.addFooter(doc, 1, 1);
-
-        const fileName = `Complaint_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+        const fileName = `HU-VMS_Complaint_Report_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(fileName);
-
-        return fileName;
-    }
-
-    // Generate Fuel Station Report PDF
-    generateFuelStationReport(data, recipient = 'Admin') {
-        const doc = new jsPDF();
-
-        this.addHeader(doc, 'Fuel Station Report', `${data.period} Report - ${data.startDate} to ${data.endDate}`);
-
-        // Recipient Information
-        const recipientInfo = {
-            name: recipient === 'Admin' ? 'Administration Office' :
-                recipient === 'Transport Office' ? 'Transport Office' :
-                    'Administration & Transport Offices',
-            department: recipient === 'Admin' ? 'University Administration' :
-                recipient === 'Transport Office' ? 'Transport Management Department' :
-                    'University Administration & Transport Management'
-        };
-        this.addRecipient(doc, recipientInfo, 50);
-
-        // Report Type Badge
-        doc.setFillColor(...this.primaryColor);
-        doc.roundedRect(20, 82, 60, 10, 2, 2, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text(data.period.toUpperCase() + ' REPORT', 50, 88.5, { align: 'center' });
-
-        let currentY = 100;
-
-        // Summary Statistics Section
-        if (data.includeSummary) {
-            doc.setTextColor(...this.darkColor);
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text('📊 Summary Statistics', 20, currentY);
-
-            const summaryData = [
-                ['Total Fuel Dispensed', `${data.totalFuel} Liters`],
-                ['Diesel Dispensed', `${data.dieselDispensed} Liters`],
-                ['Petrol Dispensed', `${data.petrolDispensed} Liters`],
-                ['Total Transactions', data.totalTransactions.toString()],
-                ['Completed Transactions', data.completedTransactions.toString()],
-                ['Pending Authorizations', data.pendingAuthorizations.toString()]
-            ];
-
-            doc.autoTable({
-                startY: currentY + 5,
-                body: summaryData,
-                theme: 'striped',
-                headStyles: {
-                    fillColor: this.primaryColor,
-                    textColor: [255, 255, 255],
-                    fontStyle: 'bold'
-                },
-                styles: {
-                    fontSize: 10,
-                    cellPadding: 5
-                },
-                columnStyles: {
-                    0: { fontStyle: 'bold', cellWidth: 80 },
-                    1: { cellWidth: 90 }
-                },
-                margin: { left: 20, right: 20 }
-            });
-
-            currentY = doc.lastAutoTable.finalY + 15;
-        }
-
-        // Inventory Status Section
-        if (data.includeInventory) {
-            doc.setTextColor(...this.darkColor);
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text('📦 Current Inventory Status', 20, currentY);
-
-            const inventoryData = [
-                ['Diesel Available', `${data.dieselAvailable} Liters`],
-                ['Petrol Available', `${data.petrolAvailable} Liters`],
-                ['Total Fuel in Stock', `${data.dieselAvailable + data.petrolAvailable} Liters`]
-            ];
-
-            doc.autoTable({
-                startY: currentY + 5,
-                body: inventoryData,
-                theme: 'striped',
-                styles: {
-                    fontSize: 10,
-                    cellPadding: 5
-                },
-                columnStyles: {
-                    0: { fontStyle: 'bold', cellWidth: 80 },
-                    1: { cellWidth: 90 }
-                },
-                margin: { left: 20, right: 20 }
-            });
-
-            currentY = doc.lastAutoTable.finalY + 15;
-        }
-
-        // Transaction Details Section
-        if (data.includeTransactions) {
-            doc.setTextColor(...this.darkColor);
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text('💳 Transaction Summary', 20, currentY);
-
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(...this.textColor);
-            doc.text(`This ${data.period.toLowerCase()} period includes ${data.totalTransactions} total transactions,`, 20, currentY + 7);
-            doc.text(`with ${data.completedTransactions} successfully completed and ${data.pendingAuthorizations} pending authorization.`, 20, currentY + 14);
-
-            currentY += 25;
-        }
-
-        // Report Metadata
-        doc.setFillColor(...this.lightGray);
-        doc.roundedRect(20, currentY, 170, 35, 3, 3, 'F');
-
-        doc.setTextColor(...this.darkColor);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Report Information', 25, currentY + 8);
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        doc.setTextColor(...this.textColor);
-        doc.text(`Generated By: ${data.generatedBy}`, 25, currentY + 15);
-        doc.text(`Report Date: ${data.date}`, 25, currentY + 21);
-        doc.text(`Recipient: ${recipient}`, 25, currentY + 27);
-
-        // Signature Section
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const signatureY = pageHeight - 60;
-
-        doc.setDrawColor(...this.primaryColor);
-        doc.line(20, signatureY, 90, signatureY);
-        doc.line(120, signatureY, 190, signatureY);
-
-        doc.setTextColor(...this.textColor);
-        doc.setFontSize(9);
-        doc.text('Fuel Station Officer', 20, signatureY + 5);
-        doc.text('Authorized Signature', 120, signatureY + 5);
-
-        doc.setFontSize(8);
-        doc.text(new Date().toLocaleString(), 20, signatureY + 10);
-
-        this.addFooter(doc, 1, 1);
-
-        // Save PDF
-        const fileName = `Fuel_Station_Report_${data.period}_${new Date().toISOString().split('T')[0]}.pdf`;
-        doc.save(fileName);
-
         return fileName;
     }
 
     // Generate Trip Report PDF
     generateTripReport(data, recipient = 'Admin') {
         const doc = new jsPDF();
-
-        this.addHeader(doc, 'Trip Report', 'Trip Summary & Details');
+        this.addHeader(doc, 'Trip Report', 'Vehicle Trip Documentation');
 
         const recipientInfo = {
             name: recipient === 'Admin' ? 'Administration Office' : 'Transport Office',
             department: recipient === 'Admin' ? 'University Administration' : 'Transport Management Department'
         };
-        this.addRecipient(doc, recipientInfo, 50);
+        this.addRecipient(doc, recipientInfo, 60);
 
-        doc.setTextColor(...this.darkColor);
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Trip Information', 20, 90);
-
+        // Trip details table
         const tableData = [
-            ['Trip ID', data.tripId || 'N/A'],
-            ['Date', data.date || new Date().toLocaleDateString()],
+            ['Trip Date', data.date || new Date().toLocaleDateString()],
             ['Driver Name', data.driverName || 'John Doe'],
             ['Vehicle ID', data.vehicleId || 'VEH-001'],
             ['Pickup Location', data.pickupLocation || 'N/A'],
@@ -745,521 +1333,25 @@ class PDFGenerator {
             ['End Time', data.endTime || 'N/A'],
             ['Distance', `${data.distance || 'N/A'} km`],
             ['Fuel Used', `${data.fuelUsed || 'N/A'} L`],
-            ['Status', data.status || 'Completed']
+            ['Trip Status', data.status || 'Completed']
         ];
 
         doc.autoTable({
-            startY: 95,
+            startY: 100,
             body: tableData,
-            theme: 'striped',
-            styles: { fontSize: 10, cellPadding: 5 },
-            columnStyles: {
-                0: { fontStyle: 'bold', cellWidth: 60 },
-                1: { cellWidth: 110 }
-            },
+            theme: 'grid',
+            styles: { font: 'times', fontSize: 10, cellPadding: 6, lineColor: [74, 144, 226], lineWidth: 0.3, textColor: [51, 51, 51] },
+            columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 }, 1: { cellWidth: 110 } },
             margin: { left: 20, right: 20 }
         });
 
-        if (data.notes) {
-            const notesY = doc.lastAutoTable.finalY + 15;
-            doc.setTextColor(...this.darkColor);
-            doc.setFontSize(11);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Trip Notes:', 20, notesY);
-
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            doc.setTextColor(...this.textColor);
-            const splitNotes = doc.splitTextToSize(data.notes, 170);
-            doc.text(splitNotes, 20, notesY + 7);
-        }
-
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const signatureY = pageHeight - 60;
-
-        doc.setDrawColor(...this.primaryColor);
-        doc.line(20, signatureY, 90, signatureY);
-        doc.setTextColor(...this.textColor);
-        doc.setFontSize(9);
-        doc.text('Driver Signature', 20, signatureY + 5);
-        doc.setFontSize(8);
-        doc.text(new Date().toLocaleString(), 20, signatureY + 10);
-
         this.addFooter(doc, 1, 1);
-
-        const fileName = `Trip_Report_${data.tripId || 'Unknown'}_${new Date().toISOString().split('T')[0]}.pdf`;
+        const fileName = `HU-VMS_Trip_Report_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(fileName);
-
         return fileName;
-    }
-
-    // Generate Gate Security Report PDF
-    generateGateSecurityReport(data, recipient = 'Admin') {
-        const doc = new jsPDF();
-
-        this.addHeader(doc, 'Gate Security Report', `${data.period} Security Operations Report`);
-
-        // Recipient
-        const recipientInfo = {
-            name: recipient === 'Admin' ? 'Administration Office' :
-                recipient === 'Security Department' ? 'Security Department' :
-                    recipient === 'Transport Office' ? 'Transport Office' : 'All Departments',
-            department: recipient === 'Admin' ? 'University Administration' :
-                recipient === 'Security Department' ? 'Campus Security Department' :
-                    recipient === 'Transport Office' ? 'Transport Management Department' : 'Multiple Departments'
-        };
-        this.addRecipient(doc, recipientInfo, 50);
-
-        // Report Period Badge
-        doc.setFillColor(...this.primaryColor);
-        doc.roundedRect(20, 85, 60, 12, 2, 2, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text(data.period.toUpperCase(), 50, 92.5, { align: 'center' });
-
-        // Report period
-        doc.setTextColor(...this.textColor);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Period: ${data.startDate} to ${data.endDate}`, 85, 92);
-
-        // Vehicle Movement Summary
-        if (data.includeVehicleMovements) {
-            doc.setTextColor(...this.darkColor);
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text('🚗 Vehicle Movement Summary', 20, 115);
-
-            const movementData = [
-                ['Total Vehicle Entries', data.totalEntries.toString()],
-                ['Total Vehicle Exits', data.totalExits.toString()],
-                ['Pending Vehicles', data.pendingVehicles.toString()],
-                ['ALPR Detections', data.alprDetections.toString()]
-            ];
-
-            doc.autoTable({
-                startY: 120,
-                head: [['Metric', 'Count']],
-                body: movementData,
-                theme: 'striped',
-                headStyles: {
-                    fillColor: this.primaryColor,
-                    textColor: [255, 255, 255],
-                    fontStyle: 'bold'
-                },
-                styles: {
-                    fontSize: 10,
-                    cellPadding: 5
-                },
-                columnStyles: {
-                    0: { fontStyle: 'bold', cellWidth: 80 },
-                    1: { cellWidth: 40, halign: 'center' }
-                },
-                margin: { left: 20, right: 20 }
-            });
-        }
-
-        // Trip Authorization Summary
-        if (data.includeAuthorizations) {
-            const startY = data.includeVehicleMovements ? doc.lastAutoTable.finalY + 15 : 120;
-
-            doc.setTextColor(...this.darkColor);
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text('✅ Trip Authorization Summary', 20, startY);
-
-            const authData = [
-                ['Authorized Trips', data.authorizedTrips.toString()],
-                ['Rejected Trips', data.rejectedTrips.toString()],
-                ['Average Processing Time', `${data.averageProcessingTime} minutes`]
-            ];
-
-            doc.autoTable({
-                startY: startY + 5,
-                head: [['Authorization Metric', 'Value']],
-                body: authData,
-                theme: 'striped',
-                headStyles: {
-                    fillColor: [16, 185, 129], // Green for authorizations
-                    textColor: [255, 255, 255],
-                    fontStyle: 'bold'
-                },
-                styles: {
-                    fontSize: 10,
-                    cellPadding: 5
-                },
-                columnStyles: {
-                    0: { fontStyle: 'bold', cellWidth: 80 },
-                    1: { cellWidth: 40, halign: 'center' }
-                },
-                margin: { left: 20, right: 20 }
-            });
-        }
-
-        // Vehicle Inspections
-        if (data.includeInspections) {
-            const startY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 15 : 120;
-
-            doc.setTextColor(...this.darkColor);
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text('🔧 Vehicle Inspection Summary', 20, startY);
-
-            const inspectionData = [
-                ['Inspections Completed', data.inspectionsCompleted.toString()]
-            ];
-
-            doc.autoTable({
-                startY: startY + 5,
-                head: [['Inspection Metric', 'Count']],
-                body: inspectionData,
-                theme: 'striped',
-                headStyles: {
-                    fillColor: [245, 158, 11], // Orange for inspections
-                    textColor: [255, 255, 255],
-                    fontStyle: 'bold'
-                },
-                styles: {
-                    fontSize: 10,
-                    cellPadding: 5
-                },
-                columnStyles: {
-                    0: { fontStyle: 'bold', cellWidth: 80 },
-                    1: { cellWidth: 40, halign: 'center' }
-                },
-                margin: { left: 20, right: 20 }
-            });
-        }
-
-        // Security Incidents
-        if (data.includeSecurityIncidents) {
-            const startY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 15 : 120;
-
-            doc.setTextColor(...this.darkColor);
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text('⚠️ Security Incidents Summary', 20, startY);
-
-            const securityData = [
-                ['Security Incidents', data.securityIncidents.toString()],
-                ['Unauthorized Attempts', data.unauthorizedAttempts.toString()]
-            ];
-
-            doc.autoTable({
-                startY: startY + 5,
-                head: [['Security Metric', 'Count']],
-                body: securityData,
-                theme: 'striped',
-                headStyles: {
-                    fillColor: [239, 68, 68], // Red for security incidents
-                    textColor: [255, 255, 255],
-                    fontStyle: 'bold'
-                },
-                styles: {
-                    fontSize: 10,
-                    cellPadding: 5
-                },
-                columnStyles: {
-                    0: { fontStyle: 'bold', cellWidth: 80 },
-                    1: { cellWidth: 40, halign: 'center' }
-                },
-                margin: { left: 20, right: 20 }
-            });
-        }
-
-        // Summary Section
-        const summaryY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 20 : 180;
-
-        doc.setFillColor(248, 250, 252);
-        doc.roundedRect(20, summaryY, 170, 35, 3, 3, 'F');
-
-        doc.setTextColor(...this.darkColor);
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        doc.text('📊 Report Summary', 25, summaryY + 10);
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        doc.setTextColor(...this.textColor);
-
-        const summaryText = [
-            `This ${data.period.toLowerCase()} security report covers the period from ${data.startDate} to ${data.endDate}.`,
-            `Total vehicle movements: ${data.totalEntries + data.totalExits} (${data.totalEntries} entries, ${data.totalExits} exits)`,
-            `Security status: ${data.securityIncidents} incidents reported, ${data.unauthorizedAttempts} unauthorized attempts`,
-            `Operational efficiency: ${data.authorizedTrips} trips authorized with avg. ${data.averageProcessingTime}min processing time`
-        ];
-
-        let textY = summaryY + 17;
-        summaryText.forEach(line => {
-            doc.text(line, 25, textY);
-            textY += 4;
-        });
-
-        // Officer signature section
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const signatureY = pageHeight - 60;
-
-        doc.setDrawColor(...this.primaryColor);
-        doc.line(20, signatureY, 90, signatureY);
-        doc.line(110, signatureY, 180, signatureY);
-
-        doc.setTextColor(...this.textColor);
-        doc.setFontSize(9);
-        doc.text('Gate Security Officer', 20, signatureY + 5);
-        doc.text('Supervisor Approval', 110, signatureY + 5);
-
-        doc.setFontSize(8);
-        doc.text(data.generatedBy || 'Gate Security Officer', 20, signatureY + 10);
-        doc.text(data.date, 20, signatureY + 15);
-
-        this.addFooter(doc, 1, 1);
-
-        // Save PDF
-        const fileName = `Gate_Security_Report_${data.period}_${data.startDate.replace(/-/g, '')}.pdf`;
-        doc.save(fileName);
-
-        return fileName;
-    }
-    generateDriverReport(data, recipient = 'Admin') {
-        const doc = new jsPDF();
-
-        // Add university logo
-        this.addUniversityLogo(doc, 160, 10);
-
-        // Add header
-        this.addHeader(doc, 'DRIVER PERFORMANCE REPORT', `${data.period} Report`);
-
-        // Add recipient
-        const recipientInfo = {
-            name: recipient,
-            department: recipient === 'Admin' ? 'University Administration' :
-                recipient === 'Transport Office' ? 'Transport Management Department' :
-                    recipient === 'HR Department' ? 'Human Resources Department' :
-                        'Multiple Departments'
-        };
-        this.addRecipient(doc, recipientInfo, 50);
-
-        let yPos = 70;
-
-        // Report period
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Report Period:', 20, yPos);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`${data.startDate} to ${data.endDate}`, 60, yPos);
-        yPos += 15;
-
-        // Driver Information
-        doc.setFont('helvetica', 'bold');
-        doc.text('Generated By:', 20, yPos);
-        doc.setFont('helvetica', 'normal');
-        doc.text(data.generatedBy, 60, yPos);
-        yPos += 10;
-
-        doc.setFont('helvetica', 'bold');
-        doc.text('Report Date:', 20, yPos);
-        doc.setFont('helvetica', 'normal');
-        doc.text(data.date, 60, yPos);
-        yPos += 20;
-
-        // Trip Summary Section
-        if (data.includeTripSummary) {
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            doc.text('🚗 TRIP SUMMARY', 20, yPos);
-            yPos += 15;
-
-            const tripData = [
-                ['Total Trips', data.totalTrips],
-                ['Completed Trips', data.completedTrips],
-                ['Cancelled Trips', data.cancelledTrips],
-                ['Total Distance', `${data.totalDistance} km`],
-                ['Completion Rate', `${((data.completedTrips / data.totalTrips) * 100).toFixed(1)}%`]
-            ];
-
-            doc.autoTable({
-                startY: yPos,
-                head: [['Metric', 'Value']],
-                body: tripData,
-                theme: 'grid',
-                headStyles: { fillColor: [40, 167, 69] },
-                margin: { left: 20, right: 20 }
-            });
-
-            yPos = doc.lastAutoTable.finalY + 15;
-        }
-
-        // Fuel Usage Section
-        if (data.includeFuelUsage) {
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            doc.text('⛽ FUEL USAGE & EFFICIENCY', 20, yPos);
-            yPos += 15;
-
-            const fuelData = [
-                ['Total Fuel Used', `${data.totalFuelUsed} L`],
-                ['Average Fuel Efficiency', `${data.averageFuelEfficiency} km/L`],
-                ['Fuel Cost Efficiency', 'Excellent'],
-                ['Environmental Impact', 'Low Carbon Footprint']
-            ];
-
-            doc.autoTable({
-                startY: yPos,
-                head: [['Metric', 'Value']],
-                body: fuelData,
-                theme: 'grid',
-                headStyles: { fillColor: [40, 167, 69] },
-                margin: { left: 20, right: 20 }
-            });
-
-            yPos = doc.lastAutoTable.finalY + 15;
-        }
-
-        // Vehicle Status Section
-        if (data.includeVehicleStatus) {
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            doc.text('🔧 VEHICLE STATUS & MAINTENANCE', 20, yPos);
-            yPos += 15;
-
-            const vehicleData = [
-                ['Vehicle Inspections', data.vehicleInspections],
-                ['Maintenance Issues', data.maintenanceIssues],
-                ['Vehicle Condition', data.maintenanceIssues === 0 ? 'Excellent' : 'Needs Attention'],
-                ['Safety Compliance', '100%']
-            ];
-
-            doc.autoTable({
-                startY: yPos,
-                head: [['Metric', 'Value']],
-                body: vehicleData,
-                theme: 'grid',
-                headStyles: { fillColor: [40, 167, 69] },
-                margin: { left: 20, right: 20 }
-            });
-
-            yPos = doc.lastAutoTable.finalY + 15;
-        }
-
-        // Performance Metrics Section
-        if (data.includePerformance) {
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            doc.text('📈 PERFORMANCE METRICS', 20, yPos);
-            yPos += 15;
-
-            const performanceData = [
-                ['On-Time Performance', `${data.onTimePerformance}%`],
-                ['Working Hours', `${data.workingHours} hrs`],
-                ['Overtime Hours', `${data.overtimeHours} hrs`],
-                ['Productivity Rating', data.onTimePerformance >= 90 ? 'Excellent' : data.onTimePerformance >= 80 ? 'Good' : 'Needs Improvement'],
-                ['Overall Rating', this.calculateDriverRating(data)]
-            ];
-
-            doc.autoTable({
-                startY: yPos,
-                head: [['Metric', 'Value']],
-                body: performanceData,
-                theme: 'grid',
-                headStyles: { fillColor: [40, 167, 69] },
-                margin: { left: 20, right: 20 }
-            });
-
-            yPos = doc.lastAutoTable.finalY + 15;
-        }
-
-        // Summary and Recommendations
-        if (yPos > 250) {
-            doc.addPage();
-            yPos = 30;
-        }
-
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('📋 SUMMARY & RECOMMENDATIONS', 20, yPos);
-        yPos += 15;
-
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-
-        const recommendations = this.generateDriverRecommendations(data);
-        recommendations.forEach(rec => {
-            doc.text(`• ${rec}`, 25, yPos);
-            yPos += 8;
-        });
-
-        // Add footer
-        const pageCount = doc.internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-            doc.setPage(i);
-            this.addFooter(doc, i, pageCount);
-        }
-
-        // Save the PDF
-        const fileName = `Driver_Report_${data.period}_${data.startDate}_to_${data.endDate}.pdf`;
-        doc.save(fileName);
-
-        return fileName;
-    }
-
-    calculateDriverRating(data) {
-        const onTimeScore = parseFloat(data.onTimePerformance);
-        const completionRate = (data.completedTrips / data.totalTrips) * 100;
-        const maintenanceScore = data.maintenanceIssues === 0 ? 100 : Math.max(0, 100 - (data.maintenanceIssues * 20));
-
-        const overallScore = (onTimeScore + completionRate + maintenanceScore) / 3;
-
-        if (overallScore >= 95) return 'Outstanding (A+)';
-        if (overallScore >= 90) return 'Excellent (A)';
-        if (overallScore >= 85) return 'Very Good (B+)';
-        if (overallScore >= 80) return 'Good (B)';
-        if (overallScore >= 75) return 'Satisfactory (C+)';
-        if (overallScore >= 70) return 'Acceptable (C)';
-        return 'Needs Improvement (D)';
-    }
-
-    generateDriverRecommendations(data) {
-        const recommendations = [];
-
-        const onTimePerf = parseFloat(data.onTimePerformance);
-        const completionRate = (data.completedTrips / data.totalTrips) * 100;
-        const fuelEfficiency = parseFloat(data.averageFuelEfficiency);
-
-        if (onTimePerf >= 95) {
-            recommendations.push('Excellent punctuality! Continue maintaining high standards.');
-        } else if (onTimePerf >= 85) {
-            recommendations.push('Good time management. Consider route optimization for better punctuality.');
-        } else {
-            recommendations.push('Focus on improving punctuality through better trip planning and time management.');
-        }
-
-        if (completionRate >= 95) {
-            recommendations.push('Outstanding trip completion rate. Excellent reliability.');
-        } else if (completionRate < 90) {
-            recommendations.push('Work on reducing trip cancellations through better communication and planning.');
-        }
-
-        if (fuelEfficiency >= 9.0) {
-            recommendations.push('Excellent fuel efficiency! Your eco-friendly driving saves costs.');
-        } else if (fuelEfficiency >= 7.0) {
-            recommendations.push('Consider eco-driving techniques to improve fuel efficiency.');
-        } else {
-            recommendations.push('Focus on fuel-efficient driving practices to reduce operational costs.');
-        }
-
-        if (data.maintenanceIssues === 0) {
-            recommendations.push('Great vehicle care! Continue regular maintenance checks.');
-        } else {
-            recommendations.push('Increase attention to vehicle maintenance and pre-trip inspections.');
-        }
-
-        if (parseFloat(data.overtimeHours) > 5) {
-            recommendations.push('Monitor overtime hours to maintain work-life balance and safety.');
-        }
-
-        return recommendations;
     }
 }
 
-export default new PDFGenerator();
+// Create and export the PDF generator instance
+const pdfGenerator = new PDFGenerator();
+export default pdfGenerator;

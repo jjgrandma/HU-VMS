@@ -8,26 +8,116 @@ const FuelStationLayout = ({ onLogout }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [fuelOfficerInfo, setFuelOfficerInfo] = useState({
-    name: 'Sarah Mohammed',
-    email: 'sarah.mohammed@university.edu.et',
-    employeeId: 'FS-2024-001',
-    role: 'Fuel Station Officer',
-    fuelStationName: 'Main Campus Fuel Station',
-    avatar: null
+  const [fuelOfficerInfo, setFuelOfficerInfo] = useState(() => {
+    // Initialize from localStorage if available
+    const savedSettings = localStorage.getItem('fuelStationSettings');
+    const savedProfilePhoto = localStorage.getItem('fuelStationProfilePhoto');
+    
+    let initialInfo = {
+      name: 'Sarah Mohammed',
+      email: 'sarah.mohammed@university.edu.et',
+      employeeId: 'FS-2024-001',
+      role: 'Fuel Station Officer',
+      fuelStationName: 'Main Campus Fuel Station',
+      avatar: savedProfilePhoto || null
+    };
+
+    if (savedSettings) {
+      try {
+        const parsed = JSON.parse(savedSettings);
+        if (parsed.account) {
+          initialInfo = {
+            ...initialInfo,
+            name: parsed.account.name || initialInfo.name,
+            email: parsed.account.email || initialInfo.email,
+            employeeId: parsed.account.employeeId || initialInfo.employeeId,
+            fuelStationName: parsed.account.fuelStationName || initialInfo.fuelStationName
+          };
+        }
+      } catch (e) {
+        console.error('Error loading settings:', e);
+      }
+    }
+
+    return initialInfo;
   });
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Apply theme on component mount and when settings change
+  useEffect(() => {
+    const applyTheme = () => {
+      const savedSettings = localStorage.getItem('fuelStationSettings');
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        const theme = parsed.system?.theme || 'light';
+        
+        if (theme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          document.body.style.backgroundColor = '#1a1a1a';
+          document.body.style.color = '#ffffff';
+        } else if (theme === 'light') {
+          document.documentElement.setAttribute('data-theme', 'light');
+          document.body.style.backgroundColor = '#ffffff';
+          document.body.style.color = '#000000';
+        } else if (theme === 'auto') {
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+          document.body.style.backgroundColor = prefersDark ? '#1a1a1a' : '#ffffff';
+          document.body.style.color = prefersDark ? '#ffffff' : '#000000';
+        }
+      }
+    };
+
+    applyTheme();
+
+    // Listen for theme changes
+    const handleStorageChange = (e) => {
+      if (e.key === 'fuelStationSettings' || e.key === 'appTheme') {
+        applyTheme();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Check for theme changes every second (for same-tab updates)
+    const themeCheckInterval = setInterval(applyTheme, 1000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(themeCheckInterval);
+    };
+  }, []);
+
   // Load profile photo from localStorage on component mount
   useEffect(() => {
-    const savedProfilePhoto = localStorage.getItem('fuelStationProfilePhoto');
-    if (savedProfilePhoto) {
-      setFuelOfficerInfo(prev => ({
-        ...prev,
-        avatar: savedProfilePhoto
-      }));
-    }
+    const loadProfileData = () => {
+      const savedProfilePhoto = localStorage.getItem('fuelStationProfilePhoto');
+      const savedSettings = localStorage.getItem('fuelStationSettings');
+      
+      if (savedProfilePhoto) {
+        setFuelOfficerInfo(prev => ({
+          ...prev,
+          avatar: savedProfilePhoto
+        }));
+      }
+
+      // Load name and other info from settings
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        if (parsed.account) {
+          setFuelOfficerInfo(prev => ({
+            ...prev,
+            name: parsed.account.name || prev.name,
+            email: parsed.account.email || prev.email,
+            employeeId: parsed.account.employeeId || prev.employeeId,
+            fuelStationName: parsed.account.fuelStationName || prev.fuelStationName
+          }));
+        }
+      }
+    };
+
+    loadProfileData();
 
     // Listen for profile photo updates
     const handleProfilePhotoUpdate = (event) => {
@@ -39,7 +129,15 @@ const FuelStationLayout = ({ onLogout }) => {
       }
     };
 
+    // Listen for settings updates (name, email, etc.)
+    const handleSettingsUpdate = (event) => {
+      if (event.key === 'fuelStationSettings') {
+        loadProfileData();
+      }
+    };
+
     window.addEventListener('storage', handleProfilePhotoUpdate);
+    window.addEventListener('storage', handleSettingsUpdate);
 
     // Also listen for custom events from the same page
     const handleCustomProfileUpdate = (event) => {
@@ -49,11 +147,35 @@ const FuelStationLayout = ({ onLogout }) => {
       }));
     };
 
+    const handleCustomAccountUpdate = (event) => {
+      console.log('Account update event received:', event.detail);
+      if (event.detail.account) {
+        setFuelOfficerInfo(prev => {
+          const newInfo = {
+            ...prev,
+            name: event.detail.account.name,
+            email: event.detail.account.email,
+            employeeId: event.detail.account.employeeId,
+            fuelStationName: event.detail.account.fuelStationName
+          };
+          console.log('Updating from', prev.name, 'to:', newInfo.name);
+          return newInfo;
+        });
+      }
+    };
+
     window.addEventListener('fuelProfilePhotoUpdated', handleCustomProfileUpdate);
+    window.addEventListener('accountSettingsUpdated', handleCustomAccountUpdate);
+
+    // Check for settings changes every second (for same-tab updates)
+    const settingsCheckInterval = setInterval(loadProfileData, 1000);
 
     return () => {
       window.removeEventListener('storage', handleProfilePhotoUpdate);
+      window.removeEventListener('storage', handleSettingsUpdate);
       window.removeEventListener('fuelProfilePhotoUpdated', handleCustomProfileUpdate);
+      window.removeEventListener('accountSettingsUpdated', handleCustomAccountUpdate);
+      clearInterval(settingsCheckInterval);
     };
   }, []);
 

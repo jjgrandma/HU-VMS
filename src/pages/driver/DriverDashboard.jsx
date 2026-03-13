@@ -12,6 +12,7 @@ import SubmitComplaint from './submit-complaint/SubmitComplaint';
 import ExitEntryVerification from './gate-verification/ExitEntryVerification';
 import DriverProfile from './profile/DriverProfile';
 import DriverReports from './reports/DriverReports';
+import DriverSettings from './DriverSettings';
 import driverService from '../../services/driverService';
 
 const DriverDashboard = () => {
@@ -40,6 +41,8 @@ const DriverDashboard = () => {
   useEffect(() => {
     loadDashboardData();
     loadNotifications();
+    loadSettings();
+    
     // Listen for profile image updates
     const handleStorageChange = () => {
       const newImage = localStorage.getItem('driverProfileImage');
@@ -47,8 +50,23 @@ const DriverDashboard = () => {
         setDriverInfo(prev => ({ ...prev, avatar: newImage }));
       }
     };
+    
+    // Listen for settings updates (including name changes)
+    const handleSettingsUpdate = (e) => {
+      if (e.detail && e.detail.account) {
+        setDriverInfo(prev => ({
+          ...prev,
+          name: e.detail.account.name,
+          email: e.detail.account.email,
+          avatar: e.detail.account.avatar || prev.avatar
+        }));
+      }
+      loadSettings();
+    };
+    
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('profileImageUpdated', handleStorageChange);
+    window.addEventListener('driverAccountSettingsUpdated', handleSettingsUpdate);
 
     const interval = setInterval(() => {
       loadDashboardData();
@@ -58,6 +76,7 @@ const DriverDashboard = () => {
       clearInterval(interval);
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('profileImageUpdated', handleStorageChange);
+      window.removeEventListener('driverAccountSettingsUpdated', handleSettingsUpdate);
     };
   }, []);
 
@@ -82,6 +101,50 @@ const DriverDashboard = () => {
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
       setLoading(false);
+    }
+  };
+
+  const loadSettings = () => {
+    const savedSettings = localStorage.getItem('driverSettings');
+    if (savedSettings) {
+      try {
+        const parsed = JSON.parse(savedSettings);
+        
+        // Apply account settings
+        if (parsed.account) {
+          setDriverInfo(prev => ({
+            ...prev,
+            name: parsed.account.name || prev.name,
+            email: parsed.account.email || prev.email,
+            phone: parsed.account.phone || prev.phone,
+            avatar: parsed.account.avatar || prev.avatar
+          }));
+        }
+        
+        // Apply theme settings
+        if (parsed.system && parsed.system.theme) {
+          applyTheme(parsed.system.theme);
+        }
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+      }
+    }
+  };
+
+  const applyTheme = (theme) => {
+    if (theme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.body.style.backgroundColor = '#1a1a1a';
+      document.body.style.color = '#ffffff';
+    } else if (theme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+      document.body.style.backgroundColor = '#ffffff';
+      document.body.style.color = '#000000';
+    } else if (theme === 'auto') {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+      document.body.style.backgroundColor = prefersDark ? '#1a1a1a' : '#ffffff';
+      document.body.style.color = prefersDark ? '#ffffff' : '#000000';
     }
   };
 
@@ -134,6 +197,8 @@ const DriverDashboard = () => {
         return <DriverReports />;
       case 'profile':
         return <DriverProfile />;
+      case 'settings':
+        return <DriverSettings />;
       case 'tracking':
         return currentTrip ? <GPSTracking trip={currentTrip} /> : <div className="no-data">No active trip for tracking</div>;
       case 'trip-status':

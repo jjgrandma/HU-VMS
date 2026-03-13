@@ -127,15 +127,16 @@ const GateSecurityReports = () => {
     return (
         <div className="gate-reports-page">
             <div className="gate-page-header">
-                <h2>🚧 Generate Security Reports</h2>
-                <p>Create and send comprehensive gate security reports to administration</p>
+                <h2 className="gate-roman-title">🚧 Generate Security Reports</h2>
+                <p className="roman-emphasis">Create and send comprehensive gate security reports to administration</p>
+                <div className="gate-roman-divider"></div>
             </div>
 
             <div className="reports-container">
                 {/* Report Configuration Card */}
-                <div className="report-config-card">
+                <div className="report-config-card roman-card">
                     <div className="card-header">
-                        <h3>📄 Report Configuration</h3>
+                        <h3 className="roman-strong">📄 Report Configuration</h3>
                         <p>Configure your security report settings</p>
                     </div>
 
@@ -251,14 +252,14 @@ const GateSecurityReports = () => {
                         <div className="form-actions">
                             <button
                                 onClick={() => setShowPreview(true)}
-                                className="btn-preview"
+                                className="btn-preview roman-button"
                             >
                                 <span>👁️</span>
                                 Preview Report
                             </button>
                             <button
                                 onClick={handleGenerateReport}
-                                className="btn-generate"
+                                className="btn-generate roman-button"
                                 disabled={isGenerating}
                             >
                                 {isGenerating ? (

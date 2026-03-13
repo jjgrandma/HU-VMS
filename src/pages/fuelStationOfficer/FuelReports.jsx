@@ -117,15 +117,16 @@ const FuelReports = () => {
     return (
         <div className="fuel-reports-page">
             <div className="fuel-page-header">
-                <h2>Generate Reports</h2>
-                <p>Create and send fuel station reports to administration</p>
+                <h2 className="fuel-roman-title">⛽ Generate Reports</h2>
+                <p className="roman-emphasis">Create and send fuel station reports to administration</p>
+                <div className="fuel-roman-divider"></div>
             </div>
 
             <div className="reports-container">
                 {/* Report Configuration Card */}
-                <div className="report-config-card">
+                <div className="report-config-card roman-card">
                     <div className="card-header">
-                        <h3>📄 Report Configuration</h3>
+                        <h3 className="roman-strong">📄 Report Configuration</h3>
                         <p>Configure your report settings</p>
                     </div>
 
@@ -232,14 +233,14 @@ const FuelReports = () => {
                         <div className="form-actions">
                             <button
                                 onClick={() => setShowPreview(true)}
-                                className="btn-preview"
+                                className="btn-preview roman-button"
                             >
                                 <span>👁️</span>
                                 Preview Report
                             </button>
                             <button
                                 onClick={handleGenerateReport}
-                                className="btn-generate"
+                                className="btn-generate roman-button"
                                 disabled={isGenerating}
                             >
                                 {isGenerating ? (

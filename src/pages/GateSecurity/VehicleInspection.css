@@ -337,3 +337,40 @@
         width: 100%;
     }
 }
+
+
+/* Dark Theme Support */
+[data-theme="dark"] .vehicle-inspection-container {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: #ffffff;
+}
+
+[data-theme="dark"] .inspection-card,
+[data-theme="dark"] .inspection-form,
+[data-theme="dark"] .inspection-checklist {
+    background: #2d2d2d;
+    border-color: #404040;
+}
+
+[data-theme="dark"] .inspection-item {
+    background: #1a1a1a;
+    border-color: #404040;
+}
+
+[data-theme="dark"] .inspection-item:hover {
+    background: #333333;
+}
+
+[data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3 {
+    color: #ffffff;
+}
+
+[data-theme="dark"] p {
+    color: #b0b0b0;
+}
+
+[data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea {
+    background: #1a1a1a;
+    border-color: #404040;
+    color: #ffffff;
+}

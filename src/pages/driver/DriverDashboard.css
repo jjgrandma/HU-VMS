@@ -2301,3 +2301,148 @@
   background-image: none !important;
   border: 2px solid #e7f3ff !important;
 }
+
+/* Dark Theme Support */
+[data-theme="dark"] .driver-dashboard-container {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .sidebar {
+  background: linear-gradient(180deg, #2d2d2d 0%, #1a1a1a 100%);
+  border-right-color: #404040;
+}
+
+[data-theme="dark"] .sidebar-header {
+  background: #1a1a1a;
+  border-bottom-color: #404040;
+}
+
+[data-theme="dark"] .sidebar-header h2 {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .sidebar-nav button {
+  color: #b0b0b0;
+}
+
+[data-theme="dark"] .sidebar-nav button:hover {
+  background: #404040;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .sidebar-nav button.active {
+  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .top-header {
+  background: #2d2d2d;
+  border-bottom-color: #404040;
+}
+
+[data-theme="dark"] .top-header h1 {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .stat-card {
+  background: #2d2d2d;
+  border-color: #404040;
+}
+
+[data-theme="dark"] .stat-card h3,
+[data-theme="dark"] .stat-card p {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .card {
+  background: #2d2d2d;
+  border-color: #404040;
+}
+
+[data-theme="dark"] .card h3,
+[data-theme="dark"] .card h4 {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .action-card {
+  background: #2d2d2d;
+  border-color: #404040;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .action-card:hover {
+  background: #404040;
+  border-color: #4a90e2;
+}
+
+[data-theme="dark"] .profile-menu {
+  background: #2d2d2d;
+  border-color: #404040;
+}
+
+[data-theme="dark"] .profile-menu-header {
+  background: #1a1a1a;
+  border-bottom-color: #404040;
+}
+
+[data-theme="dark"] .profile-menu-header h4 {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .profile-menu-header p {
+  color: #b0b0b0;
+}
+
+[data-theme="dark"] .profile-menu-items button {
+  color: #e0e0e0;
+}
+
+[data-theme="dark"] .profile-menu-items button:hover {
+  background: #404040;
+}
+
+[data-theme="dark"] .notification-dropdown {
+  background: #2d2d2d;
+  border-color: #404040;
+}
+
+[data-theme="dark"] .notification-header h3 {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .notification-item {
+  background: #1a1a1a;
+  border-bottom-color: #404040;
+}
+
+[data-theme="dark"] .notification-item strong {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .notification-item p {
+  color: #b0b0b0;
+}
+
+[data-theme="dark"] .logout-btn {
+  color: #b0b0b0;
+}
+
+[data-theme="dark"] .logout-btn:hover {
+  background: #4a1e1e;
+  border-color: #dc3545;
+  color: #ffb3b3;
+}
+
+[data-theme="dark"] .sidebar-footer {
+  border-top-color: #404040;
+}
+
+[data-theme="dark"] .toggle-btn {
+  background: #404040;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .toggle-btn:hover {
+  background: #4a90e2;
+}

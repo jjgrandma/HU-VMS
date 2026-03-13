@@ -386,3 +386,40 @@
         width: 100%;
     }
 }
+
+
+/* Dark Theme Support */
+[data-theme="dark"] .vehicle-movement-container {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: #ffffff;
+}
+
+[data-theme="dark"] .movement-card,
+[data-theme="dark"] .movement-table,
+[data-theme="dark"] .movement-filters {
+    background: #2d2d2d;
+    border-color: #404040;
+}
+
+[data-theme="dark"] .movement-row {
+    background: #1a1a1a;
+    border-color: #404040;
+}
+
+[data-theme="dark"] .movement-row:hover {
+    background: #333333;
+}
+
+[data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3 {
+    color: #ffffff;
+}
+
+[data-theme="dark"] p {
+    color: #b0b0b0;
+}
+
+[data-theme="dark"] input, [data-theme="dark"] select {
+    background: #1a1a1a;
+    border-color: #404040;
+    color: #ffffff;
+}

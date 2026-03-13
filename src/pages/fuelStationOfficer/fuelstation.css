@@ -2621,3 +2621,243 @@
     transform: translateX(0);
   }
 }
+
+/* Dark Theme Support for All Fuel Station Pages */
+[data-theme="dark"] {
+    color-scheme: dark;
+}
+
+[data-theme="dark"] body {
+    background-color: #1a1a1a;
+    color: #ffffff;
+}
+
+[data-theme="dark"] .fuel-station-layout {
+    background-color: #1a1a1a;
+}
+
+[data-theme="dark"] .fuel-header {
+    background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+    border-bottom-color: #404040;
+}
+
+[data-theme="dark"] .fuel-sidebar {
+    background: #2d2d2d;
+    border-right-color: #404040;
+}
+
+[data-theme="dark"] .fuel-nav-item {
+    color: #b0b0b0;
+}
+
+[data-theme="dark"] .fuel-nav-item:hover {
+    background: #404040;
+    color: #ffffff;
+}
+
+[data-theme="dark"] .fuel-nav-item.active {
+    background: #007bff;
+    color: #ffffff;
+}
+
+[data-theme="dark"] .fuel-main-content {
+    background-color: #1a1a1a;
+}
+
+[data-theme="dark"] .fuel-dashboard-card,
+[data-theme="dark"] .fuel-card,
+[data-theme="dark"] .card {
+    background: #2d2d2d;
+    border-color: #404040;
+    color: #ffffff;
+}
+
+[data-theme="dark"] .fuel-dashboard-card h3,
+[data-theme="dark"] .fuel-card h3,
+[data-theme="dark"] .card h3,
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4 {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .fuel-dashboard-card p,
+[data-theme="dark"] .fuel-card p {
+    color: #b0b0b0;
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+    background: #1a1a1a;
+    border-color: #404040;
+    color: #ffffff;
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] select:focus,
+[data-theme="dark"] textarea:focus {
+    border-color: #007bff;
+    background: #1a1a1a;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+    color: #666666;
+}
+
+[data-theme="dark"] table {
+    background: #2d2d2d;
+    color: #ffffff;
+}
+
+[data-theme="dark"] table thead {
+    background: #1a1a1a;
+}
+
+[data-theme="dark"] table th {
+    color: #ffffff;
+    border-color: #404040;
+}
+
+[data-theme="dark"] table td {
+    border-color: #404040;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] table tbody tr:hover {
+    background: #404040;
+}
+
+[data-theme="dark"] .notification-dropdown,
+[data-theme="dark"] .profile-dropdown {
+    background: #2d2d2d;
+    border-color: #404040;
+}
+
+[data-theme="dark"] .notification-item,
+[data-theme="dark"] .profile-menu-item {
+    color: #e0e0e0;
+    border-bottom-color: #404040;
+}
+
+[data-theme="dark"] .notification-item:hover,
+[data-theme="dark"] .profile-menu-item:hover {
+    background: #404040;
+}
+
+[data-theme="dark"] .notification-item.unread {
+    background: #1a3a4a;
+}
+
+[data-theme="dark"] .badge {
+    background: #007bff;
+    color: #ffffff;
+}
+
+[data-theme="dark"] .status-badge {
+    border-color: #404040;
+}
+
+[data-theme="dark"] .status-badge.pending {
+    background: #4a3a1a;
+    color: #ffc107;
+}
+
+[data-theme="dark"] .status-badge.approved {
+    background: #1a4a2a;
+    color: #28a745;
+}
+
+[data-theme="dark"] .status-badge.completed {
+    background: #1a3a4a;
+    color: #17a2b8;
+}
+
+[data-theme="dark"] .status-badge.rejected {
+    background: #4a1a1a;
+    color: #dc3545;
+}
+
+[data-theme="dark"] .btn-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+}
+
+[data-theme="dark"] .btn-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+}
+
+[data-theme="dark"] .btn-success {
+    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+}
+
+[data-theme="dark"] .btn-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+}
+
+[data-theme="dark"] .modal,
+[data-theme="dark"] .modal-content {
+    background: #2d2d2d;
+    color: #ffffff;
+}
+
+[data-theme="dark"] .modal-header {
+    border-bottom-color: #404040;
+}
+
+[data-theme="dark"] .modal-footer {
+    border-top-color: #404040;
+}
+
+[data-theme="dark"] .alert {
+    border-color: #404040;
+}
+
+[data-theme="dark"] .alert-success {
+    background: #1e4620;
+    color: #90ee90;
+}
+
+[data-theme="dark"] .alert-danger {
+    background: #4a1e1e;
+    color: #ffb3b3;
+}
+
+[data-theme="dark"] .alert-warning {
+    background: #4a3a1e;
+    color: #ffd700;
+}
+
+[data-theme="dark"] .alert-info {
+    background: #1e3a4a;
+    color: #87ceeb;
+}
+
+[data-theme="dark"] label {
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .form-group label {
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] hr {
+    border-color: #404040;
+}
+
+[data-theme="dark"] .divider {
+    background: #404040;
+}
+
+[data-theme="dark"] code,
+[data-theme="dark"] pre {
+    background: #1a1a1a;
+    color: #90ee90;
+    border-color: #404040;
+}
+
+[data-theme="dark"] .loading-spinner {
+    border-color: #404040;
+    border-top-color: #007bff;
+}
