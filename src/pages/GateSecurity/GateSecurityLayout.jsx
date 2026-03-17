@@ -265,8 +265,9 @@ const GateSecurityLayout = ({ onLogout }) => {
   const handleLogout = () => {
     if (onLogout) {
       onLogout();
+    } else {
+      navigate('/login');
     }
-    navigate('/login');
   };
 
   return (

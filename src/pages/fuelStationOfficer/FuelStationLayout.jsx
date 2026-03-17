@@ -258,8 +258,9 @@ const FuelStationLayout = ({ onLogout }) => {
   const handleLogout = () => {
     if (onLogout) {
       onLogout();
+    } else {
+      navigate('/login');
     }
-    navigate('/login');
   };
 
   const formatNotificationTime = (timestamp) => {
