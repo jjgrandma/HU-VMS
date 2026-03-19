@@ -2,25 +2,30 @@
   animation: fadeIn 0.4s ease-out;
 }
 
-.page-header {
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
 
-.page-header h1 {
-  font-size: 24px;
+.dashboard-header h1 {
+  font-size: 28px;
   font-weight: 700;
   color: var(--text-dark);
-  margin: 0 0 4px 0;
+  margin: 0 0 8px 0;
   letter-spacing: -0.5px;
 }
 
-.page-header p {
+.dashboard-header p {
   color: var(--text-secondary);
-  font-size: 14px;
   margin: 0;
+  font-size: 16px;
 }
 
 .btn-primary {
@@ -40,12 +45,186 @@
   box-shadow: 0 4px 12px rgba(132, 204, 22, 0.2);
 }
 
-/* Stats Cards */
-.trip-stats-grid {
+.summary-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 20px;
+  margin-bottom: 32px;
+}
+
+.summary-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.summary-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: #cbd5e1;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.card-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-btn);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+.trend-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 20px;
+}
+
+.trend-indicator.positive {
+  background-color: #f0fdf4;
+  color: var(--status-available);
+}
+
+.card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.card-icon {
+  color: var(--text-secondary);
+  background: none;
+  padding: 8px;
+}
+
+.card-content h3 {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0;
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.card-content p {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.dashboard-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 24px;
+}
+
+.panel-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.search-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--text-tertiary);
+}
+
+.search-input {
+  padding: 8px 16px 8px 36px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-btn);
+  font-size: 14px;
+  color: var(--text-dark);
+  width: 300px;
+  background-color: var(--bg-hover);
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background-color: var(--bg-surface);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-icon {
+  color: var(--text-tertiary);
+}
+
+.floating-select {
+  padding: 8px 16px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-btn);
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--bg-surface);
+  color: var(--text-dark);
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.floating-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-light);
 }
 
 .stat-card {

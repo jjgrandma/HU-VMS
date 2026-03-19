@@ -37,6 +37,7 @@ import TripManagement from './pages/transportOfficer/TripManagement';
 import VehicleTracking from './pages/transportOfficer/VehicleTracking';
 import DriverCoordination from './pages/transportOfficer/DriverCoordination';
 import TransportComplaints from './pages/transportOfficer/TransportComplaints';
+import ComplaintHistory from './pages/transportOfficer/ComplaintHistory';
 import TransportReports from './pages/transportOfficer/TransportReports';
 
 // Driver
@@ -250,6 +251,7 @@ function App() {
             <Route path="tracking" element={<VehicleTracking />} />
             <Route path="drivers" element={<DriverCoordination />} />
             <Route path="complaints" element={<TransportComplaints />} />
+            <Route path="complaint-history" element={<ComplaintHistory />} />
             <Route path="reports" element={<TransportReports />} />
             <Route index element={<Navigate to="dashboard" replace />} />
           </Route>

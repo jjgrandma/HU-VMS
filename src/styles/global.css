@@ -1,7 +1,7 @@
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: #ffffff;
+  font-family: var(--font-family, Arial, sans-serif);
+  /* Remove fixed background - let themes.css handle it */
 }
 
 ul {
@@ -11,6 +11,6 @@ ul {
 
 li {
   padding: 10px;
-  background: white;
+  background: var(--bg-surface, white);
   margin-bottom: 8px;
 }

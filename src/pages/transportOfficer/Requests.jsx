@@ -1,15 +1,15 @@
 import { useState } from "react";
-import { Search, MapPin, Users, Clock, AlertCircle, CheckCircle, XCircle, Building2, GraduationCap, Stethoscope, Truck, FlaskConical } from "lucide-react";
+import { Search, MapPin, Users, Clock, AlertCircle, CheckCircle, XCircle, Building2, GraduationCap, Stethoscope, Truck, FlaskConical, Car, User, Phone, Calendar } from "lucide-react";
 import "./requests.css";
 
 export default function Requests() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterPriority, setFilterPriority] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
-  const [expandedCard, setExpandedCard] = useState(null);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [requestToApprove, setRequestToApprove] = useState(null);
   const [recommendedVehicles, setRecommendedVehicles] = useState([]);
   
@@ -33,7 +33,7 @@ export default function Requests() {
       capacity: 5,
       driver: "Fatuma Ahmed",
       driverPhone: "+251-911-222222",
-      status: "in-transit",
+      status: "available",
       fuelType: "Diesel",
       features: ["4WD", "Cargo Space"],
       suitableFor: ["logistics", "research"]
@@ -61,18 +61,6 @@ export default function Requests() {
       fuelType: "Petrol",
       features: ["4WD", "Medical Equipment Space", "Emergency Kit"],
       suitableFor: ["medical", "emergency"]
-    },
-    {
-      id: "HU-9012",
-      name: "Mercedes Sprinter",
-      type: "Van",
-      capacity: 12,
-      driver: "Dawit Haile",
-      driverPhone: "+251-911-555555",
-      status: "maintenance",
-      fuelType: "Diesel",
-      features: ["AC", "Cargo Space", "GPS"],
-      suitableFor: ["research", "logistics"]
     }
   ]);
   
@@ -126,7 +114,10 @@ export default function Requests() {
       departmentType: "medical",
       contactPhone: "+251-911-345678",
       estimatedDuration: "6 hours",
-      specialRequirements: "Medical bag and portable equipment"
+      specialRequirements: "Medical bag and portable equipment",
+      assignedVehicle: "Toyota Land Cruiser",
+      assignedDriver: "Meron Bekele",
+      matchPercentage: 95
     },
     {
       id: "REQ-004",
@@ -144,24 +135,6 @@ export default function Requests() {
       contactPhone: "+251-911-567890",
       estimatedDuration: "3 days",
       specialRequirements: "Research equipment and camping gear transport"
-    },
-    {
-      id: "REQ-005",
-      requester: "Mr. Yusuf Ibrahim",
-      destination: "Bahir Dar Conference Center",
-      date: "2024-03-25",
-      time: "06:00",
-      passengers: 12,
-      priority: "Low",
-      status: "Rejected",
-      vehicleType: "Bus",
-      purpose: "Academic conference attendance",
-      department: "Engineering College",
-      departmentType: "academic",
-      contactPhone: "+251-911-234567",
-      estimatedDuration: "4 days",
-      specialRequirements: "Presentation equipment transport",
-      rejectionReason: "Budget constraints for extended travel duration"
     }
   ]);
 
@@ -187,14 +160,14 @@ export default function Requests() {
         // Capacity matching (most important)
         if (vehicle.capacity >= request.passengers) {
           if (vehicle.capacity <= request.passengers + 5) {
-            score += 50; // Perfect size match
+            score += 50;
             reasons.push("Optimal capacity match");
           } else {
-            score += 30; // Oversized but available
+            score += 30;
             reasons.push("Sufficient capacity");
           }
         } else {
-          return null; // Cannot accommodate passengers
+          return null;
         }
 
         // Department type suitability
@@ -214,18 +187,6 @@ export default function Requests() {
             vehicle.features.includes("Medical Kit")) {
           score += 25;
           reasons.push("Medical equipment available");
-        }
-
-        if (request.specialRequirements.toLowerCase().includes("air conditioning") && 
-            vehicle.features.includes("AC")) {
-          score += 15;
-          reasons.push("Air conditioning available");
-        }
-
-        // Vehicle type preference
-        if (request.vehicleType.toLowerCase() === vehicle.type.toLowerCase()) {
-          score += 20;
-          reasons.push("Requested vehicle type");
         }
 
         return {
@@ -249,6 +210,7 @@ export default function Requests() {
 
   const confirmAssignment = (vehicleId) => {
     const selectedVehicle = vehicles.find(v => v.id === vehicleId);
+    const matchPercentage = recommendedVehicles.find(v => v.id === vehicleId)?.matchPercentage || 85;
     
     setRequests(prev =>
       prev.map(req =>
@@ -258,37 +220,47 @@ export default function Requests() {
               status: "Approved",
               assignedVehicle: selectedVehicle.name,
               assignedDriver: selectedVehicle.driver,
-              vehicleId: vehicleId
+              vehicleId: vehicleId,
+              matchPercentage: matchPercentage
             } 
           : req
       )
     );
+    
+    // Update selected request
+    if (selectedRequest && selectedRequest.id === requestToApprove.id) {
+      setSelectedRequest({
+        ...requestToApprove,
+        status: "Approved",
+        assignedVehicle: selectedVehicle.name,
+        assignedDriver: selectedVehicle.driver,
+        vehicleId: vehicleId,
+        matchPercentage: matchPercentage
+      });
+    }
     
     setShowAssignmentModal(false);
     setRequestToApprove(null);
     setRecommendedVehicles([]);
   };
 
-  const approveRequest = (id) => {
-    const request = requests.find(r => r.id === id);
-    handleApproveClick(request);
-  };
-
   const rejectRequest = (id) => {
-    if (!rejectionReason.trim()) {
-      return;
-    }
+    if (!rejectionReason.trim()) return;
+    
     setRequests(prev =>
       prev.map(req =>
         req.id === id ? { ...req, status: "Rejected", rejectionReason } : req
       )
     );
-    setRejectionReason("");
-    setExpandedCard(null);
-  };
-
-  const toggleRejectForm = (id) => {
-    setExpandedCard(expandedCard === id ? null : id);
+    
+    if (selectedRequest && selectedRequest.id === id) {
+      setSelectedRequest({
+        ...selectedRequest,
+        status: "Rejected",
+        rejectionReason
+      });
+    }
+    
     setRejectionReason("");
   };
 
@@ -300,253 +272,101 @@ export default function Requests() {
     const matchesStatus = filterStatus === "All" || req.status === filterStatus;
     return matchesSearch && matchesPriority && matchesStatus;
   });
+
+  const handleRequestClick = (request) => {
+    setSelectedRequest(request);
+    setShowDetailsModal(true);
+  };
+
   return (
-    <div className="logistics-command-center">
-      <div className="command-header">
-        <div className="header-content">
-          <h1 className="command-title">Request Management</h1>
-          <p className="command-subtitle">Logistics Command Center • Real-time Operations</p>
+    <div className="request-management-layout">
+      <div className="dashboard-header">
+        <div>
+          <h1>Request Management</h1>
+          <p>Review trips, allocate resources, and coordinate drivers</p>
         </div>
         <div className="header-actions">
           <div className="search-container">
             <Search size={20} className="search-icon" />
             <input
               type="text"
-              placeholder="Search requests, destinations, or IDs..."
+              placeholder="Search requests..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="command-search"
+              className="search-input"
             />
           </div>
         </div>
       </div>
 
-      <div className="filter-bar">
-        <div className="filter-group">
-          <div className="custom-select">
-            <select 
-              value={filterPriority} 
-              onChange={(e) => setFilterPriority(e.target.value)}
-              className="floating-select"
-            >
-              <option value="All">All Priorities</option>
-              <option value="Emergency">Emergency</option>
-              <option value="High">High Priority</option>
-              <option value="Normal">Normal</option>
-              <option value="Low">Low Priority</option>
-            </select>
+      <div className="request-workspace-single">
+        {/* Single Panel - Incoming Requests */}
+        <div className="requests-panel-full">
+          <div className="panel-header">
+            <h3>Incoming Requests</h3>
+            <span className="request-count">{filteredRequests.length}</span>
           </div>
-          <div className="custom-select">
+          
+          <div className="filter-bar">
             <select 
               value={filterStatus} 
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="floating-select"
+              className="filter-select"
             >
               <option value="All">All Status</option>
-              <option value="Pending">Pending Review</option>
+              <option value="Pending">Pending</option>
               <option value="Approved">Approved</option>
               <option value="Rejected">Rejected</option>
             </select>
+            <select 
+              value={filterPriority} 
+              onChange={(e) => setFilterPriority(e.target.value)}
+              className="filter-select"
+            >
+              <option value="All">All Priority</option>
+              <option value="Emergency">Emergency</option>
+              <option value="High">High</option>
+              <option value="Normal">Normal</option>
+              <option value="Low">Low</option>
+            </select>
           </div>
-        </div>
-        <div className="results-counter">
-          <span className="counter-badge">{filteredRequests.length}</span>
-          <span className="counter-text">Active Requests</span>
-        </div>
-      </div>
 
-      <div className="command-grid">
-        <div className="requests-panel">
-          <div className="panel-header">
-            <h2 className="panel-title">Incoming Requests</h2>
-            <div className="live-indicator">
-              <div className="pulse-dot"></div>
-              <span>Live</span>
-            </div>
-          </div>
-          
-          <div className="requests-stream">
+          <div className="requests-list">
             {filteredRequests.map((request) => (
               <div 
                 key={request.id} 
-                className={`request-card ${selectedRequest?.id === request.id ? 'expanded' : 'compact'} priority-${request.priority.toLowerCase()} status-${request.status.toLowerCase()}`}
-                onClick={() => setSelectedRequest(selectedRequest?.id === request.id ? null : request)}
+                className={`request-item priority-${request.priority.toLowerCase()}`}
+                onClick={() => handleRequestClick(request)}
               >
-                <div className={`priority-glow priority-${request.priority.toLowerCase()}`}></div>
+                <div className="request-header">
+                  <span className="request-id">{request.id}</span>
+                  <span className={`status-badge status-${request.status.toLowerCase()}`}>
+                    {request.status}
+                  </span>
+                </div>
                 
-                <div className="card-header">
-                  <div className="request-meta">
-                    <span className="request-id">{request.id}</span>
-                    <span className={`status-badge status-${request.status.toLowerCase()}`}>
-                      {request.status}
-                    </span>
+                <div className="requester-info">
+                  <h4>{request.requester}</h4>
+                  <span className="department">{request.department}</span>
+                </div>
+                
+                <div className="request-meta">
+                  <div className="meta-item">
+                    <MapPin size={14} />
+                    <span>{request.destination}</span>
                   </div>
-                  <div className="request-time">
-                    <Clock size={14} />
-                    <span>{request.time}</span>
+                  <div className="meta-item">
+                    <Calendar size={14} />
+                    <span>{request.date}</span>
+                  </div>
+                  <div className="meta-item">
+                    <Users size={14} />
+                    <span>{request.passengers} passengers</span>
                   </div>
                 </div>
-
-                <div className="requester-section">
-                  <div className="requester-info">
-                    {getDepartmentIcon(request.departmentType)}
-                    <div className="requester-details">
-                      <h3 className="requester-name">{request.requester}</h3>
-                      <span className="department-name">{request.department}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="trip-details-compact">
-                  <div className="detail-row">
-                    <MapPin size={14} className="detail-icon" />
-                    <span className="detail-text">{request.destination}</span>
-                  </div>
-                  <div className="detail-row">
-                    <Users size={14} className="detail-icon" />
-                    <span className="detail-text">{request.passengers} passengers</span>
-                  </div>
-                </div>
-
-                {/* Expanded Details */}
-                {selectedRequest?.id === request.id && (
-                  <div className="expanded-details">
-                    <div className="detail-section">
-                      <h4>Trip Information</h4>
-                      <div className="detail-grid">
-                        <div className="detail-item">
-                          <label>Date & Time:</label>
-                          <span>{request.date} at {request.time}</span>
-                        </div>
-                        <div className="detail-item">
-                          <label>Duration:</label>
-                          <span>{request.estimatedDuration}</span>
-                        </div>
-                        <div className="detail-item">
-                          <label>Vehicle Type:</label>
-                          <span>{request.vehicleType}</span>
-                        </div>
-                        <div className="detail-item">
-                          <label>Contact:</label>
-                          <span>{request.contactPhone}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="detail-section">
-                      <h4>Purpose & Requirements</h4>
-                      <p className="purpose-text-expanded">{request.purpose}</p>
-                      <div className="requirements-box">
-                        <strong>Special Requirements:</strong>
-                        <p>{request.specialRequirements}</p>
-                      </div>
-                    </div>
-
-                    {request.assignedVehicle && (
-                      <div className="assignment-info">
-                        <h4>Assignment Details</h4>
-                        <div className="assignment-details">
-                          <span><strong>Vehicle:</strong> {request.assignedVehicle}</span>
-                          <span><strong>Driver:</strong> {request.assignedDriver}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Actions */}
-                {request.status === "Pending" && (
-                  <div className="card-actions">
-                    <button 
-                      className="action-btn approve-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        approveRequest(request.id);
-                      }}
-                    >
-                      <CheckCircle size={16} />
-                      Approve
-                    </button>
-                    <button 
-                      className="action-btn reject-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleRejectForm(request.id);
-                      }}
-                    >
-                      <XCircle size={16} />
-                      Reject
-                    </button>
-                  </div>
-                )}
-
-                {/* Rejection Reason Display */}
-                {request.status === "Rejected" && request.rejectionReason && (
-                  <div className="rejection-display">
-                    <AlertCircle size={16} className="rejection-icon" />
-                    <span className="rejection-text">{request.rejectionReason}</span>
-                  </div>
-                )}
-
-                {/* Expandable Rejection Form */}
-                {expandedCard === request.id && (
-                  <div className="rejection-form" onClick={(e) => e.stopPropagation()}>
-                    <textarea
-                      placeholder="Please provide a detailed reason for rejection..."
-                      value={rejectionReason}
-                      onChange={(e) => setRejectionReason(e.target.value)}
-                      className="rejection-textarea"
-                      autoFocus
-                    />
-                    <div className="rejection-actions">
-                      <button 
-                        className="cancel-btn"
-                        onClick={() => toggleRejectForm(null)}
-                      >
-                        Cancel
-                      </button>
-                      <button 
-                        className="confirm-reject-btn"
-                        onClick={() => rejectRequest(request.id)}
-                        disabled={!rejectionReason.trim()}
-                      >
-                        Confirm Rejection
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="assignment-panel">
-          <div className="panel-header">
-            <h2 className="panel-title">Vehicle Fleet</h2>
-            <span className="assignment-subtitle">Real-time status</span>
-          </div>
-          
-          <div className="vehicle-fleet">
-            {vehicles.map((vehicle) => (
-              <div key={vehicle.id} className={`fleet-card ${vehicle.status}`}>
-                <div className="vehicle-header">
-                  <h4 className="vehicle-name">{vehicle.name}</h4>
-                  <span className="vehicle-id">{vehicle.id}</span>
-                </div>
-                <div className="vehicle-specs">
-                  <span className="spec-item">🚐 {vehicle.capacity} seats</span>
-                  <span className="spec-item">👤 {vehicle.driver}</span>
-                  <span className="spec-item">⛽ {vehicle.fuelType}</span>
-                </div>
-                <div className="vehicle-features">
-                  {vehicle.features.slice(0, 2).map((feature, index) => (
-                    <span key={index} className="feature-tag">{feature}</span>
-                  ))}
-                </div>
-                <div className={`availability-status ${vehicle.status}`}>
-                  <div className="status-dot"></div>
-                  <span>{vehicle.status === 'available' ? 'Available' : 
-                         vehicle.status === 'in-transit' ? 'In Transit' : 'Maintenance'}</span>
+                
+                <div className={`priority-indicator priority-${request.priority.toLowerCase()}`}>
+                  {request.priority}
                 </div>
               </div>
             ))}
@@ -554,12 +374,139 @@ export default function Requests() {
         </div>
       </div>
 
-      {/* Smart Assignment Modal */}
+      {/* Request Details Modal */}
+      {showDetailsModal && selectedRequest && (
+        <div className="modal-overlay" onClick={() => setShowDetailsModal(false)}>
+          <div className="details-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Request Details</h2>
+              <span className="request-id-large">{selectedRequest.id}</span>
+              <button 
+                className="close-btn"
+                onClick={() => setShowDetailsModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              {/* Requester Info Section */}
+              <div className="detail-section">
+                <div className="section-header">
+                  <User size={20} />
+                  <h4>Requester Info</h4>
+                </div>
+                <div className="info-grid">
+                  <div className="info-item">
+                    <label>Name</label>
+                    <span>{selectedRequest.requester}</span>
+                  </div>
+                  <div className="info-item">
+                    <label>Department</label>
+                    <span>{selectedRequest.department}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Trip Details Section */}
+              <div className="detail-section">
+                <div className="section-header">
+                  <MapPin size={20} />
+                  <h4>Trip Details</h4>
+                </div>
+                <div className="info-grid">
+                  <div className="info-item">
+                    <label>Purpose</label>
+                    <span>{selectedRequest.purpose}</span>
+                  </div>
+                  <div className="info-item">
+                    <label>Destination</label>
+                    <span>{selectedRequest.destination}</span>
+                  </div>
+                  <div className="info-item">
+                    <label>Departure</label>
+                    <span>{selectedRequest.date}, {selectedRequest.time}</span>
+                  </div>
+                  <div className="info-item">
+                    <label>Return</label>
+                    <span>{selectedRequest.estimatedDuration}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Vehicle Assignment Section */}
+              {selectedRequest.status === "Approved" && selectedRequest.assignedVehicle && (
+                <div className="detail-section assignment-section">
+                  <div className="section-header">
+                    <Car size={20} />
+                    <h4>Vehicle Assignment</h4>
+                    <span className="match-badge">{selectedRequest.matchPercentage}% Match</span>
+                  </div>
+                  <div className="assignment-card">
+                    <div className="vehicle-info">
+                      <h5>{selectedRequest.assignedVehicle}</h5>
+                      <span>Driver: {selectedRequest.assignedDriver}</span>
+                    </div>
+                    <div className="assignment-status">
+                      <CheckCircle size={16} />
+                      <span>Assigned</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Actions Section */}
+              {selectedRequest.status === "Pending" && (
+                <div className="actions-section">
+                  <button 
+                    className="action-btn approve-btn"
+                    onClick={() => {
+                      setShowDetailsModal(false);
+                      handleApproveClick(selectedRequest);
+                    }}
+                  >
+                    <CheckCircle size={16} />
+                    Approve Request
+                  </button>
+                  <div className="reject-section">
+                    <textarea
+                      placeholder="Reason for rejection..."
+                      value={rejectionReason}
+                      onChange={(e) => setRejectionReason(e.target.value)}
+                      className="rejection-textarea"
+                    />
+                    <button 
+                      className="action-btn reject-btn"
+                      onClick={() => {
+                        rejectRequest(selectedRequest.id);
+                        setShowDetailsModal(false);
+                      }}
+                      disabled={!rejectionReason.trim()}
+                    >
+                      <XCircle size={16} />
+                      Reject Request
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {selectedRequest.status === "Rejected" && selectedRequest.rejectionReason && (
+                <div className="rejection-display">
+                  <AlertCircle size={16} />
+                  <span>{selectedRequest.rejectionReason}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Vehicle Assignment Modal */}
       {showAssignmentModal && (
         <div className="modal-overlay" onClick={() => setShowAssignmentModal(false)}>
           <div className="assignment-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Smart Vehicle Assignment</h2>
+              <h2>Select Vehicle for Assignment</h2>
               <button 
                 className="close-btn"
                 onClick={() => setShowAssignmentModal(false)}
@@ -613,7 +560,7 @@ export default function Requests() {
                         className={`assign-btn ${index === 0 ? 'primary' : 'secondary'}`}
                         onClick={() => confirmAssignment(vehicle.id)}
                       >
-                        {index === 0 ? '✨ Assign Best Match' : 'Assign Vehicle'}
+                        {index === 0 ? '⭐ Assign Best Match' : 'Assign Vehicle'}
                       </button>
                     </div>
                   ))}

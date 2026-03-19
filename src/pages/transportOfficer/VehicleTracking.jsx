@@ -111,9 +111,18 @@ const VehicleTracking = () => {
   useEffect(() => {
     const loadLeafletMap = () => {
       if (window.L) {
+        console.log('Leaflet already loaded');
         setMapLoaded(true);
         return;
       }
+
+      console.log('Loading Leaflet...');
+      
+      // Remove any existing Leaflet resources
+      const existingCss = document.querySelector('link[href*="leaflet"]');
+      const existingScript = document.querySelector('script[src*="leaflet"]');
+      if (existingCss) existingCss.remove();
+      if (existingScript) existingScript.remove();
 
       const cssLink = document.createElement('link');
       cssLink.rel = 'stylesheet';
@@ -129,12 +138,14 @@ const VehicleTracking = () => {
       script.async = true;
       script.defer = true;
       script.onload = () => {
+        console.log('Leaflet loaded successfully');
         setMapLoaded(true);
         setMapError(false);
       };
-      script.onerror = () => {
-        console.warn('Leaflet failed to load');
+      script.onerror = (error) => {
+        console.error('Leaflet failed to load:', error);
         setMapError(true);
+        setMapLoaded(false);
       };
       document.head.appendChild(script);
     };
@@ -145,6 +156,7 @@ const VehicleTracking = () => {
   useEffect(() => {
     if (activeView === 'map' && mapLoaded && window.L && mapRef.current && !mapInstanceRef.current) {
       try {
+        console.log('Initializing map...');
         mapInstanceRef.current = window.L.map(mapRef.current).setView([9.4103, 42.0461], 13);
 
         window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -185,6 +197,7 @@ const VehicleTracking = () => {
             </div>
           `);
 
+        console.log('Map initialized successfully');
         setMapError(false);
       } catch (error) {
         console.error('Error initializing map:', error);
@@ -194,6 +207,7 @@ const VehicleTracking = () => {
 
     if (activeView === 'map' && mapInstanceRef.current) {
       setTimeout(() => {
+        console.log('Invalidating map size...');
         mapInstanceRef.current.invalidateSize();
       }, 100);
     }
@@ -337,7 +351,7 @@ const VehicleTracking = () => {
 
   return (
     <div className="vehicle-tracking-page">
-      <div className="page-header">
+      <div className="dashboard-header">
         <div>
           <h1>Vehicle Tracking</h1>
           <p>Real-time fleet monitoring and map overview</p>
@@ -358,15 +372,79 @@ const VehicleTracking = () => {
         </div>
       </div>
 
+      {/* Fleet Statistics Cards */}
+      <div className="summary-cards">
+        <div className="summary-card">
+          <div className="card-header">
+            <div className="card-icon-wrapper" style={{ color: 'var(--primary-color)', backgroundColor: 'var(--primary-color)15' }}>
+              <Car size={28} />
+            </div>
+            <div className="trend-indicator positive">
+              <span>{stats.total}</span>
+            </div>
+          </div>
+          <div className="card-content">
+            <h3>{stats.total}</h3>
+            <p>Total Fleet</p>
+          </div>
+        </div>
+
+        <div className="summary-card">
+          <div className="card-header">
+            <div className="card-icon-wrapper" style={{ color: 'var(--status-available)', backgroundColor: 'var(--status-available)15' }}>
+              <CheckCircle2 size={28} />
+            </div>
+            <div className="trend-indicator positive">
+              <span>{Math.round((stats.active / stats.total) * 100)}%</span>
+            </div>
+          </div>
+          <div className="card-content">
+            <h3>{stats.active}</h3>
+            <p>Active Trips</p>
+          </div>
+        </div>
+
+        <div className="summary-card">
+          <div className="card-header">
+            <div className="card-icon-wrapper" style={{ color: 'var(--status-pending)', backgroundColor: 'var(--status-pending)15' }}>
+              <Activity size={28} />
+            </div>
+            <div className="trend-indicator positive">
+              <span>{Math.round((stats.available / stats.total) * 100)}%</span>
+            </div>
+          </div>
+          <div className="card-content">
+            <h3>{stats.available}</h3>
+            <p>Available</p>
+          </div>
+        </div>
+
+        <div className="summary-card">
+          <div className="card-header">
+            <div className="card-icon-wrapper" style={{ color: 'var(--status-complaint)', backgroundColor: 'var(--status-complaint)15' }}>
+              <AlertTriangle size={28} />
+            </div>
+            <div className="trend-indicator negative">
+              <span>{stats.issues}</span>
+            </div>
+          </div>
+          <div className="card-content">
+            <h3>{stats.issues}</h3>
+            <p>Need Attention</p>
+          </div>
+        </div>
+      </div>
+
       <div className="tracking-workspace">
         {activeView === 'fleet' && (
-          <div className="fleet-view-panel">
+          <div className="dashboard-panel">
             <div className="panel-header">
               <h3>Fleet Status</h3>
               <div className="status-filter">
                 <select 
                   value={statusFilter} 
                   onChange={(e) => setStatusFilter(e.target.value)}
+                  className="floating-select"
                 >
                   <option value="All">All Statuses</option>
                   <option value="Available">Available</option>
@@ -421,7 +499,13 @@ const VehicleTracking = () => {
 
                   <div className="fc-footer">
                     <span className="timestamp"><Clock size={12} /> {vehicle.lastUpdate}</span>
-                    <button className="btn-locate">
+                    <button 
+                      className="btn-locate"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleVehicleClick(vehicle);
+                      }}
+                    >
                       <MapPin size={14} /> Locate
                     </button>
                   </div>
@@ -458,12 +542,34 @@ const VehicleTracking = () => {
               )}
             </div>
             <div className="map-canvas-container">
-              <div ref={mapRef} className="leaflet-map-canvas"></div>
-              {!mapLoaded && !mapError && (
-                <div className="map-loading-overlay">
-                  <div className="spinner"></div>
-                  <p>Loading Maps...</p>
+              {mapError ? (
+                <div className="map-error-overlay">
+                  <div className="error-content">
+                    <AlertTriangle size={48} color="#ef4444" />
+                    <h3>Map Loading Failed</h3>
+                    <p>Unable to load the map. Please check your internet connection and try refreshing the page.</p>
+                    <button 
+                      className="retry-btn"
+                      onClick={() => {
+                        setMapError(false);
+                        setMapLoaded(false);
+                        window.location.reload();
+                      }}
+                    >
+                      Retry
+                    </button>
+                  </div>
                 </div>
+              ) : (
+                <>
+                  <div ref={mapRef} className="leaflet-map-canvas"></div>
+                  {!mapLoaded && (
+                    <div className="map-loading-overlay">
+                      <div className="spinner"></div>
+                      <p>Loading Maps...</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

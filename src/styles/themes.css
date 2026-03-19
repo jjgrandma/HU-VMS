@@ -25,24 +25,42 @@
 
 /* Light Theme */
 [data-theme="light"] {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --card-bg: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --card-bg: #ffffff;
   --card-bg-secondary: rgba(248, 250, 252, 0.8);
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
-  --border-color: rgba(0, 0, 0, 0.1);
-  --primary-color: #3b82f6;
-  --primary-color-alpha: rgba(59, 130, 246, 0.1);
-  --success-color: #22c55e;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --border-color: #e2e8f0;
+  --primary-color: #84cc16;
+  --primary-color-alpha: rgba(132, 204, 22, 0.1);
+  --success-color: #10b981;
   --danger-color: #ef4444;
   --warning-color: #f59e0b;
   --info-color: #06b6d4;
-  --hover-bg: rgba(0, 0, 0, 0.05);
+  --hover-bg: #f1f5f9;
   --input-bg: #ffffff;
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.15);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  
+  /* Transport Officer specific variables */
+  --bg-main: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-hover: #f1f5f9;
+  --text-dark: #1f2937;
+  --text-tertiary: #9ca3af;
+  --status-available: #10b981;
+  --status-in-trip: #3b82f6;
+  --status-pending: #f59e0b;
+  --status-complaint: #ef4444;
+  --status-driver: #8b5cf6;
+  --border-light: #e2e8f0;
+  --primary-hover: #65a30d;
+  --primary-light: #f7fee7;
+  --radius-card: 12px;
+  --radius-panel: 10px;
+  --radius-btn: 8px;
 }
 
 /* Colorful Theme */
@@ -69,8 +87,8 @@
 
 /* Apply theme to body */
 body {
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  background: var(--bg-main, var(--bg-primary));
+  color: var(--text-dark, var(--text-primary));
   transition: background 0.3s ease, color 0.3s ease;
 }
 

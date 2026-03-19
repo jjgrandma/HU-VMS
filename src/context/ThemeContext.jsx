@@ -4,12 +4,18 @@ const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('theme') || 'dark';
+    // Force clear any existing dark theme and set to light
+    localStorage.removeItem('theme');
+    localStorage.setItem('theme', 'light');
+    return 'light';
   });
 
   useEffect(() => {
     localStorage.setItem('theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
+    // Force remove any dark theme classes
+    document.body.classList.remove('dark-theme');
+    document.body.classList.add('light-theme');
   }, [theme]);
 
   const toggleTheme = (newTheme) => {

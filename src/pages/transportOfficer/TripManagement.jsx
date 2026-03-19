@@ -101,74 +101,83 @@ const TripManagement = () => {
 
   return (
     <div className="trip-management">
-      <div className="page-header">
+      <div className="dashboard-header">
         <div>
           <h1>Trip Management</h1>
           <p>Monitor active journeys and upcoming schedules</p>
         </div>
-        <button className="btn btn-primary">
-          + New Trip
-        </button>
       </div>
 
-      <div className="trip-stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon-wrapper active-trips">
-            <Activity size={24} />
-          </div>
-          <div className="stat-info">
-            <h3>Active Trips</h3>
-            <div className="stat-value">{stats.active}</div>
-            <span className="stat-trend positive">Live tracking enabled</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon-wrapper upcoming-trips">
-            <ClockIcon size={24} />
-          </div>
-          <div className="stat-info">
-            <h3>Upcoming Today</h3>
-            <div className="stat-value">{stats.upcoming}</div>
-            <span className="stat-trend">Scheduled departures</span>
+      <div className="summary-cards">
+        <div className="summary-card">
+          <div className="card-content">
+            <div className="card-icon">
+              <Activity size={28} />
+            </div>
+            <h3>{stats.active}</h3>
+            <p>Active Trips</p>
+            <div className="trend-indicator positive">
+              <span>Live</span>
+            </div>
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-icon-wrapper completed-trips">
-            <CheckCircle size={24} />
+
+        <div className="summary-card">
+          <div className="card-content">
+            <div className="card-icon">
+              <ClockIcon size={28} />
+            </div>
+            <h3>{stats.upcoming}</h3>
+            <p>Upcoming</p>
+            <div className="trend-indicator positive">
+              <span>Today</span>
+            </div>
           </div>
-          <div className="stat-info">
-            <h3>Completed</h3>
-            <div className="stat-value">{stats.completed}</div>
-            <span className="stat-trend">Successfully finished</span>
+        </div>
+
+        <div className="summary-card">
+          <div className="card-content">
+            <div className="card-icon">
+              <CheckCircle size={28} />
+            </div>
+            <h3>{stats.completed}</h3>
+            <p>Completed</p>
+            <div className="trend-indicator positive">
+              <span>100%</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="table-container">
-        <div className="table-toolbar">
-          <div className="search-bar">
-            <Search size={16} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search by ID, Driver, or Destination..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          
-          <div className="filter-group">
-            <div className="status-filter">
-              <Filter size={16} className="filter-icon" />
-              <select 
-                value={statusFilter} 
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="All">All Statuses</option>
-                <option value="Approved">Upcoming (Approved)</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
+      <div className="dashboard-panel">
+        <div className="panel-header">
+          <h3>Trip Schedule</h3>
+          <div className="header-actions">
+            <div className="search-bar">
+              <Search size={16} className="search-icon" />
+              <input
+                type="text"
+                placeholder="Search by ID, Driver, or Destination..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+            </div>
+            <div className="filter-group">
+              <div className="status-filter">
+                <Filter size={16} className="filter-icon" />
+                <select 
+                  value={statusFilter} 
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="floating-select"
+                >
+                  <option value="All">All Statuses</option>
+                  <option value="Approved">Upcoming (Approved)</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>

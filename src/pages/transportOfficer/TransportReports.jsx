@@ -103,7 +103,7 @@ const TransportReports = () => {
 
   return (
     <div className="transport-reports-page">
-      <div className="page-header">
+      <div className="dashboard-header">
         <div>
           <h1>Reports & Analytics</h1>
           <p>Generate, view, and export operational metrics</p>
@@ -113,97 +113,153 @@ const TransportReports = () => {
         </button>
       </div>
 
-      <div className="reports-top-section">
-        <div className="reports-quick-stats">
-          <div className="rqs-card">
-            <div className="rqs-icon"><FileText size={20} /></div>
-            <div className="rqs-info">
-              <span className="rqs-val">24</span>
-              <span className="rqs-label">Generated This Month</span>
+      <div className="summary-cards">
+        <div className="summary-card">
+          <div className="card-header">
+            <div className="card-icon-wrapper" style={{ color: 'var(--primary-color)', backgroundColor: 'var(--primary-color)15' }}>
+              <FileText size={28} />
+            </div>
+            <div className="trend-indicator positive">
+              <span>+12%</span>
             </div>
           </div>
-          <div className="rqs-card">
-            <div className="rqs-icon"><Download size={20} /></div>
-            <div className="rqs-info">
-              <span className="rqs-val">156</span>
-              <span className="rqs-label">Total Downloads</span>
-            </div>
-          </div>
-          <div className="rqs-card">
-            <div className="rqs-icon"><PieChart size={20} /></div>
-            <div className="rqs-info">
-              <span className="rqs-val">5</span>
-              <span className="rqs-label">Report Types</span>
-            </div>
-          </div>
-          <div className="rqs-card">
-            <div className="rqs-icon"><CheckCircle2 size={20} /></div>
-            <div className="rqs-info">
-              <span className="rqs-val">98%</span>
-              <span className="rqs-label">Success Rate</span>
-            </div>
+          <div className="card-content">
+            <h3>24</h3>
+            <p>Generated This Month</p>
           </div>
         </div>
 
-        <div className="recent-activity-panel">
-          <h3>Recent Activity</h3>
-          <div className="rap-list">
-            <div className="rap-item">
-              <div className="rap-bullet success"></div>
-              <div className="rap-content">
-                <span className="rap-text">Daily Trip Report generated</span>
-                <span className="rap-time">2 hours ago</span>
-              </div>
+        <div className="summary-card">
+          <div className="card-header">
+            <div className="card-icon-wrapper" style={{ color: 'var(--status-available)', backgroundColor: 'var(--status-available)15' }}>
+              <Download size={28} />
             </div>
-            <div className="rap-item">
-              <div className="rap-bullet print"></div>
-              <div className="rap-content">
-                <span className="rap-text">Vehicle Usage Report downloaded</span>
-                <span className="rap-time">4 hours ago</span>
-              </div>
+            <div className="trend-indicator positive">
+              <span>+8%</span>
             </div>
-            <div className="rap-item">
-              <div className="rap-bullet processing"></div>
-              <div className="rap-content">
-                <span className="rap-text">Fuel Usage Report queued</span>
-                <span className="rap-time">6 hours ago</span>
-              </div>
+          </div>
+          <div className="card-content">
+            <h3>156</h3>
+            <p>Total Downloads</p>
+          </div>
+        </div>
+
+        <div className="summary-card">
+          <div className="card-header">
+            <div className="card-icon-wrapper" style={{ color: 'var(--status-pending)', backgroundColor: 'var(--status-pending)15' }}>
+              <PieChart size={28} />
             </div>
+            <div className="trend-indicator positive">
+              <span>5</span>
+            </div>
+          </div>
+          <div className="card-content">
+            <h3>5</h3>
+            <p>Report Types</p>
+          </div>
+        </div>
+
+        <div className="summary-card">
+          <div className="card-header">
+            <div className="card-icon-wrapper" style={{ color: 'var(--status-available)', backgroundColor: 'var(--status-available)15' }}>
+              <CheckCircle2 size={28} />
+            </div>
+            <div className="trend-indicator positive">
+              <span>98%</span>
+            </div>
+          </div>
+          <div className="card-content">
+            <h3>98%</h3>
+            <p>Success Rate</p>
           </div>
         </div>
       </div>
 
-      <div className="reports-workspace">
-        <div className="rw-toolbar">
-          <div className="rw-title">
-            <h3>Standard Reports</h3>
+      <div className="dashboard-grid">
+        <div className="dashboard-panel">
+          <div className="panel-header">
+            <h3>Recent Activity</h3>
+            <button className="view-all-btn">View All</button>
           </div>
-          <div className="rw-filters">
-            <div className="filter-select-wrapper">
-              <Filter size={14} className="fs-icon" />
-              <select 
-                value={selectedPeriod} 
-                onChange={(e) => setSelectedPeriod(e.target.value)}
-              >
-                <option value="All">All Periods</option>
-                <option value="Daily">Daily</option>
-                <option value="Weekly">Weekly</option>
-                <option value="Monthly">Monthly</option>
-                <option value="Quarterly">Quarterly</option>
-              </select>
+          <div className="activity-timeline">
+            <div className="timeline-item">
+              <div className="timeline-marker">
+                <div className="timeline-icon-bg">
+                  <CheckCircle2 size={18} color="var(--status-available)" />
+                </div>
+                <div className="timeline-connector"></div>
+              </div>
+              <div className="timeline-content">
+                <p className="timeline-title">Daily Trip Report generated</p>
+                <div className="timeline-meta">
+                  <Clock size={12} />
+                  <span>2 hours ago</span>
+                </div>
+              </div>
             </div>
-            <div className="filter-select-wrapper">
-              <select 
-                value={selectedFormat} 
-                onChange={(e) => setSelectedFormat(e.target.value)}
-              >
-                <option value="All">All Formats</option>
-                <option value="PDF">PDF</option>
-                <option value="Excel">Excel / CSV</option>
-              </select>
+            <div className="timeline-item">
+              <div className="timeline-marker">
+                <div className="timeline-icon-bg">
+                  <Download size={18} color="var(--primary-color)" />
+                </div>
+                <div className="timeline-connector"></div>
+              </div>
+              <div className="timeline-content">
+                <p className="timeline-title">Vehicle Usage Report downloaded</p>
+                <div className="timeline-meta">
+                  <Clock size={12} />
+                  <span>4 hours ago</span>
+                </div>
+              </div>
+            </div>
+            <div className="timeline-item">
+              <div className="timeline-marker">
+                <div className="timeline-icon-bg">
+                  <RefreshCw size={18} color="var(--status-pending)" />
+                </div>
+              </div>
+              <div className="timeline-content">
+                <p className="timeline-title">Fuel Usage Report queued</p>
+                <div className="timeline-meta">
+                  <Clock size={12} />
+                  <span>6 hours ago</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
+        <div className="dashboard-panel">
+          <div className="panel-header">
+            <h3>Standard Reports</h3>
+            <div className="rw-filters">
+              <div className="filter-select-wrapper">
+                <Filter size={14} className="fs-icon" />
+                <select 
+                  value={selectedPeriod} 
+                  onChange={(e) => setSelectedPeriod(e.target.value)}
+                  className="floating-select"
+                >
+                  <option value="All">All Periods</option>
+                  <option value="Daily">Daily</option>
+                  <option value="Weekly">Weekly</option>
+                  <option value="Monthly">Monthly</option>
+                  <option value="Quarterly">Quarterly</option>
+                </select>
+              </div>
+              <div className="filter-select-wrapper">
+                <select 
+                  value={selectedFormat} 
+                  onChange={(e) => setSelectedFormat(e.target.value)}
+                  className="floating-select"
+                >
+                  <option value="All">All Formats</option>
+                  <option value="PDF">PDF</option>
+                  <option value="Excel">Excel / CSV</option>
+                </select>
+              </div>
+            </div>
+          </div>
 
         <div className="reports-grid">
           {filteredReports.map((report) => (
@@ -267,6 +323,7 @@ const TransportReports = () => {
               <p>No reports match your filters.</p>
             </div>
           )}
+        </div>
         </div>
       </div>
     </div>
