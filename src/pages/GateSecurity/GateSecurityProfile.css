@@ -970,3 +970,33 @@
     outline: 3px solid rgba(74, 144, 226, 0.3);
     outline-offset: 2px;
 }
+
+
+/* Dark Theme Support */
+[data-theme="dark"] .gate-profile-container {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: #ffffff;
+}
+
+[data-theme="dark"] .profile-card,
+[data-theme="dark"] .profile-section {
+    background: #2d2d2d;
+    border-color: #404040;
+}
+
+[data-theme="dark"] .profile-info-item {
+    background: #1a1a1a;
+    border-color: #404040;
+}
+
+[data-theme="dark"] .profile-label {
+    color: #b0b0b0;
+}
+
+[data-theme="dark"] .profile-value {
+    color: #ffffff;
+}
+
+[data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3 {
+    color: #ffffff;
+}

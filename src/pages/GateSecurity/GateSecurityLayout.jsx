@@ -8,26 +8,110 @@ const GateSecurityLayout = ({ onLogout }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [gateOfficerInfo, setGateOfficerInfo] = useState({
-    name: 'Ahmed Hassan',
-    email: 'ahmed.hassan@university.edu.et',
-    employeeId: 'GS-2024-001',
-    role: 'Gate Security Officer',
-    gateLocation: 'Main Gate',
-    avatar: null
-  });
-
-  // Load profile photo from localStorage on component mount
-  useEffect(() => {
+  const [gateOfficerInfo, setGateOfficerInfo] = useState(() => {
+    const savedSettings = localStorage.getItem('gateSecuritySettings');
     const savedProfilePhoto = localStorage.getItem('gateSecurityProfilePhoto');
-    if (savedProfilePhoto) {
-      setGateOfficerInfo(prev => ({
-        ...prev,
-        avatar: savedProfilePhoto
-      }));
+    
+    let initialInfo = {
+      name: 'Ahmed Hassan',
+      email: 'ahmed.hassan@university.edu.et',
+      employeeId: 'GS-2024-001',
+      role: 'Gate Security Officer',
+      gateLocation: 'Main Gate',
+      avatar: savedProfilePhoto || null
+    };
+
+    if (savedSettings) {
+      try {
+        const parsed = JSON.parse(savedSettings);
+        if (parsed.account) {
+          initialInfo = {
+            ...initialInfo,
+            name: parsed.account.name || initialInfo.name,
+            email: parsed.account.email || initialInfo.email,
+            employeeId: parsed.account.employeeId || initialInfo.employeeId,
+            gateLocation: parsed.account.gateLocation || initialInfo.gateLocation
+          };
+        }
+      } catch (e) {
+        console.error('Error loading settings:', e);
+      }
     }
 
-    // Listen for profile photo updates
+    return initialInfo;
+  });
+
+  // Apply theme on component mount
+  useEffect(() => {
+    const applyTheme = () => {
+      const savedSettings = localStorage.getItem('gateSecuritySettings');
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        const theme = parsed.system?.theme || 'light';
+        
+        if (theme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          document.body.style.backgroundColor = '#1a1a1a';
+          document.body.style.color = '#ffffff';
+        } else if (theme === 'light') {
+          document.documentElement.setAttribute('data-theme', 'light');
+          document.body.style.backgroundColor = '#ffffff';
+          document.body.style.color = '#000000';
+        } else if (theme === 'auto') {
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+          document.body.style.backgroundColor = prefersDark ? '#1a1a1a' : '#ffffff';
+          document.body.style.color = prefersDark ? '#ffffff' : '#000000';
+        }
+      }
+    };
+
+    applyTheme();
+
+    const handleStorageChange = (e) => {
+      if (e.key === 'gateSecuritySettings' || e.key === 'appTheme') {
+        applyTheme();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    const themeCheckInterval = setInterval(applyTheme, 1000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(themeCheckInterval);
+    };
+  }, []);
+
+  // Load profile photo and settings
+  useEffect(() => {
+    const loadProfileData = () => {
+      const savedProfilePhoto = localStorage.getItem('gateSecurityProfilePhoto');
+      const savedSettings = localStorage.getItem('gateSecuritySettings');
+      
+      if (savedProfilePhoto) {
+        setGateOfficerInfo(prev => ({
+          ...prev,
+          avatar: savedProfilePhoto
+        }));
+      }
+
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        if (parsed.account) {
+          setGateOfficerInfo(prev => ({
+            ...prev,
+            name: parsed.account.name || prev.name,
+            email: parsed.account.email || prev.email,
+            employeeId: parsed.account.employeeId || prev.employeeId,
+            gateLocation: parsed.account.gateLocation || prev.gateLocation
+          }));
+        }
+      }
+    };
+
+    loadProfileData();
+
     const handleProfilePhotoUpdate = (event) => {
       if (event.key === 'gateSecurityProfilePhoto') {
         setGateOfficerInfo(prev => ({
@@ -37,9 +121,15 @@ const GateSecurityLayout = ({ onLogout }) => {
       }
     };
 
-    window.addEventListener('storage', handleProfilePhotoUpdate);
+    const handleSettingsUpdate = (event) => {
+      if (event.key === 'gateSecuritySettings') {
+        loadProfileData();
+      }
+    };
 
-    // Also listen for custom events from the same page
+    window.addEventListener('storage', handleProfilePhotoUpdate);
+    window.addEventListener('storage', handleSettingsUpdate);
+
     const handleCustomProfileUpdate = (event) => {
       setGateOfficerInfo(prev => ({
         ...prev,
@@ -47,13 +137,35 @@ const GateSecurityLayout = ({ onLogout }) => {
       }));
     };
 
+    const handleCustomAccountUpdate = (event) => {
+      if (event.detail.account) {
+        setGateOfficerInfo(prev => {
+          const newInfo = {
+            ...prev,
+            name: event.detail.account.name,
+            email: event.detail.account.email,
+            employeeId: event.detail.account.employeeId,
+            gateLocation: event.detail.account.gateLocation
+          };
+          return newInfo;
+        });
+      }
+    };
+
     window.addEventListener('profilePhotoUpdated', handleCustomProfileUpdate);
+    window.addEventListener('gateAccountSettingsUpdated', handleCustomAccountUpdate);
+
+    const settingsCheckInterval = setInterval(loadProfileData, 1000);
 
     return () => {
       window.removeEventListener('storage', handleProfilePhotoUpdate);
+      window.removeEventListener('storage', handleSettingsUpdate);
       window.removeEventListener('profilePhotoUpdated', handleCustomProfileUpdate);
+      window.removeEventListener('gateAccountSettingsUpdated', handleCustomAccountUpdate);
+      clearInterval(settingsCheckInterval);
     };
   }, []);
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -153,8 +265,9 @@ const GateSecurityLayout = ({ onLogout }) => {
   const handleLogout = () => {
     if (onLogout) {
       onLogout();
+    } else {
+      navigate('/login');
     }
-    navigate('/login');
   };
 
   return (

@@ -1817,3 +1817,94 @@
     transform: translateY(0);
   }
 }
+
+
+/* Dark Theme Support */
+[data-theme="dark"] .gate-dashboard-wrapper {
+    background: #1a1a1a;
+}
+
+[data-theme="dark"] .gate-sidebar {
+    background: #2d2d2d;
+    border-right-color: #404040;
+}
+
+[data-theme="dark"] .gate-sidebar-header {
+    background: #1a1a1a;
+    border-bottom-color: #404040;
+}
+
+[data-theme="dark"] .gate-logo-text {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .gate-nav-item {
+    color: #b0b0b0;
+}
+
+[data-theme="dark"] .gate-nav-item:hover {
+    background: #404040;
+    color: #ffffff;
+}
+
+[data-theme="dark"] .gate-nav-item.active {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: #ffffff;
+}
+
+[data-theme="dark"] .gate-main-content {
+    background: #1a1a1a;
+}
+
+[data-theme="dark"] .gate-header {
+    background: #2d2d2d;
+    border-bottom-color: #404040;
+}
+
+[data-theme="dark"] .gate-header h1 {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .gate-page-content {
+    background: #1a1a1a;
+}
+
+[data-theme="dark"] .gate-notification-dropdown,
+[data-theme="dark"] .gate-profile-dropdown {
+    background: #2d2d2d;
+    border-color: #404040;
+}
+
+[data-theme="dark"] .gate-notification-item {
+    background: #1a1a1a;
+    border-color: #404040;
+}
+
+[data-theme="dark"] .gate-notification-item:hover {
+    background: #333333;
+}
+
+[data-theme="dark"] .gate-notification-title {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .gate-notification-message {
+    color: #b0b0b0;
+}
+
+[data-theme="dark"] .gate-profile-header-name {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .gate-profile-header-email {
+    color: #b0b0b0;
+}
+
+[data-theme="dark"] .gate-profile-menu-item {
+    color: #b0b0b0;
+}
+
+[data-theme="dark"] .gate-profile-menu-item:hover {
+    background: #404040;
+    color: #ffffff;
+}

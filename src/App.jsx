@@ -42,6 +42,7 @@ import TransportReports from './pages/transportOfficer/TransportReports';
 
 // Driver
 import DriverDashboard from './pages/driver/DriverDashboard';
+import DriverSettings from './pages/driver/DriverSettings';
 
 // User
 import UserLayout from './pages/user/UserLayout';
@@ -62,6 +63,7 @@ import FuelTransactionHistory from './pages/fuelStationOfficer/FuelTransactionHi
 import FuelReports from './pages/fuelStationOfficer/FuelReports';
 import FuelNotifications from './pages/fuelStationOfficer/FuelNotifications';
 import FuelStationProfile from './pages/fuelStationOfficer/FuelStationProfile';
+import FuelStationSettings from './pages/fuelStationOfficer/FuelStationSettings';
 
 // Gate Security
 import GateSecurityLayout from './pages/gateSecurity/GateSecurityLayout';
@@ -75,6 +77,7 @@ import VehicleMovement from './pages/gateSecurity/VehicleMovement';
 import GateNotifications from './pages/gateSecurity/GateNotifications';
 import GateSecurityProfile from './pages/gateSecurity/GateSecurityProfile';
 import GateSecurityReports from './pages/gateSecurity/GateSecurityReports';
+import GateSecuritySettings from './pages/GateSecurity/GateSecuritySettings';
 
 function App() {
   // For testing Transport Officer - temporarily set default user
@@ -264,6 +267,7 @@ function App() {
         <>
           <Route path="/driver" element={<DriverDashboard onLogout={handleLogout} />} />
           <Route path="/driver/dashboard" element={<DriverDashboard onLogout={handleLogout} />} />
+          <Route path="*" element={<Navigate to="/driver" replace />} />
         </>
       )}
 
@@ -295,7 +299,10 @@ function App() {
             <Route path="notifications" element={<FuelNotifications />} />
             <Route path="transactions" element={<FuelTransactionHistory />} />
             <Route path="profile" element={<FuelStationProfile />} />
+            <Route path="settings" element={<FuelStationSettings />} />
+            <Route path="performance" element={<FuelDashboard />} />
           </Route>
+          <Route path="*" element={<Navigate to="/fuel/dashboard" replace />} />
         </>
       )}
 
@@ -314,12 +321,15 @@ function App() {
             <Route path="reports" element={<GateSecurityReports />} />
             <Route path="notifications" element={<GateNotifications />} />
             <Route path="profile" element={<GateSecurityProfile />} />
+            <Route path="settings" element={<GateSecuritySettings />} />
+            <Route path="performance" element={<GateDashboard />} />
           </Route>
+          <Route path="*" element={<Navigate to="/gate/dashboard" replace />} />
         </>
       )}
 
       {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 }

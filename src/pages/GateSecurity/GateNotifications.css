@@ -410,3 +410,31 @@
         flex-direction: row;
     }
 }
+
+
+/* Dark Theme Support */
+[data-theme="dark"] .gate-notifications-container {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: #ffffff;
+}
+
+[data-theme="dark"] .notification-card {
+    background: #2d2d2d;
+    border-color: #404040;
+}
+
+[data-theme="dark"] .notification-card:hover {
+    background: #333333;
+}
+
+[data-theme="dark"] .notification-title {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .notification-message {
+    color: #b0b0b0;
+}
+
+[data-theme="dark"] h1, [data-theme="dark"] h2 {
+    color: #ffffff;
+}
