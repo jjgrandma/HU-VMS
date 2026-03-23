@@ -1,56 +1,42 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import busLogo from "../../assets/bus.png"; // local logo
+import busLogo from "../../assets/bus.png";
+import { login } from "../../api/api";
 import "./login.css";
 
 export default function Login({ onLogin }) {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    username: "",
-    password: "",
-    role: "",
-  });
+  const [formData, setFormData] = useState({ username: "", password: "", role: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.role) { setError("Please select your role"); return; }
 
-    if (!formData.role) {
-      alert("Please select your role");
-      return;
-    }
+    setLoading(true);
+    try {
+      const data = await login(formData.username, formData.password, formData.role);
+      onLogin({ username: data.user.username, role: data.user.role });
 
-    // Call the onLogin prop passed from App.jsx
-    onLogin({
-      username: formData.username,
-      role: formData.role,
-    });
-
-    // Navigate to the appropriate dashboard based on role
-    switch (formData.role) {
-      case 'ADMIN':
-        navigate('/admin/dashboard');
-        break;
-      case 'TRANSPORT':
-        navigate('/transport/dashboard');
-        break;
-      case 'DRIVER':
-        navigate('/driver/dashboard');
-        break;
-      case 'USER':
-        navigate('/user/dashboard');
-        break;
-      case 'FUEL_OFFICER':
-        navigate('/fuel/dashboard');
-        break;
-      case 'GATE_OFFICER':
-        navigate('/gate/dashboard');
-        break;
-      default:
-        navigate('/');
+      const routes = {
+        ADMIN: '/admin/dashboard',
+        TRANSPORT: '/transport/dashboard',
+        DRIVER: '/driver/dashboard',
+        USER: '/user/dashboard',
+        FUEL_OFFICER: '/fuel/dashboard',
+        GATE_OFFICER: '/gate/dashboard',
+      };
+      navigate(routes[data.user.role] || '/');
+    } catch (err) {
+      setError(err.message || "Login failed. Check your credentials.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -69,6 +55,8 @@ export default function Login({ onLogin }) {
           </div>
 
           <p className="subtitle">Login to Secure Access</p>
+
+          {error && <div className="login-error">{error}</div>}
 
           <form onSubmit={handleSubmit}>
             <label>Username</label>
@@ -113,7 +101,9 @@ export default function Login({ onLogin }) {
               <a href="#">Forgot Password?</a>
             </div>
 
-            <button type="submit">Login</button>
+            <button type="submit" disabled={loading}>
+              {loading ? 'Logging in...' : 'Login'}
+            </button>
           </form>
 
           <div className="support">
