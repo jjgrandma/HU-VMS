@@ -10,7 +10,7 @@ body {
   background: #f5f5f5;
   line-height: 1.6;
   color: #333;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* App Layout */
@@ -389,4 +389,14 @@ body {
 
 [data-theme="dark"] *::-webkit-scrollbar-thumb:hover {
     background: #555555;
+}
+
+/* Collapsed sidebar layout adjustment */
+.main-content-collapsed {
+  margin-left: 64px !important;
+  transition: margin-left 0.3s ease;
+}
+
+.main-content {
+  transition: margin-left 0.3s ease;
 }

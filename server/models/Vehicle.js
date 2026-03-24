@@ -16,6 +16,8 @@ const vehicleSchema = new mongoose.Schema(
     fuelLevel: { type: Number, default: 100 }, // percentage
     mileage: { type: Number, default: 0 },
     department: String,
+    year: Number,
+    color: String,
   },
   { timestamps: true }
 );

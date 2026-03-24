@@ -5,7 +5,7 @@ require('dotenv').config();
 
 const app = express();
 
-app.use(cors({ origin: 'http://localhost:5173' }));
+app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:5174'] }));
 app.use(express.json());
 
 // Routes
@@ -14,6 +14,8 @@ app.use('/api/requests', require('./routes/requests'));
 app.use('/api/vehicles', require('./routes/vehicles'));
 app.use('/api/drivers', require('./routes/drivers'));
 app.use('/api/users', require('./routes/users'));
+app.use('/api/reports', require('./routes/reports'));
+app.use('/api/complaints', require('./routes/complaints'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));

@@ -1,18 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getUsers, deleteUser, updateUser } from '../../api/api';
 import './adminTheme.css';
 import './manageUsersPage.css';
 
 const ManageUsersPage = () => {
-  const [users, setUsers] = useState([
-    { id: 1, fullname: 'John Doe', username: 'johndoe', email: 'john@example.com', role: 'Driver', unit: 'Transport Unit', status: 'Active', isLocked: false, joinDate: '2024-01-15' },
-    { id: 2, fullname: 'Jane Smith', username: 'janesmith', email: 'jane@example.com', role: 'User', unit: 'Engineering College', status: 'Active', isLocked: false, joinDate: '2024-02-10' },
-    { id: 3, fullname: 'Mike Johnson', username: 'mikej', email: 'mike@example.com', role: 'Driver', unit: 'Transport Unit', status: 'Active', isLocked: false, joinDate: '2024-01-20' },
-    { id: 4, fullname: 'Sarah Williams', username: 'sarahw', email: 'sarah@example.com', role: 'User', unit: 'Medical College', status: 'Inactive', isLocked: false, joinDate: '2023-12-05' },
-    { id: 5, fullname: 'David Brown', username: 'davidb', email: 'david@example.com', role: 'Transport Officer', unit: 'Transport Unit', status: 'Active', isLocked: false, joinDate: '2023-11-15' },
-    { id: 6, fullname: 'Emily Davis', username: 'emilyd', email: 'emily@example.com', role: 'User', unit: 'Law School', status: 'Active', isLocked: false, joinDate: '2024-03-01' },
-    { id: 7, fullname: 'Robert Wilson', username: 'robertw', email: 'robert@example.com', role: 'Driver', unit: 'Transport Unit', status: 'Active', isLocked: false, joinDate: '2024-02-15' },
-    { id: 8, fullname: 'Lisa Anderson', username: 'lisaa', email: 'lisa@example.com', role: 'User', unit: 'Business School', status: 'Active', isLocked: false, joinDate: '2024-01-25' }
-  ]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getUsers()
+      .then(data => setUsers(data))
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
+  }, []);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('All');
@@ -22,54 +22,39 @@ const ManageUsersPage = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [lockReason, setLockReason] = useState('');
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
-      setUsers(users.filter(user => user.id !== id));
-      // Reset to first page if current page becomes empty
-      const newFilteredUsers = users.filter(user => user.id !== id);
-      const totalPages = Math.ceil(newFilteredUsers.length / itemsPerPage);
-      if (currentPage > totalPages) {
-        setCurrentPage(totalPages || 1);
+      try {
+        await deleteUser(id);
+        setUsers(users.filter(u => u._id !== id));
+      } catch (err) {
+        alert('Failed to delete: ' + err.message);
       }
     }
   };
 
-  const handleToggleLock = (id) => {
-    const user = users.find(u => u.id === id);
-    
-    if (user.isLocked) {
-      // Unlock account directly
-      setUsers(users.map(u => {
-        if (u.id === id) {
-          return { ...u, isLocked: false, lockReason: null };
-        }
-        return u;
-      }));
-      alert('Account unlocked successfully!');
+  const handleToggleLock = async (id) => {
+    const user = users.find(u => u._id === id);
+    if (user.isActive === false) {
+      try {
+        const updated = await updateUser(id, { isActive: true });
+        setUsers(users.map(u => u._id === id ? updated : u));
+      } catch (err) { alert(err.message); }
     } else {
-      // Show modal to enter lock reason
       setSelectedUserId(id);
       setShowLockModal(true);
     }
   };
 
-  const handleLockSubmit = () => {
-    if (!lockReason.trim()) {
-      alert('Please provide a reason for locking this account.');
-      return;
-    }
-
-    setUsers(users.map(user => {
-      if (user.id === selectedUserId) {
-        return { ...user, isLocked: true, lockReason: lockReason.trim() };
-      }
-      return user;
-    }));
-
-    alert('Account locked successfully!');
-    setShowLockModal(false);
-    setLockReason('');
-    setSelectedUserId(null);
+  const handleLockSubmit = async () => {
+    if (!lockReason.trim()) { alert('Please provide a reason.'); return; }
+    try {
+      const updated = await updateUser(selectedUserId, { isActive: false });
+      setUsers(users.map(u => u._id === selectedUserId ? { ...updated, lockReason } : u));
+      setShowLockModal(false);
+      setLockReason('');
+      setSelectedUserId(null);
+    } catch (err) { alert(err.message); }
   };
 
   const handleLockCancel = () => {
@@ -79,9 +64,9 @@ const ManageUsersPage = () => {
   };
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (user.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (user.username || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (user.email || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterRole === 'All' || user.role === filterRole;
     return matchesSearch && matchesFilter;
   });
@@ -135,63 +120,65 @@ const ManageUsersPage = () => {
           className="filter-select"
         >
           <option value="All">All Roles</option>
-          <option value="User">User</option>
-          <option value="Driver">Driver</option>
-          <option value="Transport Officer">Transport Officer</option>
+          <option value="USER">User</option>
+          <option value="DRIVER">Driver</option>
+          <option value="TRANSPORT">Transport Officer</option>
+          <option value="FUEL_OFFICER">Fuel Officer</option>
+          <option value="GATE_OFFICER">Gate Officer</option>
+          <option value="ADMIN">Admin</option>
         </select>
       </div>
 
       <div className="table-container">
+        {loading ? <div style={{padding:'40px',textAlign:'center'}}>Loading users...</div> : (
         <table className="users-table">
           <thead>
             <tr>
-              <th>ID</th>
               <th>Full Name</th>
               <th>Username</th>
               <th>Email</th>
               <th>Role</th>
-              <th>Unit</th>
+              <th>Department</th>
               <th>Status</th>
-              <th>Join Date</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {currentUsers.map(user => (
-              <tr key={user.id}>
-                <td>{user.id}</td>
-                <td>{user.fullname}</td>
+              <tr key={user._id}>
+                <td>{user.name}</td>
                 <td>{user.username}</td>
                 <td>{user.email}</td>
-                <td>{user.role}</td>
-                <td>{user.unit}</td>
+                <td>{{
+                  ADMIN: 'Admin',
+                  TRANSPORT: 'Transport Officer',
+                  DRIVER: 'Driver',
+                  USER: 'User',
+                  FUEL_OFFICER: 'Fuel Officer',
+                  GATE_OFFICER: 'Gate Officer',
+                }[user.role] || user.role}</td>
+                <td>{user.department || '-'}</td>
                 <td>
-                  <span className={`status-badge ${getStatusClass(user.status)}`}>
-                    {user.status}
+                  <span className={`status-badge ${user.isActive !== false ? 'status-active' : 'status-inactive'}`}>
+                    {user.isActive !== false ? 'Active' : 'Locked'}
                   </span>
                 </td>
-                <td>{user.joinDate}</td>
                 <td>
                   <div className="action-buttons">
-                    <button 
-                      className={user.isLocked ? "btn-unlock" : "btn-lock"}
-                      onClick={() => handleToggleLock(user.id)}
-                      title={user.isLocked ? "Unlock Account" : "Lock Account"}
+                    <button
+                      className={user.isActive === false ? "btn-unlock" : "btn-lock"}
+                      onClick={() => handleToggleLock(user._id)}
                     >
-                      {user.isLocked ? '🔓 Unlock' : '🔒 Lock'}
+                      {user.isActive === false ? '🔓 Unlock' : '🔒 Lock'}
                     </button>
-                    <button 
-                      className="btn-delete"
-                      onClick={() => handleDelete(user.id)}
-                    >
-                      Delete
-                    </button>
+                    <button className="btn-delete" onClick={() => handleDelete(user._id)}>Delete</button>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        )}
       </div>
 
       {filteredUsers.length === 0 && (

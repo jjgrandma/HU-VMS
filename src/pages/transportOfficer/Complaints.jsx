@@ -1,56 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Search, Filter, MessageSquare, AlertCircle, CheckCircle2,
   Clock, ShieldAlert, Wrench, Users, Fuel, ChevronDown
 } from 'lucide-react';
 import ComplaintResolutionToolkit from './ComplaintResolutionToolkit';
+import { getComplaints, updateComplaint } from '../../api/api';
 import './complaints.css';
-
-// ─── Sample Data ─────────────────────────────────────────────────────────────
-const INITIAL_COMPLAINTS = [
-  {
-    id: 'COMP-001', sender: 'Dr. Ahmed Hassan', role: 'User',
-    vehicle: 'HU-VH-001 Toyota Hiace', driver: 'Abdi Mohammed',
-    tripId: 'TRIP-2024-045', category: 'Mechanical',
-    description: 'Air conditioning not working properly. Passengers were uncomfortable during the 4-hour trip.',
-    priority: 'Medium', status: 'Pending', dateSubmitted: '2024-03-14',
-  },
-  {
-    id: 'COMP-002', sender: 'Ato Mulugeta', role: 'Driver',
-    vehicle: 'HU-VH-003 Isuzu D-Max', driver: 'Ato Mulugeta',
-    tripId: 'TRIP-2024-041', category: 'Resource',
-    description: 'Fuel allocation was insufficient for the assigned route. Had to stop mid-trip.',
-    priority: 'High', status: 'In Progress', dateSubmitted: '2024-03-13',
-  },
-  {
-    id: 'COMP-003', sender: 'Prof. Sarah Johnson', role: 'User',
-    vehicle: 'HU-VH-002 Toyota Coaster', driver: 'Fatuma Ahmed',
-    tripId: 'TRIP-2024-038', category: 'Behavioral',
-    description: 'Driver was rude to passengers and used phone while driving.',
-    priority: 'High', status: 'Pending', dateSubmitted: '2024-03-12',
-  },
-  {
-    id: 'COMP-004', sender: 'W/ro Hanan', role: 'Driver',
-    vehicle: 'HU-VH-002 Toyota Coaster', driver: 'W/ro Hanan',
-    tripId: 'TRIP-2024-035', category: 'Safety',
-    description: 'Brake system needs immediate attention. Noticed unusual noise and reduced braking efficiency.',
-    priority: 'Critical', status: 'Pending', dateSubmitted: '2024-03-11',
-  },
-  {
-    id: 'COMP-005', sender: 'Mr. Tesfaye Bekele', role: 'User',
-    vehicle: 'HU-VH-004 Land Cruiser', driver: 'Meron Bekele',
-    tripId: 'TRIP-2024-030', category: 'Service',
-    description: 'Route taken was unnecessarily long, adding 2 hours to the trip. Needs optimization.',
-    priority: 'Low', status: 'Resolved', dateSubmitted: '2024-03-10',
-  },
-  {
-    id: 'COMP-006', sender: 'Dr. Liya Tadesse', role: 'User',
-    vehicle: 'HU-VH-001 Toyota Hiace', driver: 'Abdi Mohammed',
-    tripId: 'TRIP-2024-028', category: 'Safety',
-    description: 'Driver was speeding on the highway and ignored passenger requests to slow down.',
-    priority: 'High', status: 'Pending', dateSubmitted: '2024-03-09',
-  },
-];
 
 const CATEGORIES = ['All', 'Resource', 'Safety', 'Mechanical', 'Behavioral', 'Service'];
 const STATUSES = ['All', 'Pending', 'In Progress', 'Resolved'];
@@ -68,7 +23,8 @@ const CATEGORY_ICONS = {
 };
 
 export default function Complaints() {
-  const [complaints, setComplaints] = useState(INITIAL_COMPLAINTS);
+  const [complaints, setComplaints] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [roleFilter, setRoleFilter] = useState('All');
@@ -77,10 +33,17 @@ export default function Complaints() {
   const [page, setPage] = useState(1);
   const PER_PAGE = 6;
 
+  useEffect(() => {
+    getComplaints()
+      .then(data => setComplaints(data))
+      .catch(err => console.error('Failed to load complaints:', err))
+      .finally(() => setLoading(false));
+  }, []);
+
   const filtered = complaints.filter(c => {
     const q = search.toLowerCase();
-    const matchSearch = c.id.toLowerCase().includes(q) || c.sender.toLowerCase().includes(q) ||
-      c.driver.toLowerCase().includes(q) || c.description.toLowerCase().includes(q);
+    const matchSearch = (c.sender || '').toLowerCase().includes(q) ||
+      (c.driver || '').toLowerCase().includes(q) || (c.description || '').toLowerCase().includes(q);
     return matchSearch &&
       (statusFilter === 'All' || c.status === statusFilter) &&
       (roleFilter === 'All' || c.role === roleFilter) &&
@@ -97,15 +60,24 @@ export default function Complaints() {
     resolved: complaints.filter(c => c.status === 'Resolved').length,
   };
 
-  const handleResolve = (resolution) => {
-    setComplaints(prev => prev.map(c =>
-      c.id === resolution.complaintId
-        ? { ...c, status: 'Resolved', resolution }
-        : c
-    ));
-    setToolkitComplaint(null);
-    alert(`✅ Complaint ${resolution.complaintId} resolved successfully.\n\nActions taken: ${resolution.actions.map(a => a.label).join(', ')}`);
+  const handleResolve = async (resolution) => {
+    try {
+      const updated = await updateComplaint(resolution.complaintId, {
+        status: 'Resolved',
+        actions: resolution.actions.map(a => a.label),
+        resolutionNotes: resolution.notes || '',
+        driverAtFault: resolution.driverAtFault || false,
+        resolvedAt: new Date().toISOString(),
+      });
+      setComplaints(prev => prev.map(c => c._id === resolution.complaintId ? updated : c));
+      setToolkitComplaint(null);
+      alert(`✅ Complaint resolved.\nActions: ${resolution.actions.map(a => a.label).join(', ')}`);
+    } catch (err) {
+      alert(`Failed to resolve: ${err.message}`);
+    }
   };
+
+  if (loading) return <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-secondary)' }}>Loading complaints...</div>;
 
   return (
     <div className="complaints-page">
@@ -190,17 +162,17 @@ export default function Complaints() {
           </thead>
           <tbody>
             {paginated.map(c => (
-              <tr key={c.id}>
-                <td><span className="cp-id">{c.id}</span></td>
+              <tr key={c._id}>
+                <td><span className="cp-id">{c.tripId || c._id?.slice(-6)}</span></td>
                 <td>
                   <div className="cp-sender">{c.sender}</div>
-                  <span className={`cp-role-badge ${c.role.toLowerCase()}`}>{c.role}</span>
+                  <span className={`cp-role-badge ${(c.role || '').toLowerCase()}`}>{c.role}</span>
                 </td>
                 <td>
-                  <div className="cp-vehicle">{c.vehicle}</div>
-                  <div className="cp-driver-name">{c.driver}</div>
+                  <div className="cp-vehicle">{c.vehicle || '—'}</div>
+                  <div className="cp-driver-name">{c.driver || '—'}</div>
                 </td>
-                <td><span className="cp-trip">{c.tripId}</span></td>
+                <td><span className="cp-trip">{c.tripId || '—'}</span></td>
                 <td>
                   <span className="cp-category-tag">
                     {CATEGORY_ICONS[c.category]}
@@ -223,13 +195,12 @@ export default function Complaints() {
                     {c.status}
                   </span>
                 </td>
-                <td><span className="cp-date">{c.dateSubmitted}</span></td>
+                <td><span className="cp-date">{c.createdAt ? c.createdAt.slice(0, 10) : '—'}</span></td>
                 <td>
                   {c.status !== 'Resolved' ? (
                     <button className="cp-toolkit-btn" onClick={() => setToolkitComplaint(c)}>
                       <ShieldAlert size={13} /> Resolution Toolkit
-                    </button>
-                  ) : (
+                    </button>                  ) : (
                     <span className="cp-resolved-tag"><CheckCircle2 size={13} /> Resolved</span>
                   )}
                 </td>

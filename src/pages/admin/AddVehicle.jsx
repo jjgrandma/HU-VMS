@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createVehicle } from '../../api/api';
 import './addVehicle.css';
 
 const AddVehicle = () => {
@@ -9,29 +10,28 @@ const AddVehicle = () => {
     capacity: '',
     year: '',
     color: '',
-    status: 'Available'
+    status: 'available'
   });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState(null);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setMessage(null);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Vehicle Added:', formData);
-    alert('Vehicle added successfully!');
-    setFormData({
-      plateNumber: '',
-      model: '',
-      type: '',
-      capacity: '',
-      year: '',
-      color: '',
-      status: 'Available'
-    });
+    setLoading(true);
+    try {
+      await createVehicle({ ...formData, capacity: Number(formData.capacity) });
+      setMessage({ type: 'success', text: 'Vehicle added successfully!' });
+      setFormData({ plateNumber: '', model: '', type: '', capacity: '', year: '', color: '', status: 'available' });
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message || 'Failed to add vehicle' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -40,6 +40,16 @@ const AddVehicle = () => {
 
       <div className="form-card">
         <form onSubmit={handleSubmit}>
+          {message && (
+            <div style={{
+              padding: '10px 14px', borderRadius: '6px', marginBottom: '16px', fontSize: '14px',
+              background: message.type === 'success' ? '#f0fdf4' : '#fef2f2',
+              color: message.type === 'success' ? '#16a34a' : '#dc2626',
+              border: `1px solid ${message.type === 'success' ? '#bbf7d0' : '#fecaca'}`
+            }}>
+              {message.text}
+            </div>
+          )}
           <div className="form-row">
             <div className="form-group">
               <label>Plate Number</label>
@@ -76,10 +86,11 @@ const AddVehicle = () => {
                 required
               >
                 <option value="">Select Type</option>
-                <option value="Van">Van</option>
-                <option value="Bus">Bus</option>
-                <option value="Truck">Truck</option>
-                <option value="SUV">SUV</option>
+                <option value="van">Van</option>
+                <option value="bus">Bus</option>
+                <option value="minibus">Minibus</option>
+                <option value="truck">Truck</option>
+                <option value="car">Car</option>
               </select>
             </div>
 
@@ -131,15 +142,16 @@ const AddVehicle = () => {
                 onChange={handleChange}
                 required
               >
-                <option value="Available">Available</option>
-                <option value="Assigned">Assigned</option>
-                <option value="Maintenance">Maintenance</option>
+                <option value="available">Available</option>
+                <option value="in-use">In Use</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="out-of-service">Out of Service</option>
               </select>
             </div>
           </div>
 
-          <button type="submit" className="btn-submit">
-            Add Vehicle
+          <button type="submit" className="btn-submit" disabled={loading}>
+            {loading ? 'Saving...' : 'Add Vehicle'}
           </button>
         </form>
       </div>

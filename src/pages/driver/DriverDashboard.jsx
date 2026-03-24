@@ -7,7 +7,6 @@ import DriverNotifications from './notifications/DriverNotifications';
 import DriverAvailability from './availability/DriverAvailability';
 import UpdateTripStatus from './trip-status/UpdateTripStatus';
 import GPSTracking from './tracking/GPSTracking';
-import DriverComplaints from './complaints/DriverComplaints';
 import SubmitComplaint from './submit-complaint/SubmitComplaint';
 import ExitEntryVerification from './gate-verification/ExitEntryVerification';
 import DriverProfile from './profile/DriverProfile';
@@ -184,7 +183,6 @@ const DriverDashboard = ({ onLogout }) => {
       case 'trip-history': return <TripHistory />;
       case 'vehicle': return <VehicleInfo />;
       case 'notifications': return <DriverNotifications />;
-      case 'complaints': return <DriverComplaints />;
       case 'submit-complaint': return <SubmitComplaint />;
       case 'gate-verification': return <ExitEntryVerification />;
       case 'reports': return <DriverReports />;
@@ -333,13 +331,7 @@ const DriverDashboard = ({ onLogout }) => {
               </button>
             </>
           )}
-          <button
-            className={`driver-nav-item ${activeView === 'complaints' ? 'active' : ''}`}
-            onClick={() => setActiveView('complaints')}
-          >
-            <span className="driver-nav-icon">💬</span>
-            <span>Complaints</span>
-          </button>
+
           <button
             className={`driver-nav-item ${activeView === 'submit-complaint' ? 'active' : ''}`}
             onClick={() => setActiveView('submit-complaint')}

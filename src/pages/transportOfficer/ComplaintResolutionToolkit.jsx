@@ -103,7 +103,7 @@ export default function ComplaintResolutionToolkit({ complaint, onClose, onResol
   // Auto-select automatic actions on mount
   useEffect(() => {
     setSelectedActions(autoActions);
-  }, [complaint.id]);
+  }, [complaint._id || complaint.id]);
 
   // Regenerate messages whenever relevant state changes
   useEffect(() => {
@@ -153,7 +153,7 @@ export default function ComplaintResolutionToolkit({ complaint, onClose, onResol
     console.log(`[WARNING] Driver warning issued to ${complaint.driver}`);
 
     onResolve({
-      complaintId: complaint.id,
+      complaintId: complaint._id || complaint.id,
       actions: allActions,
       notes: resolutionNotes,
       driverAtFault,
@@ -176,7 +176,7 @@ export default function ComplaintResolutionToolkit({ complaint, onClose, onResol
             <ShieldAlert size={20} />
             <div>
               <h2>Resolution Toolkit</h2>
-              <span className="rtk-complaint-id">{complaint.id}</span>
+              <span className="rtk-complaint-id">{complaint.tripId || complaint._id?.slice(-8)}</span>
             </div>
           </div>
           <button className="rtk-close" onClick={onClose}><X size={20} /></button>

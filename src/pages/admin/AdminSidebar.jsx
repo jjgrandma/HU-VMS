@@ -4,7 +4,7 @@ import NotificationBell from '../../components/NotificationBell';
 import NotificationPanel from '../../components/NotificationPanel';
 import './adminSidebar.css';
 
-const AdminSidebar = ({ onLogout }) => {
+const AdminSidebar = ({ onLogout, collapsed, onToggleCollapse }) => {
   const location = useLocation();
   const [openDropdown, setOpenDropdown] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
@@ -44,9 +44,12 @@ const AdminSidebar = ({ onLogout }) => {
         <div className="mobile-overlay" onClick={closeMobileMenu}></div>
       )}
 
-      <div className={`admin-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+      <div className={`admin-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''} ${collapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
-        <h2>Admin Panel</h2>
+        {!collapsed && <h2>Admin Panel</h2>}
+        <button className="sidebar-collapse-btn" onClick={onToggleCollapse} title={collapsed ? 'Expand' : 'Collapse'}>
+          {collapsed ? '▶' : '◀'}
+        </button>
       </div>
 
       <NotificationPanel 
@@ -59,21 +62,23 @@ const AdminSidebar = ({ onLogout }) => {
           to="/admin/dashboard" 
           className={`nav-item ${location.pathname === '/admin/dashboard' ? 'active' : ''}`}
           onClick={closeMobileMenu}
+          title="Dashboard Overview"
         >
           <span className="nav-icon">📊</span>
-          <span>Dashboard Overview</span>
+          {!collapsed && <span>Dashboard Overview</span>}
         </Link>
 
         <div className="nav-dropdown">
           <div 
             className={`nav-item dropdown-toggle ${openDropdown === 'vehicles' ? 'open' : ''}`}
-            onClick={() => toggleDropdown('vehicles')}
+            onClick={() => !collapsed && toggleDropdown('vehicles')}
+            title="Vehicles"
           >
             <span className="nav-icon">🚗</span>
-            <span>Vehicles</span>
-            <span className="dropdown-arrow">{openDropdown === 'vehicles' ? '▼' : '▶'}</span>
+            {!collapsed && <><span>Vehicles</span>
+            <span className="dropdown-arrow">{openDropdown === 'vehicles' ? '▼' : '▶'}</span></>}
           </div>
-          {openDropdown === 'vehicles' && (
+          {!collapsed && openDropdown === 'vehicles' && (
             <div className="dropdown-menu">
               <Link 
                 to="/admin/manage-vehicles" 
@@ -103,13 +108,14 @@ const AdminSidebar = ({ onLogout }) => {
         <div className="nav-dropdown">
           <div 
             className={`nav-item dropdown-toggle ${openDropdown === 'users' ? 'open' : ''}`}
-            onClick={() => toggleDropdown('users')}
+            onClick={() => !collapsed && toggleDropdown('users')}
+            title="Users"
           >
             <span className="nav-icon">👥</span>
-            <span>Users</span>
-            <span className="dropdown-arrow">{openDropdown === 'users' ? '▼' : '▶'}</span>
+            {!collapsed && <><span>Users</span>
+            <span className="dropdown-arrow">{openDropdown === 'users' ? '▼' : '▶'}</span></>}
           </div>
-          {openDropdown === 'users' && (
+          {!collapsed && openDropdown === 'users' && (
             <div className="dropdown-menu">
               <Link 
                 to="/admin/manage-users" 
@@ -139,13 +145,14 @@ const AdminSidebar = ({ onLogout }) => {
         <div className="nav-dropdown">
           <div 
             className={`nav-item dropdown-toggle ${openDropdown === 'reports' ? 'open' : ''}`}
-            onClick={() => toggleDropdown('reports')}
+            onClick={() => !collapsed && toggleDropdown('reports')}
+            title="Reports"
           >
             <span className="nav-icon">📄</span>
-            <span>Reports</span>
-            <span className="dropdown-arrow">{openDropdown === 'reports' ? '▼' : '▶'}</span>
+            {!collapsed && <><span>Reports</span>
+            <span className="dropdown-arrow">{openDropdown === 'reports' ? '▼' : '▶'}</span></>}
           </div>
-          {openDropdown === 'reports' && (
+          {!collapsed && openDropdown === 'reports' && (
             <div className="dropdown-menu">
               <Link 
                 to="/admin/user-request-report" 

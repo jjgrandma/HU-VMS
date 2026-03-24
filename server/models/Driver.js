@@ -16,6 +16,7 @@ const driverSchema = new mongoose.Schema(
     assignedVehiclePlate: String,
     totalTrips: { type: Number, default: 0 },
     rating: { type: Number, default: 5 },
+    isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

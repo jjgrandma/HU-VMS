@@ -1,289 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getVehicles, updateVehicle, deleteVehicle } from '../../api/api';
 import './manageVehiclesPage.css';
 
 const ManageVehiclesPage = () => {
-  const [vehicles, setVehicles] = useState([
-    { 
-      id: 'VH-001', 
-      plateNumber: 'ABC-1234', 
-      model: 'Toyota Hiace', 
-      type: 'Van', 
-      capacity: 15, 
-      status: 'Available', 
-      driver: 'Unassigned',
-      fuelType: 'Diesel',
-      lastMaintenance: '2024-02-15',
-      department: 'Transport',
-      mileage: '45,000 km',
-      year: 2022
-    },
-    { 
-      id: 'VH-002', 
-      plateNumber: 'XYZ-5678', 
-      model: 'Nissan Urvan', 
-      type: 'Van', 
-      capacity: 18, 
-      status: 'Assigned', 
-      driver: 'John Doe',
-      fuelType: 'Diesel',
-      lastMaintenance: '2024-01-20',
-      department: 'Administration',
-      mileage: '62,000 km',
-      year: 2021
-    },
-    { 
-      id: 'VH-003', 
-      plateNumber: 'DEF-9012', 
-      model: 'Mitsubishi L300', 
-      type: 'Van', 
-      capacity: 12, 
-      status: 'Maintenance', 
-      driver: 'Unassigned',
-      fuelType: 'Gasoline',
-      lastMaintenance: '2024-03-01',
-      department: 'Transport',
-      mileage: '78,000 km',
-      year: 2020
-    },
-    { 
-      id: 'VH-004', 
-      plateNumber: 'GHI-3456', 
-      model: 'Isuzu Elf', 
-      type: 'Truck', 
-      capacity: 20, 
-      status: 'Available', 
-      driver: 'Unassigned',
-      fuelType: 'Diesel',
-      lastMaintenance: '2024-02-28',
-      department: 'Logistics',
-      mileage: '35,000 km',
-      year: 2023
-    },
-    { 
-      id: 'VH-005', 
-      plateNumber: 'JKL-7890', 
-      model: 'Toyota Coaster', 
-      type: 'Bus', 
-      capacity: 30, 
-      status: 'Assigned', 
-      driver: 'Jane Smith',
-      fuelType: 'Diesel',
-      lastMaintenance: '2024-01-15',
-      department: 'Transport',
-      mileage: '92,000 km',
-      year: 2019
-    },
-    { 
-      id: 'VH-006', 
-      plateNumber: 'MNO-2345', 
-      model: 'Hyundai County', 
-      type: 'Bus', 
-      capacity: 25, 
-      status: 'Available', 
-      driver: 'Unassigned',
-      fuelType: 'Diesel',
-      lastMaintenance: '2024-02-10',
-      department: 'Administration',
-      mileage: '55,000 km',
-      year: 2022
-    },
-    { 
-      id: 'VH-007', 
-      plateNumber: 'PQR-6789', 
-      model: 'Ford Transit', 
-      type: 'Van', 
-      capacity: 14, 
-      status: 'Maintenance', 
-      driver: 'Unassigned',
-      fuelType: 'Gasoline',
-      lastMaintenance: '2024-03-05',
-      department: 'Logistics',
-      mileage: '48,000 km',
-      year: 2021
-    },
-    { 
-      id: 'VH-008', 
-      plateNumber: 'STU-0123', 
-      model: 'Mercedes Sprinter', 
-      type: 'Van', 
-      capacity: 16, 
-      status: 'Assigned', 
-      driver: 'Mike Johnson',
-      fuelType: 'Diesel',
-      lastMaintenance: '2024-01-25',
-      department: 'Transport',
-      mileage: '71,000 km',
-      year: 2020
-    },
-    { 
-      id: 'VH-009', 
-      plateNumber: 'VWX-4567', 
-      model: 'Toyota Commuter', 
-      type: 'Van', 
-      capacity: 14, 
-      status: 'Available', 
-      driver: 'Unassigned',
-      fuelType: 'Diesel',
-      lastMaintenance: '2024-02-20',
-      department: 'Transport',
-      mileage: '38,000 km',
-      year: 2023
-    },
-    { 
-      id: 'VH-010', 
-      plateNumber: 'YZA-8901', 
-      model: 'Nissan Civilian', 
-      type: 'Bus', 
-      capacity: 28, 
-      status: 'Assigned', 
-      driver: 'Sarah Williams',
-      fuelType: 'Diesel',
-      lastMaintenance: '2024-01-10',
-      department: 'Administration',
-      mileage: '85,000 km',
-      year: 2019
-    },
-    { 
-      id: 'VH-011', 
-      plateNumber: 'BCD-2345', 
-      model: 'Isuzu NQR', 
-      type: 'Truck', 
-      capacity: 25, 
-      status: 'Available', 
-      driver: 'Unassigned',
-      fuelType: 'Diesel',
-      lastMaintenance: '2024-02-25',
-      department: 'Logistics',
-      mileage: '42,000 km',
-      year: 2022
-    },
-    { 
-      id: 'VH-012', 
-      plateNumber: 'EFG-6789', 
-      model: 'Toyota Hiace Super GL', 
-      type: 'Van', 
-      capacity: 15, 
-      status: 'Maintenance', 
-      driver: 'Unassigned',
-      fuelType: 'Diesel',
-      lastMaintenance: '2024-03-02',
-      department: 'Transport',
-      mileage: '67,000 km',
-      year: 2020
-    },
-    { 
-      id: 'VH-013', 
-      plateNumber: 'HIJ-0123', 
-      model: 'Mitsubishi Fuso', 
-      type: 'Truck', 
-      capacity: 30, 
-      status: 'Assigned', 
-      driver: 'David Brown',
-      fuelType: 'Diesel',
-      lastMaintenance: '2024-01-18',
-      department: 'Logistics',
-      mileage: '95,000 km',
-      year: 2018
-    },
-    { 
-      id: 'VH-014', 
-      plateNumber: 'KLM-4567', 
-      model: 'Hyundai H350', 
-      type: 'Van', 
-      capacity: 17, 
-      status: 'Available', 
-      driver: 'Unassigned',
-      fuelType: 'Diesel',
-      lastMaintenance: '2024-02-12',
-      department: 'Administration',
-      mileage: '51,000 km',
-      year: 2021
-    },
-    { 
-      id: 'VH-015', 
-      plateNumber: 'NOP-8901', 
-      model: 'Toyota Coaster Deluxe', 
-      type: 'Bus', 
-      capacity: 32, 
-      status: 'Assigned', 
-      driver: 'Emily Davis',
-      fuelType: 'Diesel',
-      lastMaintenance: '2024-01-22',
-      department: 'Transport',
-      mileage: '88,000 km',
-      year: 2019
-    },
-    { 
-      id: 'VH-016', 
-      plateNumber: 'QRS-2345', 
-      model: 'Nissan Caravan', 
-      type: 'Van', 
-      capacity: 13, 
-      status: 'Available', 
-      driver: 'Unassigned',
-      fuelType: 'Gasoline',
-      lastMaintenance: '2024-02-18',
-      department: 'Transport',
-      mileage: '44,000 km',
-      year: 2022
-    },
-    { 
-      id: 'VH-017', 
-      plateNumber: 'TUV-6789', 
-      model: 'Isuzu Giga', 
-      type: 'Truck', 
-      capacity: 35, 
-      status: 'Maintenance', 
-      driver: 'Unassigned',
-      fuelType: 'Diesel',
-      lastMaintenance: '2024-03-04',
-      department: 'Logistics',
-      mileage: '102,000 km',
-      year: 2017
-    },
-    { 
-      id: 'VH-018', 
-      plateNumber: 'WXY-0123', 
-      model: 'Mercedes Vito', 
-      type: 'Van', 
-      capacity: 12, 
-      status: 'Assigned', 
-      driver: 'Robert Wilson',
-      fuelType: 'Diesel',
-      lastMaintenance: '2024-01-28',
-      department: 'Administration',
-      mileage: '59,000 km',
-      year: 2021
-    },
-    { 
-      id: 'VH-019', 
-      plateNumber: 'ZAB-4567', 
-      model: 'Toyota Granvia', 
-      type: 'Van', 
-      capacity: 10, 
-      status: 'Available', 
-      driver: 'Unassigned',
-      fuelType: 'Hybrid',
-      lastMaintenance: '2024-02-22',
-      department: 'Administration',
-      mileage: '28,000 km',
-      year: 2023
-    },
-    { 
-      id: 'VH-020', 
-      plateNumber: 'CDE-8901', 
-      model: 'Hino Dutro', 
-      type: 'Truck', 
-      capacity: 22, 
-      status: 'Assigned', 
-      driver: 'Lisa Anderson',
-      fuelType: 'Diesel',
-      lastMaintenance: '2024-01-30',
-      department: 'Logistics',
-      mileage: '73,000 km',
-      year: 2020
-    }
-  ]);
+  const [vehicles, setVehicles] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
@@ -299,6 +20,19 @@ const ManageVehiclesPage = () => {
   const [showOtherDept, setShowOtherDept] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(15);
+
+  useEffect(() => { loadVehicles(); }, []);
+
+  const loadVehicles = async () => {
+    try {
+      const data = await getVehicles();
+      setVehicles(data);
+    } catch (err) {
+      console.error('Failed to load vehicles:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // View Details
   const handleViewDetails = (vehicle) => {
@@ -316,12 +50,14 @@ const ManageVehiclesPage = () => {
     setShowOtherDept(false);
   };
 
-  const handleEditSave = () => {
-    setVehicles(vehicles.map(v => 
-      v.id === selectedVehicle.id ? editFormData : v
-    ));
-    setShowEditModal(false);
-    alert('✅ Vehicle updated successfully!');
+  const handleEditSave = async () => {
+    try {
+      const updated = await updateVehicle(selectedVehicle._id, editFormData);
+      setVehicles(vehicles.map(v => v._id === selectedVehicle._id ? updated : v));
+      setShowEditModal(false);
+    } catch (err) {
+      alert('Failed to update vehicle: ' + err.message);
+    }
   };
 
   const handleTypeChange = (value) => {
@@ -354,11 +90,14 @@ const ManageVehiclesPage = () => {
     }
   };
 
-  // Delete Vehicle
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this vehicle?')) {
-      setVehicles(vehicles.filter(vehicle => vehicle.id !== id));
-      alert('✅ Vehicle deleted successfully!');
+      try {
+        await deleteVehicle(id);
+        setVehicles(vehicles.filter(v => v._id !== id));
+      } catch (err) {
+        alert('Failed to delete: ' + err.message);
+      }
     }
   };
 
@@ -446,6 +185,8 @@ const ManageVehiclesPage = () => {
         <p className="page-subtitle">Manage all vehicles in the system</p>
       </div>
 
+      {loading ? <div style={{padding:'40px',textAlign:'center'}}>Loading vehicles...</div> : (
+      <>
       <div className="controls-bar">
         <input
           type="text"
@@ -535,8 +276,8 @@ const ManageVehiclesPage = () => {
           </thead>
           <tbody>
             {currentVehicles.map(vehicle => (
-              <tr key={vehicle.id}>
-                <td><strong>{vehicle.id}</strong></td>
+              <tr key={vehicle._id}>
+                <td><strong>{vehicle.plateNumber}</strong></td>
                 <td>{vehicle.plateNumber}</td>
                 <td>{vehicle.type}</td>
                 <td>{vehicle.driver}</td>
@@ -550,27 +291,9 @@ const ManageVehiclesPage = () => {
                 <td>{vehicle.department}</td>
                 <td>
                   <div className="action-buttons">
-                    <button 
-                      className="btn-action btn-view"
-                      onClick={() => handleViewDetails(vehicle)}
-                      title="View Details"
-                    >
-                      👁️
-                    </button>
-                    <button 
-                      className="btn-action btn-edit"
-                      onClick={() => handleEditClick(vehicle)}
-                      title="Edit Vehicle"
-                    >
-                      ✏️
-                    </button>
-                    <button 
-                      className="btn-action btn-delete"
-                      onClick={() => handleDelete(vehicle.id)}
-                      title="Delete Vehicle"
-                    >
-                      🗑️
-                    </button>
+                    <button className="btn-action btn-view" onClick={() => handleViewDetails(vehicle)} title="View Details">👁️</button>
+                    <button className="btn-action btn-edit" onClick={() => handleEditClick(vehicle)} title="Edit Vehicle">✏️</button>
+                    <button className="btn-action btn-delete" onClick={() => handleDelete(vehicle._id)} title="Delete Vehicle">🗑️</button>
                   </div>
                 </td>
               </tr>
@@ -630,6 +353,7 @@ const ManageVehiclesPage = () => {
           )}
         </div>
       )}
+      </>)}
 
       {/* View Details Modal */}
       {showDetailsModal && selectedVehicle && (
@@ -698,8 +422,7 @@ const ManageVehiclesPage = () => {
       )}
 
       {/* Edit Vehicle Modal */}
-      {showEditModal && selectedVehicle && (
-        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+      {showEditModal && selectedVehicle && (        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>✏️ Edit Vehicle</h2>

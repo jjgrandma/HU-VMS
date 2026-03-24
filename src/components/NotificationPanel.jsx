@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { getVehicleUsageReport, getDriverActivityReport, sendReport, getReportRequests, updateReportRequest } from '../api/api';
 import './NotificationPanel.css';
 
 const NotificationPanel = ({ isOpen, onClose }) => {
@@ -41,36 +44,36 @@ const NotificationPanel = ({ isOpen, onClose }) => {
       priority: 'high',
       avatar: '👨‍✈️'
     },
-    {
-      id: 4,
-      type: 'report_request',
-      role: 'Transport Officer',
-      username: 'sarah_officer',
-      fullName: 'Sarah Williams',
-      reportType: 'vehicle_usage',
-      message: 'Requested Vehicle Usage Report for March 2024',
-      timestamp: '2 hours ago',
-      status: 'pending',
-      priority: 'medium',
-      avatar: '👩‍💼'
-    },
-    {
-      id: 5,
-      type: 'report_request',
-      role: 'Transport Officer',
-      username: 'david_officer',
-      fullName: 'David Brown',
-      reportType: 'driver_activity',
-      message: 'Requested Driver Activity Report',
-      timestamp: '3 hours ago',
-      status: 'resolved',
-      priority: 'low',
-      avatar: '👨‍💼',
-      resolvedData: {
-        reportUrl: '/reports/driver-activity-2024.pdf'
-      }
-    }
   ]);
+
+  // Load real report requests from DB and merge into notifications
+  useEffect(() => {
+    if (!isOpen) return;
+    getReportRequests()
+      .then(requests => {
+        const mapped = requests.map(r => ({
+          id: r._id,
+          type: 'report_request',
+          role: 'Transport Officer',
+          username: r.requestedBy,
+          fullName: r.requestedByName || r.requestedBy,
+          reportType: r.reportType,
+          period: r.period,
+          message: r.message || `Requested ${r.reportType.replace('_', ' ')} report`,
+          timestamp: new Date(r.createdAt).toLocaleString(),
+          status: r.status === 'resolved' ? 'resolved' : r.status === 'rejected' ? 'rejected' : 'pending',
+          priority: 'medium',
+          avatar: '👩‍💼',
+          dbId: r._id,
+        }));
+        setNotifications(prev => {
+          // Remove old DB-sourced report_requests, keep static ones
+          const statics = prev.filter(n => !n.dbId);
+          return [...statics, ...mapped];
+        });
+      })
+      .catch(err => console.warn('Could not load report requests:', err));
+  }, [isOpen]);
 
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -160,36 +163,121 @@ const NotificationPanel = ({ isOpen, onClose }) => {
     alert('✅ Request rejected and user notified');
   };
 
-  // Handle Generate Report
-  const handleGenerateReport = (id, reportType) => {
-    const reportName = reportType.replace('_', ' ').toUpperCase();
-    const reportUrl = `/reports/${reportType}-${Date.now()}.pdf`;
-    
-    setNotifications(notifications.map(notif => 
-      notif.id === id ? { 
-        ...notif, 
-        status: 'resolved',
-        resolvedData: {
-          action: 'Report generated',
-          reportUrl: reportUrl,
-          reportName: reportName
-        }
-      } : notif
-    ));
-    
-    setExpandedNotif(id);
-    alert(`✅ ${reportName} Report generated successfully!`);
+  // Build and return a jsPDF doc from real data rows/columns
+  const buildPDF = (reportType, requesterName, rows, columns) => {
+    const doc = new jsPDF();
+    const now = new Date().toLocaleString();
+    const title = reportType === 'vehicle_usage' ? 'Vehicle Usage Report' : 'Driver Activity Report';
+
+    // Header
+    doc.setFillColor(30, 64, 175);
+    doc.rect(0, 0, 210, 28, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Haramaya University — VMS', 14, 12);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text(title, 14, 22);
+
+    // Meta
+    doc.setTextColor(80, 80, 80);
+    doc.setFontSize(9);
+    doc.text(`Generated: ${now}`, 14, 36);
+    doc.text(`Requested by: ${requesterName}`, 14, 42);
+
+    doc.autoTable({
+      head: [columns],
+      body: rows,
+      startY: 50,
+      theme: 'grid',
+      headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [240, 245, 255] },
+      styles: { fontSize: 8, cellPadding: 3 },
+    });
+
+    // Footer
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text('HU-VMS Confidential', 14, doc.internal.pageSize.height - 8);
+
+    return { doc, title };
   };
 
-  // Handle Send Report
-  const handleSendReport = (reportUrl, username) => {
-    alert(`✅ Report sent to ${username} successfully!`);
+  // Handle Generate Report — fetches real backend data, builds PDF, auto-downloads
+  const handleGenerateReport = async (id, reportType, requesterName) => {
+    try {
+      let columns, rows;
+
+      if (reportType === 'vehicle_usage') {
+        const data = await getVehicleUsageReport();
+        columns = ['Model', 'Plate', 'Type', 'Capacity', 'Status', 'Trips', 'Mileage', 'Fuel', 'Driver'];
+        rows = data.map(v => [v.model, v.plateNumber, v.type, v.capacity, v.status, v.trips, v.mileage, v.fuelLevel, v.driver]);
+      } else {
+        const data = await getDriverActivityReport();
+        columns = ['Name', 'Employee ID', 'Phone', 'License', 'Status', 'Vehicle', 'Trips', 'Rating'];
+        rows = data.map(d => [d.name, d.employeeId, d.phone, d.licenseNumber, d.status, d.assignedVehicle, d.totalTrips, d.rating]);
+      }
+
+      const { doc, title } = buildPDF(reportType, requesterName, rows, columns);
+      const filename = `${reportType}_${Date.now()}.pdf`;
+      doc.save(filename);
+
+      const pdfBlob = doc.output('blob');
+      const blobUrl = URL.createObjectURL(pdfBlob);
+
+      setNotifications(notifications.map(notif =>
+        notif.id === id ? {
+          ...notif,
+          status: 'resolved',
+          resolvedData: {
+            action: 'Report generated',
+            reportUrl: blobUrl,
+            reportName: title,
+            filename,
+            reportType,
+            rows,
+            columns,
+          }
+        } : notif
+      ));
+      setExpandedNotif(id);
+      // Mark DB request as resolved
+      const notif = notifications.find(n => n.id === id);
+      if (notif?.dbId) {
+        updateReportRequest(notif.dbId, { status: 'resolved' }).catch(() => {});
+      }
+    } catch (err) {
+      alert(`Failed to generate report: ${err.message}`);
+    }
   };
 
-  // Handle Download Report
-  const handleDownloadReport = (reportUrl) => {
-    alert(`📥 Downloading report: ${reportUrl}`);
-    // In real implementation: window.open(reportUrl, '_blank');
+  // Handle Download Report — re-triggers browser download from blob URL
+  const handleDownloadReport = (reportUrl, filename) => {
+    const a = document.createElement('a');
+    a.href = reportUrl;
+    a.download = filename || 'report.pdf';
+    a.click();
+  };
+
+  // Handle Send Report — saves to DB + downloads a copy for the officer
+  const handleSendReport = async (reportUrl, username, filename, resolvedData) => {
+    try {
+      await sendReport({
+        reportType: resolvedData.reportType,
+        reportName: resolvedData.reportName,
+        sentTo: username,
+        data: resolvedData.rows || [],
+        columns: resolvedData.columns || [],
+      });
+    } catch (e) {
+      console.warn('Could not persist report to DB:', e.message);
+    }
+    const a = document.createElement('a');
+    a.href = reportUrl;
+    a.download = `FOR_${username}_${filename || 'report.pdf'}`;
+    a.click();
+    alert(`✅ Report sent to ${username}`);
   };
 
   const getIcon = (type) => {
@@ -439,12 +527,13 @@ const NotificationPanel = ({ isOpen, onClose }) => {
                     {notif.type === 'report_request' && notif.status === 'pending' && (
                       <div className="action-section">
                         <h4>📊 Report Request</h4>
-                        <p><strong>Report Type:</strong> {notif.reportType?.replace('_', ' ').toUpperCase()}</p>
+                        <p><strong>Report Type:</strong> {notif.reportType?.replace(/_/g, ' ').toUpperCase()}</p>
+                        {notif.period && <p><strong>Period:</strong> {notif.period.charAt(0).toUpperCase() + notif.period.slice(1)}</p>}
                         <p><strong>Requested by:</strong> {notif.fullName} ({notif.role})</p>
                         <div className="action-buttons">
                           <button 
                             className="btn-action btn-generate"
-                            onClick={() => handleGenerateReport(notif.id, notif.reportType)}
+                            onClick={() => handleGenerateReport(notif.id, notif.reportType, notif.fullName)}
                           >
                             📄 Generate Report
                           </button>
@@ -483,13 +572,13 @@ const NotificationPanel = ({ isOpen, onClose }) => {
                         <div className="action-buttons">
                           <button 
                             className="btn-action btn-download"
-                            onClick={() => handleDownloadReport(notif.resolvedData.reportUrl)}
+                            onClick={() => handleDownloadReport(notif.resolvedData.reportUrl, notif.resolvedData.filename)}
                           >
                             📥 Download Report
                           </button>
                           <button 
                             className="btn-action btn-send"
-                            onClick={() => handleSendReport(notif.resolvedData.reportUrl, notif.username)}
+                            onClick={() => handleSendReport(notif.resolvedData.reportUrl, notif.username, notif.resolvedData.filename, notif.resolvedData)}
                           >
                             📧 Send to Officer
                           </button>

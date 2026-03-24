@@ -1,15 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getDrivers, deleteDriver, updateDriver } from '../../api/api';
 import './adminTheme.css';
 import './manageDrivers.css';
 
 const ManageDrivers = () => {
-  const [drivers, setDrivers] = useState([
-    { id: 1, fullname: 'John Doe', licenseNumber: 'DL-123456', phone: '09123456789', status: 'Active', vehicle: 'ABC-1234', totalTrips: 45 },
-    { id: 2, fullname: 'Jane Smith', licenseNumber: 'DL-234567', phone: '09234567890', status: 'Active', vehicle: 'XYZ-5678', totalTrips: 38 },
-    { id: 3, fullname: 'Mike Johnson', licenseNumber: 'DL-345678', phone: '09345678901', status: 'On Leave', vehicle: 'Unassigned', totalTrips: 42 },
-    { id: 4, fullname: 'Robert Wilson', licenseNumber: 'DL-456789', phone: '09456789012', status: 'Active', vehicle: 'GHI-3456', totalTrips: 35 },
-    { id: 5, fullname: 'David Brown', licenseNumber: 'DL-567890', phone: '09567890123', status: 'Active', vehicle: 'JKL-7890', totalTrips: 40 }
-  ]);
+  const [drivers, setDrivers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getDrivers()
+      .then(data => setDrivers(data))
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
+  }, []);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,9 +33,25 @@ const ManageDrivers = () => {
     confirmPassword: ''
   });
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this driver?')) {
-      setDrivers(drivers.filter(driver => driver.id !== id));
+      try {
+        await deleteDriver(id);
+        setDrivers(drivers.filter(d => d._id !== id));
+      } catch (err) {
+        alert('Failed to delete: ' + err.message);
+      }
+    }
+  };
+
+  const handleToggleActive = async (id) => {
+    const driver = drivers.find(d => d._id === id);
+    const newState = driver.isActive === false ? true : false;
+    try {
+      const updated = await updateDriver(id, { isActive: newState });
+      setDrivers(drivers.map(d => d._id === id ? updated : d));
+    } catch (err) {
+      alert('Failed to update driver: ' + err.message);
     }
   };
 
@@ -116,11 +135,11 @@ const ManageDrivers = () => {
   };
 
   const filteredDrivers = drivers.filter(driver =>
-    driver.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    driver.licenseNumber.toLowerCase().includes(searchTerm.toLowerCase())
+    driver.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    driver.licenseNumber?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const activeDrivers = drivers.filter(d => d.status === 'Active').length;
+  const activeDrivers = drivers.filter(d => d.status === 'available').length;
 
   const getStatusClass = (status) => {
     switch(status) {
@@ -411,11 +430,11 @@ const ManageDrivers = () => {
         <table className="drivers-table">
           <thead>
             <tr>
-              <th>ID</th>
               <th>Full Name</th>
               <th>License Number</th>
               <th>Phone</th>
               <th>Status</th>
+              <th>Account</th>
               <th>Assigned Vehicle</th>
               <th>Total Trips</th>
               <th>Actions</th>
@@ -423,25 +442,32 @@ const ManageDrivers = () => {
           </thead>
           <tbody>
             {filteredDrivers.map(driver => (
-              <tr key={driver.id}>
-                <td>{driver.id}</td>
-                <td>{driver.fullname}</td>
-                <td>{driver.licenseNumber}</td>
-                <td>{driver.phone}</td>
+              <tr key={driver._id}>
+                <td>{driver.name}</td>
+                <td>{driver.licenseNumber || '-'}</td>
+                <td>{driver.phone || '-'}</td>
                 <td>
-                  <span className={`status-badge ${getStatusClass(driver.status)}`}>
+                  <span className={`status-badge ${driver.status === 'available' ? 'status-active' : 'status-leave'}`}>
                     {driver.status}
                   </span>
                 </td>
-                <td>{driver.vehicle}</td>
-                <td>{driver.totalTrips}</td>
                 <td>
-                  <button 
-                    className="btn-delete"
-                    onClick={() => handleDelete(driver.id)}
-                  >
-                    Delete
-                  </button>
+                  <span className={`status-badge ${driver.isActive !== false ? 'status-active' : 'status-inactive'}`}>
+                    {driver.isActive !== false ? 'Active' : 'Inactive'}
+                  </span>
+                </td>
+                <td>{driver.assignedVehiclePlate || 'Unassigned'}</td>
+                <td>{driver.totalTrips || 0}</td>
+                <td>
+                  <div className="action-buttons">
+                    <button
+                      className={driver.isActive !== false ? 'btn-lock' : 'btn-unlock'}
+                      onClick={() => handleToggleActive(driver._id)}
+                    >
+                      {driver.isActive !== false ? '🔒 Deactivate' : '🔓 Activate'}
+                    </button>
+                    <button className="btn-delete" onClick={() => handleDelete(driver._id)}>Delete</button>
+                  </div>
                 </td>
               </tr>
             ))}

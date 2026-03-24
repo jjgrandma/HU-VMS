@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthContext } from './context/AuthContext';
+import { logout as apiLogout } from './api/api';
 import 'leaflet/dist/leaflet.css';
 import './App.css';
 
@@ -80,14 +82,15 @@ import GateSecurityReports from './pages/gateSecurity/GateSecurityReports';
 import GateSecuritySettings from './pages/GateSecurity/GateSecuritySettings';
 
 function App() {
-  // For testing Transport Officer - temporarily set default user
-  const [user, setUser] = useState({ role: 'TRANSPORT', name: 'Test Transport Officer' });
+  const { user, setUser } = useContext(AuthContext);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleLogin = (userData) => {
     setUser(userData);
   };
 
   const handleLogout = () => {
+    apiLogout();
     setUser(null);
   };
 
@@ -108,8 +111,8 @@ function App() {
         <>
           <Route path="/admin" element={
             <div className="app">
-              <AdminSidebar onLogout={handleLogout} />
-              <div className="main-content">
+              <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
+              <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
                 <AdminHeader />
                 <AdminDashboardOverview />
               </div>
@@ -117,8 +120,8 @@ function App() {
           } />
           <Route path="/admin/dashboard" element={
             <div className="app">
-              <AdminSidebar onLogout={handleLogout} />
-              <div className="main-content">
+              <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
+              <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
                 <AdminHeader />
                 <AdminDashboardOverview />
               </div>
@@ -126,8 +129,8 @@ function App() {
           } />
           <Route path="/admin/manage-vehicles" element={
             <div className="app">
-              <AdminSidebar onLogout={handleLogout} />
-              <div className="main-content">
+              <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
+              <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
                 <AdminHeader />
                 <ManageVehiclesPage />
               </div>
@@ -135,8 +138,8 @@ function App() {
           } />
           <Route path="/admin/vehicle-status" element={
             <div className="app">
-              <AdminSidebar onLogout={handleLogout} />
-              <div className="main-content">
+              <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
+              <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
                 <AdminHeader />
                 <VehicleStatus />
               </div>
@@ -144,8 +147,8 @@ function App() {
           } />
           <Route path="/admin/add-vehicle" element={
             <div className="app">
-              <AdminSidebar onLogout={handleLogout} />
-              <div className="main-content">
+              <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
+              <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
                 <AdminHeader />
                 <AddVehicle />
               </div>
@@ -153,8 +156,8 @@ function App() {
           } />
           <Route path="/admin/vehicle-trip-history" element={
             <div className="app">
-              <AdminSidebar onLogout={handleLogout} />
-              <div className="main-content">
+              <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
+              <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
                 <AdminHeader />
                 <VehicleTripHistory />
               </div>
@@ -162,8 +165,8 @@ function App() {
           } />
           <Route path="/admin/manage-users" element={
             <div className="app">
-              <AdminSidebar onLogout={handleLogout} />
-              <div className="main-content">
+              <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
+              <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
                 <AdminHeader />
                 <ManageUsersPage />
               </div>
@@ -171,8 +174,8 @@ function App() {
           } />
           <Route path="/admin/add-user" element={
             <div className="app">
-              <AdminSidebar onLogout={handleLogout} />
-              <div className="main-content">
+              <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
+              <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
                 <AdminHeader />
                 <AddUser />
               </div>
@@ -180,8 +183,8 @@ function App() {
           } />
           <Route path="/admin/manage-drivers" element={
             <div className="app">
-              <AdminSidebar onLogout={handleLogout} />
-              <div className="main-content">
+              <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
+              <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
                 <AdminHeader />
                 <ManageDrivers />
               </div>
@@ -189,8 +192,8 @@ function App() {
           } />
           <Route path="/admin/user-request-report" element={
             <div className="app">
-              <AdminSidebar onLogout={handleLogout} />
-              <div className="main-content">
+              <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
+              <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
                 <AdminHeader />
                 <UserRequestReport />
               </div>
@@ -198,8 +201,8 @@ function App() {
           } />
           <Route path="/admin/vehicle-trip-report" element={
             <div className="app">
-              <AdminSidebar onLogout={handleLogout} />
-              <div className="main-content">
+              <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
+              <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
                 <AdminHeader />
                 <VehicleTripReport />
               </div>
@@ -207,8 +210,8 @@ function App() {
           } />
           <Route path="/admin/driver-trip-report" element={
             <div className="app">
-              <AdminSidebar onLogout={handleLogout} />
-              <div className="main-content">
+              <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
+              <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
                 <AdminHeader />
                 <DriverTripReport />
               </div>
@@ -216,8 +219,8 @@ function App() {
           } />
           <Route path="/admin/driver-performance-report" element={
             <div className="app">
-              <AdminSidebar onLogout={handleLogout} />
-              <div className="main-content">
+              <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
+              <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
                 <AdminHeader />
                 <DriverPerformanceReport />
               </div>
@@ -225,8 +228,8 @@ function App() {
           } />
           <Route path="/admin/fuel-records-report" element={
             <div className="app">
-              <AdminSidebar onLogout={handleLogout} />
-              <div className="main-content">
+              <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
+              <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
                 <AdminHeader />
                 <FuelRecordsReport />
               </div>
@@ -234,8 +237,8 @@ function App() {
           } />
           <Route path="/admin/settings" element={
             <div className="app">
-              <AdminSidebar onLogout={handleLogout} />
-              <div className="main-content">
+              <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
+              <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
                 <AdminHeader />
                 <Settings />
               </div>
@@ -335,3 +338,4 @@ function App() {
 }
 
 export default App;
+

@@ -1,8 +1,11 @@
 import { Search, Bell, ChevronDown, Menu, Settings, User, LogOut } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import TransportNotificationPanel from './TransportNotificationPanel';
 import './TransportHeader.css';
 
 const TransportHeader = ({ onLogout, toggleSidebar, isSidebarOpen }) => {
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifCount, setNotifCount] = useState(0);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -158,9 +161,14 @@ const TransportHeader = ({ onLogout, toggleSidebar, isSidebarOpen }) => {
 
         <div className="header-right">
           <div className="header-actions">
-            <button className="icon-btn notification-btn">
+            <button
+              className="icon-btn notification-btn"
+              onClick={() => setShowNotifications(v => !v)}
+            >
               <Bell size={20} />
-              <span className="notification-badge">3</span>
+              {notifCount > 0 && (
+                <span className="notification-badge">{notifCount}</span>
+              )}
             </button>
           </div>
         </div>
@@ -173,6 +181,13 @@ const TransportHeader = ({ onLogout, toggleSidebar, isSidebarOpen }) => {
         onChange={handleFileChange}
         accept="image/*"
         style={{ display: 'none' }}
+      />
+
+      {/* Notification Panel */}
+      <TransportNotificationPanel
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        onBadgeCount={setNotifCount}
       />
 
       {/* Profile Edit Modal */}

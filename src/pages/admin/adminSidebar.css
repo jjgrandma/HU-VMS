@@ -518,3 +518,60 @@
 .logout-icon {
   font-size: 20px;
 }
+
+/* Collapsed sidebar */
+.admin-sidebar.collapsed {
+  width: 64px;
+}
+
+.admin-sidebar.collapsed .sidebar-header {
+  justify-content: center;
+  padding: 16px 8px;
+}
+
+.admin-sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 14px 0;
+  margin: 2px 6px;
+}
+
+.admin-sidebar.collapsed .nav-dropdown {
+  margin: 2px 6px;
+}
+
+.admin-sidebar.collapsed .dropdown-toggle {
+  justify-content: center;
+  padding: 14px 0;
+}
+
+.admin-sidebar.collapsed .nav-icon {
+  font-size: 20px;
+}
+
+/* Collapse button */
+.sidebar-collapse-btn {
+  background: rgba(76, 175, 80, 0.15);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  color: #4CAF50;
+  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.sidebar-collapse-btn:hover {
+  background: rgba(76, 175, 80, 0.3);
+  transform: scale(1.1);
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+}

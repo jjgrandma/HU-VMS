@@ -74,6 +74,17 @@ export const deleteRequest = async (id) => {
 };
 
 // ─── Vehicles ────────────────────────────────────────────
+export const createVehicle = async (vehicleData) => {
+  const res = await fetch(`${BASE_URL}/vehicles`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify(vehicleData),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
 export const getVehicles = async (filters = {}) => {
   const params = new URLSearchParams(filters).toString();
   const res = await fetch(`${BASE_URL}/vehicles?${params}`, { headers: headers() });
@@ -105,6 +116,169 @@ export const getDrivers = async (filters = {}) => {
 // ─── Users ───────────────────────────────────────────────
 export const getUsers = async () => {
   const res = await fetch(`${BASE_URL}/users`, { headers: headers() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+// ─── Additional helpers ───────────────────────────────────
+export const registerUser = async (userData) => {
+  const res = await fetch(`${BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify(userData),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const deleteUser = async (id) => {
+  const res = await fetch(`${BASE_URL}/users/${id}`, {
+    method: 'DELETE',
+    headers: headers(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const updateUser = async (id, updates) => {
+  const res = await fetch(`${BASE_URL}/users/${id}`, {
+    method: 'PATCH',
+    headers: headers(),
+    body: JSON.stringify(updates),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const deleteVehicle = async (id) => {
+  const res = await fetch(`${BASE_URL}/vehicles/${id}`, {
+    method: 'DELETE',
+    headers: headers(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const deleteDriver = async (id) => {
+  const res = await fetch(`${BASE_URL}/drivers/${id}`, {
+    method: 'DELETE',
+    headers: headers(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const updateDriver = async (id, updates) => {
+  const res = await fetch(`${BASE_URL}/drivers/${id}`, {
+    method: 'PATCH',
+    headers: headers(),
+    body: JSON.stringify(updates),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+// ─── Reports ─────────────────────────────────────────────
+export const getVehicleUsageReport = async () => {
+  const res = await fetch(`${BASE_URL}/reports/vehicle-usage`, { headers: headers() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const getDriverActivityReport = async () => {
+  const res = await fetch(`${BASE_URL}/reports/driver-activity`, { headers: headers() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const getRequestsSummaryReport = async () => {
+  const res = await fetch(`${BASE_URL}/reports/requests-summary`, { headers: headers() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const sendReport = async (payload) => {
+  const res = await fetch(`${BASE_URL}/reports/send`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const getReceivedReports = async () => {
+  const res = await fetch(`${BASE_URL}/reports/received`, { headers: headers() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const submitReportRequest = async (payload) => {
+  const res = await fetch(`${BASE_URL}/reports/request`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const getReportRequests = async () => {
+  const res = await fetch(`${BASE_URL}/reports/requests`, { headers: headers() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const updateReportRequest = async (id, updates) => {
+  const res = await fetch(`${BASE_URL}/reports/requests/${id}`, {
+    method: 'PATCH',
+    headers: headers(),
+    body: JSON.stringify(updates),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+// ─── Complaints ───────────────────────────────────────────
+export const getComplaints = async () => {
+  const res = await fetch(`${BASE_URL}/complaints`, { headers: headers() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const createComplaint = async (payload) => {
+  const res = await fetch(`${BASE_URL}/complaints`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const updateComplaint = async (id, updates) => {
+  const res = await fetch(`${BASE_URL}/complaints/${id}`, {
+    method: 'PATCH',
+    headers: headers(),
+    body: JSON.stringify(updates),
+  });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message);
   return data;

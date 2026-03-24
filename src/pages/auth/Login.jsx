@@ -54,6 +54,7 @@ export default function Login({ onLogin }) {
             />
           </div>
 
+          <h2>Sign In</h2>
           <p className="subtitle">Login to Secure Access</p>
 
           {error && <div className="login-error">{error}</div>}
@@ -106,16 +107,9 @@ export default function Login({ onLogin }) {
             </button>
           </form>
 
-          <div className="support">
-            Need help? <a href="#">Contact Support</a>
-          </div>
+          <div className="support" style={{display:'none'}}></div>
         </div>
       </div>
-
-      {/* ===== FOOTER ===== */}
-      <footer className="login-footer">
-        © 2026 Haramaya University. All rights reserved.
-      </footer>
     </div>
   );
 }
