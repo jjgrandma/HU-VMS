@@ -1,11 +1,14 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Search, Filter, Download, ChevronDown, Calendar,
   User, Car, Hash, FileText, CheckCircle2, Clock,
   AlertTriangle, ShieldAlert, Wrench, Users, Fuel,
-  TrendingUp, BarChart2, Eye, X
+  TrendingUp, BarChart2, Eye, X, FileSpreadsheet, Sheet
 } from 'lucide-react';
 import { getComplaints } from '../../api/api';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import './complaintHistory.css';
 
 const STATUSES = ['All', 'Pending', 'In Progress', 'Resolved'];
@@ -46,6 +49,8 @@ export default function ComplaintHistory() {
   const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(1);
   const [detailItem, setDetailItem] = useState(null);
+  const [exportOpen, setExportOpen] = useState(false);
+  const exportRef = useRef(null);
   const PER_PAGE = 6;
 
   useEffect(() => {
@@ -102,24 +107,68 @@ export default function ComplaintHistory() {
     categoryFilter !== 'All' || priorityFilter !== 'All' || driverFilter !== 'All' ||
     senderFilter !== 'All' || dateFrom || dateTo;
 
+  const exportRows = () => filtered.map(c => ({
+    Sender: c.sender || '',
+    Role: c.role || '',
+    Driver: c.driver || '',
+    Vehicle: c.vehicle || '',
+    'Trip ID': c.tripId || '',
+    Category: c.category || '',
+    Priority: c.priority || '',
+    Status: c.status || '',
+    Submitted: c.createdAt ? c.createdAt.slice(0, 10) : '',
+    Resolved: c.resolvedAt ? c.resolvedAt.slice(0, 10) : '-',
+    'Driver at Fault': c.driverAtFault ? 'Yes' : 'No',
+    'Actions Taken': (c.actions || []).join('; '),
+    Notes: c.resolutionNotes || '-',
+  }));
+
   const exportCSV = () => {
-    const headers = ['Sender', 'Role', 'Driver', 'Vehicle', 'Trip ID', 'Category', 'Priority', 'Status', 'Date Submitted', 'Resolved At', 'Driver At Fault', 'Actions', 'Notes'];
-    const rows = filtered.map(c => [
-      c.sender, c.role, c.driver, c.vehicle, c.tripId,
-      c.category, c.priority, c.status,
-      c.createdAt ? c.createdAt.slice(0, 10) : '',
-      c.resolvedAt ? c.resolvedAt.slice(0, 10) : '-',
-      c.driverAtFault ? 'Yes' : 'No',
-      (c.actions || []).join('; '), c.resolutionNotes || '-',
-    ]);
-    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const rows = exportRows();
+    const headers = Object.keys(rows[0] || {});
+    const csv = [headers, ...rows.map(r => headers.map(h => `"${r[h]}"`))]
+      .map(r => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `complaint-history-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `complaints-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    setExportOpen(false);
+  };
+
+  const exportExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(exportRows());
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Complaints');
+    XLSX.writeFile(wb, `complaints-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    setExportOpen(false);
+  };
+
+  const exportPDF = () => {
+    const doc = new jsPDF({ orientation: 'landscape' });
+    doc.setFontSize(14);
+    doc.text('Complaint History Report', 14, 15);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Generated: ${new Date().toLocaleDateString()} · ${filtered.length} records`, 14, 22);
+    autoTable(doc, {
+      startY: 28,
+      head: [['Sender', 'Role', 'Driver', 'Category', 'Priority', 'Status', 'Submitted', 'Resolved', 'Fault', 'Actions']],
+      body: filtered.map(c => [
+        c.sender, c.role, c.driver || '—', c.category, c.priority, c.status,
+        c.createdAt ? c.createdAt.slice(0, 10) : '—',
+        c.resolvedAt ? c.resolvedAt.slice(0, 10) : '—',
+        c.driverAtFault ? 'Yes' : 'No',
+        (c.actions || []).join(', ') || '—',
+      ]),
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [99, 102, 241], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+    });
+    doc.save(`complaints-${new Date().toISOString().slice(0, 10)}.pdf`);
+    setExportOpen(false);
   };
 
   if (loading) return (
@@ -136,9 +185,24 @@ export default function ComplaintHistory() {
           <h1>Complaint History</h1>
           <p>Full audit trail of all complaints with resolution details</p>
         </div>
-        <button className="ch-export-btn" onClick={exportCSV}>
-          <Download size={14} /> Export CSV
-        </button>
+        <div className="ch-export-wrap" ref={exportRef}>
+          <button className="ch-export-btn" onClick={() => setExportOpen(o => !o)}>
+            <Download size={14} /> Export <ChevronDown size={13} />
+          </button>
+          {exportOpen && (
+            <div className="ch-export-menu">
+              <button onClick={exportCSV}>
+                <FileText size={14} /> Export CSV
+              </button>
+              <button onClick={exportExcel}>
+                <FileSpreadsheet size={14} /> Export Excel (.xlsx)
+              </button>
+              <button onClick={exportPDF}>
+                <Download size={14} /> Export PDF
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="ch-stats">

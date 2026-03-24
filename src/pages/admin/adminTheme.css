@@ -7,10 +7,10 @@
 :root {
   /* Primary Colors */
   --admin-bg-primary: #ffffff;
-  --admin-bg-secondary: #f8f9fa;
-  --admin-primary: #32CD32;
-  --admin-primary-dark: #28a428;
-  --admin-accent: #90EE90;
+  --admin-bg-secondary: #f8fafc;
+  --admin-primary: #16a34a;
+  --admin-primary-dark: #15803d;
+  --admin-accent: #bbf7d0;
   
   /* Text Colors */
   --admin-text-primary: #000000;
@@ -19,9 +19,9 @@
   --admin-text-light: #999999;
   
   /* Border Colors */
-  --admin-border-primary: #32CD32;
-  --admin-border-light: #e0e0e0;
-  --admin-border-lighter: #f0f0f0;
+  --admin-border-primary: #16a34a;
+  --admin-border-light: #e2e8f0;
+  --admin-border-lighter: #f1f5f9;
   
   /* Status Colors */
   --admin-success: #4CAF50;
@@ -41,13 +41,13 @@
   --admin-info-border: rgba(33, 150, 243, 0.4);
   
   /* Hover & Focus */
-  --admin-hover-bg: #f0f0f0;
-  --admin-focus-shadow: 0 0 0 2px rgba(50, 205, 50, 0.2);
+  --admin-hover-bg: #f8fafc;
+  --admin-focus-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
   
   /* Shadows */
-  --admin-shadow-sm: 0 2px 8px rgba(50, 205, 50, 0.1);
-  --admin-shadow-md: 0 4px 12px rgba(50, 205, 50, 0.1);
-  --admin-shadow-lg: 0 4px 20px rgba(50, 205, 50, 0.1);
+  --admin-shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
+  --admin-shadow-md: 0 2px 8px rgba(0,0,0,0.08);
+  --admin-shadow-lg: 0 4px 16px rgba(0,0,0,0.1);
 }
 
 /* Global Container Styles */

@@ -1,353 +1,191 @@
 import { useState, useEffect, useRef } from 'react';
-import { 
-  Map as MapIcon, 
-  List, 
-  Car, 
-  User, 
-  Navigation, 
-  Activity, 
-  AlertTriangle,
-  MapPin,
-  Clock,
-  Settings,
-  CheckCircle2
+import {
+  Map as MapIcon, List, Car, User, Navigation, Activity,
+  AlertTriangle, MapPin, Clock, CheckCircle2, RefreshCw
 } from 'lucide-react';
+import { getVehicles } from '../../api/api';
 import './VehicleTracking.css';
 
-const VehicleTracking = () => {
-  const mapRef = useRef(null);
-  const mapInstanceRef = useRef(null);
-  const markersRef = useRef({});
+const STATUS_COLOR = {
+  available:      'var(--status-available)',
+  'in-use':       'var(--primary-color)',
+  maintenance:    'var(--status-pending)',
+  'out-of-service': 'var(--status-complaint)',
+};
+
+const STATUS_LABEL = {
+  available:      'Available',
+  'in-use':       'In Trip',
+  maintenance:    'Maintenance',
+  'out-of-service': 'Out of Service',
+};
+
+export default function VehicleTracking() {
+  const mapRef           = useRef(null);
+  const mapInstanceRef   = useRef(null);
+  const markersRef       = useRef({});
+  const [vehicles, setVehicles]           = useState([]);
+  const [liveCoords, setLiveCoords]       = useState({}); // _id → {lat,lng,speed}
+  const [loading, setLoading]             = useState(true);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const [mapError, setMapError] = useState(false);
-  const [activeView, setActiveView] = useState('fleet'); // 'fleet' or 'map'
+  const [mapLoaded, setMapLoaded]         = useState(false);
+  const [mapError, setMapError]           = useState(false);
+  const [activeView, setActiveView]       = useState('fleet');
+  const [statusFilter, setStatusFilter]   = useState('All');
 
-  const [vehicles, setVehicles] = useState([
-    {
-      id: 1,
-      plate: 'HU-2456',
-      driver: 'Abdi Mohammed',
-      vehicleStatus: 'In Trip',
-      tripStatus: 'En route to Dire Dawa',
-      currentLocation: 'Near Main Gate',
-      coordinates: { lat: 9.4103, lng: 42.0461 }, 
-      speed: 45,
-      destination: 'Dire Dawa',
-      lastUpdate: new Date().toLocaleTimeString()
-    },
-    {
-      id: 2,
-      plate: 'HU-3789',
-      driver: 'Fatuma Ahmed',
-      vehicleStatus: 'Available',
-      tripStatus: 'Parked',
-      currentLocation: 'University Parking',
-      coordinates: { lat: 9.4120, lng: 42.0480 },
-      speed: 0,
-      destination: null,
-      lastUpdate: new Date().toLocaleTimeString()
-    },
-    {
-      id: 3,
-      plate: 'HU-1234',
-      driver: 'Mohammed Hassan',
-      vehicleStatus: 'In Trip',
-      tripStatus: 'En route to Addis Ababa',
-      currentLocation: 'Highway A1',
-      coordinates: { lat: 9.4200, lng: 42.0600 },
-      speed: 65,
-      destination: 'Addis Ababa',
-      lastUpdate: new Date().toLocaleTimeString()
-    },
-    {
-      id: 4,
-      plate: 'HU-5678',
-      driver: 'Alemayehu Tadesse',
-      vehicleStatus: 'Under Maintenance',
-      tripStatus: 'Maintenance',
-      currentLocation: 'Maintenance Shop',
-      coordinates: { lat: 9.4080, lng: 42.0440 },
-      speed: 0,
-      destination: null,
-      lastUpdate: new Date().toLocaleTimeString()
-    },
-    {
-      id: 5,
-      plate: 'HU-9012',
-      driver: 'Hanan Yusuf',
-      vehicleStatus: 'In Trip',
-      tripStatus: 'En route to Harar',
-      currentLocation: 'City Center',
-      coordinates: { lat: 9.4150, lng: 42.0520 },
-      speed: 35,
-      destination: 'Harar',
-      lastUpdate: new Date().toLocaleTimeString()
-    },
-    {
-      id: 6,
-      plate: 'HU-3456',
-      driver: 'Bekele Worku',
-      vehicleStatus: 'Out of Service',
-      tripStatus: 'Breakdown',
-      currentLocation: 'Roadside',
-      coordinates: { lat: 9.4050, lng: 42.0400 },
-      speed: 0,
-      destination: null,
-      lastUpdate: new Date().toLocaleTimeString()
+  // ── Fetch vehicles from DB ──────────────────────────────
+  const fetchVehicles = async () => {
+    try {
+      const data = await getVehicles();
+      setVehicles(data);
+      // Seed liveCoords from DB location
+      const coords = {};
+      data.forEach(v => {
+        coords[v._id] = {
+          lat:   v.location?.lat  ?? 9.4140,
+          lng:   v.location?.lng  ?? 42.0360,
+          speed: v.speed ?? 0,
+        };
+      });
+      setLiveCoords(coords);
+    } catch (err) {
+      console.error('Failed to load vehicles:', err.message);
+    } finally {
+      setLoading(false);
     }
-  ]);
-
-  const [filteredVehicles, setFilteredVehicles] = useState(vehicles);
-  const [statusFilter, setStatusFilter] = useState('All');
-
-  const stats = {
-    total: vehicles.length,
-    active: vehicles.filter(v => v.vehicleStatus === 'In Trip').length,
-    available: vehicles.filter(v => v.vehicleStatus === 'Available').length,
-    issues: vehicles.filter(v => ['Under Maintenance', 'Out of Service'].includes(v.vehicleStatus)).length
   };
 
+  useEffect(() => { fetchVehicles(); }, []);
+
+  // ── Simulate movement for in-use vehicles ──────────────
   useEffect(() => {
-    const loadLeafletMap = () => {
-      if (window.L) {
-        console.log('Leaflet already loaded');
-        setMapLoaded(true);
-        return;
-      }
+    const interval = setInterval(() => {
+      setLiveCoords(prev => {
+        const next = { ...prev };
+        vehicles.forEach(v => {
+          if (v.status === 'in-use') {
+            const c = prev[v._id] || { lat: 9.414, lng: 42.036, speed: 50 };
+            next[v._id] = {
+              lat:   c.lat + (Math.random() - 0.5) * 0.002,
+              lng:   c.lng + (Math.random() - 0.5) * 0.002,
+              speed: Math.round(Math.max(20, Math.min(90, c.speed + (Math.random() - 0.5) * 10))),
+            };
+          }
+        });
+        return next;
+      });
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [vehicles]);
 
-      console.log('Loading Leaflet...');
-      
-      // Remove any existing Leaflet resources
-      const existingCss = document.querySelector('link[href*="leaflet"]');
-      const existingScript = document.querySelector('script[src*="leaflet"]');
-      if (existingCss) existingCss.remove();
-      if (existingScript) existingScript.remove();
+  // ── Load Leaflet ────────────────────────────────────────
+  useEffect(() => {
+    if (window.L) { setMapLoaded(true); return; }
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    css.crossOrigin = '';
+    document.head.appendChild(css);
 
-      const cssLink = document.createElement('link');
-      cssLink.rel = 'stylesheet';
-      cssLink.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      cssLink.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
-      cssLink.crossOrigin = '';
-      document.head.appendChild(cssLink);
-
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
-      script.crossOrigin = '';
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
-        console.log('Leaflet loaded successfully');
-        setMapLoaded(true);
-        setMapError(false);
-      };
-      script.onerror = (error) => {
-        console.error('Leaflet failed to load:', error);
-        setMapError(true);
-        setMapLoaded(false);
-      };
-      document.head.appendChild(script);
-    };
-
-    loadLeafletMap();
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.crossOrigin = '';
+    script.async = true;
+    script.onload  = () => { setMapLoaded(true); setMapError(false); };
+    script.onerror = () => setMapError(true);
+    document.head.appendChild(script);
   }, []);
 
+  // ── Init map ────────────────────────────────────────────
   useEffect(() => {
-    if (activeView === 'map' && mapLoaded && window.L && mapRef.current && !mapInstanceRef.current) {
-      try {
-        console.log('Initializing map...');
-        mapInstanceRef.current = window.L.map(mapRef.current).setView([9.4103, 42.0461], 13);
+    if (activeView !== 'map' || !mapLoaded || !window.L || !mapRef.current || mapInstanceRef.current) return;
+    try {
+      mapInstanceRef.current = window.L.map(mapRef.current).setView([9.4140, 42.0360], 13);
+      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors', maxZoom: 19,
+      }).addTo(mapInstanceRef.current);
 
-        window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© OpenStreetMap contributors',
-          maxZoom: 19
-        }).addTo(mapInstanceRef.current);
+      // University boundary
+      window.L.polygon([
+        [9.4050, 42.0270], [9.4050, 42.0450],
+        [9.4230, 42.0450], [9.4230, 42.0270],
+      ], { color: '#84cc16', fillColor: '#84cc16', fillOpacity: 0.08, weight: 2, dashArray: '5,5' })
+        .addTo(mapInstanceRef.current);
 
-        const universityBounds = [
-          [9.4050, 42.0270],
-          [9.4050, 42.0450],  
-          [9.4230, 42.0450],
-          [9.4230, 42.0270],
-          [9.4050, 42.0270]  
-        ];
-
-        const universityZone = window.L.polygon(universityBounds, {
-          color: '#84cc16',       
-          fill: true,
-          fillColor: '#84cc16',
-          fillOpacity: 0.1,             
-          weight: 2,               
-          opacity: 1,              
-          dashArray: '5, 5'       
-        }).addTo(mapInstanceRef.current);
-
-        const universityIcon = window.L.divIcon({
-          html: '<div style="background: #1f2937; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 2px solid white; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">🎓</div>',
-          iconSize: [32, 32],
-          className: 'university-marker'
-        });
-
-        window.L.marker([9.414, 42.036], { icon: universityIcon })
-          .addTo(mapInstanceRef.current)
-          .bindPopup(`
-            <div style="padding: 8px; text-align: center; font-family: 'Inter', sans-serif;">
-              <h4 style="margin: 0 0 8px 0; color: #1f2937; font-size: 14px;">Haramaya University</h4>
-              <p style="margin: 4px 0; color: #6b7280; font-size: 12px;">Main Campus</p>
-            </div>
-          `);
-
-        console.log('Map initialized successfully');
-        setMapError(false);
-      } catch (error) {
-        console.error('Error initializing map:', error);
-        setMapError(true);
-      }
-    }
-
-    if (activeView === 'map' && mapInstanceRef.current) {
-      setTimeout(() => {
-        console.log('Invalidating map size...');
-        mapInstanceRef.current.invalidateSize();
-      }, 100);
-    }
+      const uniIcon = window.L.divIcon({
+        html: '<div style="background:#1f2937;color:#fff;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.2)">🎓</div>',
+        iconSize: [32, 32], className: '',
+      });
+      window.L.marker([9.4140, 42.0360], { icon: uniIcon })
+        .addTo(mapInstanceRef.current)
+        .bindPopup('<b>Haramaya University</b><br>Main Campus');
+    } catch (e) { setMapError(true); }
   }, [activeView, mapLoaded]);
 
   useEffect(() => {
-    if (activeView === 'map' && mapInstanceRef.current && window.L && !mapError) {
-      try {
-        Object.values(markersRef.current).forEach(marker => {
-          mapInstanceRef.current.removeLayer(marker);
-        });
-        markersRef.current = {};
-
-        filteredVehicles.forEach(vehicle => {
-          const icon = getVehicleIcon(vehicle.vehicleStatus);
-          const marker = window.L.marker([vehicle.coordinates.lat, vehicle.coordinates.lng], { icon })
-            .addTo(mapInstanceRef.current)
-            .bindPopup(createPopupContent(vehicle));
-
-          markersRef.current[vehicle.id] = marker;
-
-          if (selectedVehicle && selectedVehicle.id === vehicle.id) {
-            marker.openPopup();
-          }
-        });
-      } catch (error) {
-        console.error('Error updating markers:', error);
-      }
+    if (activeView === 'map' && mapInstanceRef.current) {
+      setTimeout(() => mapInstanceRef.current.invalidateSize(), 100);
     }
-  }, [filteredVehicles, selectedVehicle, mapLoaded, mapError, activeView]);
+  }, [activeView]);
 
+  // ── Update markers when liveCoords change ──────────────
   useEffect(() => {
-    if (statusFilter === 'All') {
-      setFilteredVehicles(vehicles);
-    } else {
-      setFilteredVehicles(vehicles.filter(v => v.vehicleStatus === statusFilter));
-    }
-  }, [statusFilter, vehicles]);
+    if (activeView !== 'map' || !mapInstanceRef.current || !window.L || mapError) return;
+    // Remove old markers
+    Object.values(markersRef.current).forEach(m => mapInstanceRef.current.removeLayer(m));
+    markersRef.current = {};
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setVehicles(prevVehicles => 
-        prevVehicles.map(vehicle => {
-          if (vehicle.vehicleStatus === 'In Trip') {
-            const MathRandom = Math.random();
-            const newLat = vehicle.coordinates.lat + (MathRandom - 0.5) * 0.001;
-            const newLng = vehicle.coordinates.lng + (MathRandom - 0.5) * 0.001;
-            const newSpeed = Math.max(20, Math.min(80, vehicle.speed + (Math.random() - 0.5) * 10));
-            
-            return {
-              ...vehicle,
-              coordinates: { lat: newLat, lng: newLng },
-              speed: Math.round(newSpeed),
-              lastUpdate: new Date().toLocaleTimeString()
-            };
-          }
-          return vehicle;
-        })
-      );
-    }, 5000); 
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const getVehicleIcon = (status) => {
-    const colors = {
-      'Available': '#10b981',
-      'In Trip': '#84cc16',
-      'Under Maintenance': '#f59e0b',
-      'Out of Service': '#ef4444'
-    };
-
-    return window.L.divIcon({
-      html: `<div style="background-color: ${colors[status]}; width: 28px; height: 28px; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>`,
-      iconSize: [28, 28],
-      className: 'vehicle-marker'
+    vehicles.forEach(v => {
+      const c = liveCoords[v._id];
+      if (!c) return;
+      const color = STATUS_COLOR[v.status] || '#6b7280';
+      const icon = window.L.divIcon({
+        html: `<div style="background:${color};width:28px;height:28px;border-radius:50%;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;font-size:13px;">🚌</div>`,
+        iconSize: [28, 28], className: '',
+      });
+      const marker = window.L.marker([c.lat, c.lng], { icon })
+        .addTo(mapInstanceRef.current)
+        .bindPopup(`
+          <div style="min-width:200px;font-family:sans-serif;padding:8px">
+            <b style="font-size:14px">${v.plateNumber} – ${v.model}</b><br>
+            <span style="color:#6b7280;font-size:12px">${STATUS_LABEL[v.status]}</span>
+            <hr style="margin:8px 0;border-color:#e5e7eb">
+            <div style="font-size:13px">👤 ${v.assignedDriverName || '—'}</div>
+            <div style="font-size:13px">⚡ ${c.speed} km/h</div>
+            <div style="font-size:13px">📍 ${v.location?.name || '—'}</div>
+            ${v.destination ? `<div style="font-size:13px">🏁 ${v.destination}</div>` : ''}
+          </div>
+        `);
+      markersRef.current[v._id] = marker;
+      if (selectedVehicle?._id === v._id) marker.openPopup();
     });
+  }, [liveCoords, activeView, mapLoaded, mapError, vehicles, selectedVehicle]);
+
+  // ── Derived ─────────────────────────────────────────────
+  const filtered = vehicles.filter(v =>
+    (statusFilter === 'All' || v.status === statusFilter)
+  );
+
+  const stats = {
+    total:     vehicles.length,
+    active:    vehicles.filter(v => v.status === 'in-use').length,
+    available: vehicles.filter(v => v.status === 'available').length,
+    issues:    vehicles.filter(v => ['maintenance','out-of-service'].includes(v.status)).length,
   };
 
-  const createPopupContent = (vehicle) => {
-    return `
-      <div style="padding: 12px; min-width: 220px; font-family: 'Inter', sans-serif;">
-        <h4 style="margin: 0 0 12px 0; color: #1f2937; font-size: 15px; font-weight: 600; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;">${vehicle.plate}</h4>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="font-size: 13px; color: #4b5563; display: flex; justify-content: space-between;">
-            <span>Driver:</span> <strong style="color: #1f2937;">${vehicle.driver}</strong>
-          </div>
-          <div style="font-size: 13px; color: #4b5563; display: flex; justify-content: space-between;">
-            <span>Speed:</span> <strong style="color: #1f2937;">${vehicle.speed} km/h</strong>
-          </div>
-          <div style="font-size: 13px; color: #4b5563; display: flex; justify-content: space-between;">
-            <span>Status:</span> <strong style="color: #1f2937;">${vehicle.tripStatus}</strong>
-          </div>
-        </div>
-      </div>
-    `;
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Available': return 'var(--status-available)';
-      case 'In Trip': return 'var(--primary-color)';
-      case 'Under Maintenance': return 'var(--status-pending)';
-      case 'Out of Service': return 'var(--status-complaint)';
-      default: return 'var(--text-secondary)';
-    }
-  };
-
-  const handleVehicleClick = (vehicle) => {
-    setSelectedVehicle(vehicle);
-    
-    if (activeView === 'fleet') {
-      setActiveView('map');
-    }
-    
+  const handleVehicleClick = (v) => {
+    setSelectedVehicle(v);
+    setActiveView('map');
     if (mapInstanceRef.current && !mapError) {
-      setTimeout(() => {
-        try {
-          mapInstanceRef.current.setView([vehicle.coordinates.lat, vehicle.coordinates.lng], 16);
-          
-          const marker = markersRef.current[vehicle.id];
-          if (marker) {
-            marker.openPopup();
-          }
-        } catch (error) {
-          console.error('Error navigating to vehicle:', error);
-        }
+      const c = liveCoords[v._id];
+      if (c) setTimeout(() => {
+        mapInstanceRef.current.setView([c.lat, c.lng], 15);
+        markersRef.current[v._id]?.openPopup();
       }, 200);
     }
   };
 
-  const centerOnUniversity = () => {
-    if (mapInstanceRef.current && !mapError) {
-      try {
-        mapInstanceRef.current.setView([9.414, 42.036], 14);
-      } catch (error) {
-        console.error('Error centering map:', error);
-      }
-    }
-  };
+  if (loading) return <div className="vehicle-tracking-page"><p style={{padding:'2rem',color:'#94a3b8'}}>Loading fleet...</p></div>;
 
   return (
     <div className="vehicle-tracking-page">
@@ -356,208 +194,168 @@ const VehicleTracking = () => {
           <h1>Vehicle Tracking</h1>
           <p>Real-time fleet monitoring and map overview</p>
         </div>
-        <div className="view-toggle">
-          <button 
-            className={`toggle-btn ${activeView === 'fleet' ? 'active' : ''}`}
-            onClick={() => setActiveView('fleet')}
-          >
-            <List size={16} /> List View
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <button onClick={fetchVehicles} title="Refresh" style={{
+            background:'rgba(99,102,241,0.15)', border:'1px solid rgba(99,102,241,0.3)',
+            color:'#818cf8', borderRadius:8, padding:'0.5rem', cursor:'pointer', display:'flex', alignItems:'center',
+          }}>
+            <RefreshCw size={16} />
           </button>
-          <button 
-            className={`toggle-btn ${activeView === 'map' ? 'active' : ''}`}
-            onClick={() => setActiveView('map')}
-          >
-            <MapIcon size={16} /> Map View
-          </button>
+          <div className="view-toggle">
+            <button className={`toggle-btn ${activeView === 'fleet' ? 'active' : ''}`} onClick={() => setActiveView('fleet')}>
+              <List size={16} /> List View
+            </button>
+            <button className={`toggle-btn ${activeView === 'map' ? 'active' : ''}`} onClick={() => setActiveView('map')}>
+              <MapIcon size={16} /> Map View
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Fleet Statistics Cards */}
+      {/* Stats */}
       <div className="summary-cards">
-        <div className="summary-card">
-          <div className="card-header">
-            <div className="card-icon-wrapper" style={{ color: 'var(--primary-color)', backgroundColor: 'var(--primary-color)15' }}>
-              <Car size={28} />
+        {[
+          { icon: <Car size={28} />, value: stats.total,     label: 'Total Fleet',    color: 'var(--primary-color)' },
+          { icon: <CheckCircle2 size={28} />, value: stats.active,    label: 'Active Trips',   color: 'var(--status-available)' },
+          { icon: <Activity size={28} />, value: stats.available, label: 'Available',      color: 'var(--status-pending)' },
+          { icon: <AlertTriangle size={28} />, value: stats.issues,    label: 'Need Attention', color: 'var(--status-complaint)' },
+        ].map((s, i) => (
+          <div key={i} className="summary-card">
+            <div className="card-header">
+              <div className="card-icon-wrapper" style={{ color: s.color }}>{s.icon}</div>
             </div>
-            <div className="trend-indicator positive">
-              <span>{stats.total}</span>
-            </div>
-          </div>
-          <div className="card-content">
-            <h3>{stats.total}</h3>
-            <p>Total Fleet</p>
-          </div>
-        </div>
-
-        <div className="summary-card">
-          <div className="card-header">
-            <div className="card-icon-wrapper" style={{ color: 'var(--status-available)', backgroundColor: 'var(--status-available)15' }}>
-              <CheckCircle2 size={28} />
-            </div>
-            <div className="trend-indicator positive">
-              <span>{Math.round((stats.active / stats.total) * 100)}%</span>
+            <div className="card-content">
+              <h3>{s.value}</h3>
+              <p>{s.label}</p>
             </div>
           </div>
-          <div className="card-content">
-            <h3>{stats.active}</h3>
-            <p>Active Trips</p>
-          </div>
-        </div>
-
-        <div className="summary-card">
-          <div className="card-header">
-            <div className="card-icon-wrapper" style={{ color: 'var(--status-pending)', backgroundColor: 'var(--status-pending)15' }}>
-              <Activity size={28} />
-            </div>
-            <div className="trend-indicator positive">
-              <span>{Math.round((stats.available / stats.total) * 100)}%</span>
-            </div>
-          </div>
-          <div className="card-content">
-            <h3>{stats.available}</h3>
-            <p>Available</p>
-          </div>
-        </div>
-
-        <div className="summary-card">
-          <div className="card-header">
-            <div className="card-icon-wrapper" style={{ color: 'var(--status-complaint)', backgroundColor: 'var(--status-complaint)15' }}>
-              <AlertTriangle size={28} />
-            </div>
-            <div className="trend-indicator negative">
-              <span>{stats.issues}</span>
-            </div>
-          </div>
-          <div className="card-content">
-            <h3>{stats.issues}</h3>
-            <p>Need Attention</p>
-          </div>
-        </div>
+        ))}
       </div>
 
       <div className="tracking-workspace">
+        {/* ── Fleet List ── */}
         {activeView === 'fleet' && (
           <div className="dashboard-panel">
             <div className="panel-header">
               <h3>Fleet Status</h3>
-              <div className="status-filter">
-                <select 
-                  value={statusFilter} 
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="floating-select"
-                >
-                  <option value="All">All Statuses</option>
-                  <option value="Available">Available</option>
-                  <option value="In Trip">In Trip</option>
-                  <option value="Under Maintenance">Maintenance</option>
-                  <option value="Out of Service">Out of Service</option>
-                </select>
-              </div>
+              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="floating-select">
+                <option value="All">All Statuses</option>
+                <option value="available">Available</option>
+                <option value="in-use">In Trip</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="out-of-service">Out of Service</option>
+              </select>
             </div>
 
             <div className="vehicle-cards-grid">
-              {filteredVehicles.map((vehicle) => (
-                <div 
-                  key={vehicle.id} 
-                  className={`fleet-card ${selectedVehicle?.id === vehicle.id ? 'selected' : ''}`}
-                  onClick={() => handleVehicleClick(vehicle)}
-                >
-                  <div className="fc-header">
-                    <h4>{vehicle.plate}</h4>
-                    <span 
-                      className="status-badge"
-                      style={{ 
-                        backgroundColor: `${getStatusColor(vehicle.vehicleStatus)}15`,
-                        color: getStatusColor(vehicle.vehicleStatus)
-                      }}
-                    >
-                      {vehicle.vehicleStatus === 'In Trip' && <span className="live-dot" style={{backgroundColor: getStatusColor(vehicle.vehicleStatus)}}></span>}
-                      {vehicle.vehicleStatus}
-                    </span>
-                  </div>
-                  
-                  <div className="fc-body">
-                    <div className="fc-row">
-                      <User size={14} className="fc-icon" />
-                      <span>{vehicle.driver}</span>
+              {filtered.map(v => {
+                const c = liveCoords[v._id] || {};
+                const color = STATUS_COLOR[v.status] || '#6b7280';
+                return (
+                  <div
+                    key={v._id}
+                    className={`fleet-card ${selectedVehicle?._id === v._id ? 'selected' : ''}`}
+                    onClick={() => handleVehicleClick(v)}
+                  >
+                    <div className="fc-header">
+                      <h4>{v.plateNumber} – {v.model}</h4>
+                      <span className="status-badge" style={{ background: `${color}22`, color }}>
+                        {v.status === 'in-use' && <span className="live-dot" style={{ background: color }}></span>}
+                        {STATUS_LABEL[v.status]}
+                      </span>
                     </div>
-                    <div className="fc-row">
-                      <MapPin size={14} className="fc-icon" />
-                      <span>{vehicle.currentLocation}</span>
-                    </div>
-                    <div className="fc-row">
-                      <Activity size={14} className="fc-icon" />
-                      <span>{vehicle.tripStatus}</span>
-                    </div>
-                    {vehicle.speed > 0 && (
+                    <div className="fc-body">
+                      <div className="fc-row"><User size={14} className="fc-icon" /><span>{v.assignedDriverName || '—'}</span></div>
+                      <div className="fc-row"><MapPin size={14} className="fc-icon" /><span>{v.location?.name || 'Haramaya University'}</span></div>
+                      <div className="fc-row"><Car size={14} className="fc-icon" /><span>{v.type} · {v.capacity} seats · {v.color || ''}</span></div>
+                      {v.status === 'in-use' && (
+                        <div className="fc-row"><Navigation size={14} className="fc-icon" /><span>{c.speed ?? v.speed} km/h → {v.destination || '—'}</span></div>
+                      )}
                       <div className="fc-row">
-                        <Navigation size={14} className="fc-icon" />
-                        <span>{vehicle.speed} km/h</span>
+                        <Activity size={14} className="fc-icon" />
+                        <span>Fuel: {v.fuelLevel}% · {v.mileage?.toLocaleString()} km</span>
                       </div>
-                    )}
+                    </div>
+                    <div className="fc-footer">
+                      <span className="timestamp"><Clock size={12} /> {new Date().toLocaleTimeString()}</span>
+                      <button className="btn-locate" onClick={e => { e.stopPropagation(); handleVehicleClick(v); }}>
+                        <MapPin size={14} /> Locate
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="fc-footer">
-                    <span className="timestamp"><Clock size={12} /> {vehicle.lastUpdate}</span>
-                    <button 
-                      className="btn-locate"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleVehicleClick(vehicle);
-                      }}
-                    >
-                      <MapPin size={14} /> Locate
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
+              {filtered.length === 0 && (
+                <p style={{ color: '#94a3b8', padding: '2rem' }}>No vehicles match the filter.</p>
+              )}
             </div>
           </div>
         )}
 
+        {/* ── Map View ── */}
         {activeView === 'map' && (
           <div className="map-view-panel">
             <div className="map-sidebar">
               <div className="map-sidebar-header">
                 <h3>Live Map</h3>
-                <button className="btn-center" onClick={centerOnUniversity}>
-                   <MapPin size={14} /> Center Campus
+                <button className="btn-center" onClick={() => mapInstanceRef.current?.setView([9.4140, 42.0360], 13)}>
+                  <MapPin size={14} /> Campus
                 </button>
               </div>
               <div className="legend">
                 <h4>Legend</h4>
-                <div className="legend-item"><span className="dot" style={{background: 'var(--status-available)'}}></span> Available</div>
-                <div className="legend-item"><span className="dot" style={{background: 'var(--primary-color)'}}></span> In Trip</div>
-                <div className="legend-item"><span className="dot" style={{background: 'var(--status-pending)'}}></span> Maintenance</div>
-                <div className="legend-item"><span className="dot" style={{background: 'var(--status-complaint)'}}></span> Offline</div>
+                {Object.entries(STATUS_LABEL).map(([k, label]) => (
+                  <div key={k} className="legend-item">
+                    <span className="dot" style={{ background: STATUS_COLOR[k] }}></span> {label}
+                  </div>
+                ))}
+              </div>
+              {/* Vehicle list in sidebar */}
+              <div style={{ marginTop: 12, overflowY: 'auto', maxHeight: 340 }}>
+                {vehicles.map(v => {
+                  const c = liveCoords[v._id] || {};
+                  const color = STATUS_COLOR[v.status] || '#6b7280';
+                  return (
+                    <div
+                      key={v._id}
+                      onClick={() => handleVehicleClick(v)}
+                      style={{
+                        padding: '10px 12px', cursor: 'pointer', borderRadius: 8, marginBottom: 6,
+                        background: selectedVehicle?._id === v._id ? 'rgba(99,102,241,0.1)' : 'transparent',
+                        border: `1px solid ${selectedVehicle?._id === v._id ? '#818cf8' : 'transparent'}`,
+                      }}
+                    >
+                      <div style={{ fontWeight: 600, fontSize: 13, color: '#e2e8f0' }}>{v.plateNumber}</div>
+                      <div style={{ fontSize: 12, color: '#94a3b8' }}>{v.model}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                        <span style={{ fontSize: 11, color, fontWeight: 600 }}>{STATUS_LABEL[v.status]}</span>
+                        {v.status === 'in-use' && <span style={{ fontSize: 11, color: '#94a3b8' }}>{c.speed ?? 0} km/h</span>}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
               {selectedVehicle && (
                 <div className="selected-info-panel">
-                  <h4>Selected Vehicle</h4>
-                  <div className="sip-plate">{selectedVehicle.plate}</div>
-                  <div className="sip-detail"><strong>Driver:</strong> {selectedVehicle.driver}</div>
-                  <div className="sip-detail"><strong>Speed:</strong> {selectedVehicle.speed} km/h</div>
-                  <div className="sip-detail"><strong>Status:</strong> {selectedVehicle.tripStatus}</div>
+                  <h4>Selected</h4>
+                  <div className="sip-plate">{selectedVehicle.plateNumber}</div>
+                  <div className="sip-detail"><strong>Model:</strong> {selectedVehicle.model}</div>
+                  <div className="sip-detail"><strong>Driver:</strong> {selectedVehicle.assignedDriverName || '—'}</div>
+                  <div className="sip-detail"><strong>Speed:</strong> {liveCoords[selectedVehicle._id]?.speed ?? 0} km/h</div>
+                  <div className="sip-detail"><strong>Fuel:</strong> {selectedVehicle.fuelLevel}%</div>
+                  {selectedVehicle.destination && <div className="sip-detail"><strong>To:</strong> {selectedVehicle.destination}</div>}
                 </div>
               )}
             </div>
+
             <div className="map-canvas-container">
               {mapError ? (
                 <div className="map-error-overlay">
                   <div className="error-content">
                     <AlertTriangle size={48} color="#ef4444" />
                     <h3>Map Loading Failed</h3>
-                    <p>Unable to load the map. Please check your internet connection and try refreshing the page.</p>
-                    <button 
-                      className="retry-btn"
-                      onClick={() => {
-                        setMapError(false);
-                        setMapLoaded(false);
-                        window.location.reload();
-                      }}
-                    >
-                      Retry
-                    </button>
+                    <p>Check your internet connection and refresh.</p>
+                    <button className="retry-btn" onClick={() => window.location.reload()}>Retry</button>
                   </div>
                 </div>
               ) : (
@@ -566,7 +364,7 @@ const VehicleTracking = () => {
                   {!mapLoaded && (
                     <div className="map-loading-overlay">
                       <div className="spinner"></div>
-                      <p>Loading Maps...</p>
+                      <p>Loading Map...</p>
                     </div>
                   )}
                 </>
@@ -577,6 +375,4 @@ const VehicleTracking = () => {
       </div>
     </div>
   );
-};
-
-export default VehicleTracking;
+}

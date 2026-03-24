@@ -1009,3 +1009,16 @@
     align-self: flex-start;
   }
 }
+
+.refresh-btn {
+  background: rgba(99,102,241,0.15);
+  border: 1px solid rgba(99,102,241,0.3);
+  color: #818cf8;
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background 0.2s;
+}
+.refresh-btn:hover { background: rgba(99,102,241,0.3); }

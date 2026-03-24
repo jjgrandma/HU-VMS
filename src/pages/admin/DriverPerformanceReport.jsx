@@ -1,175 +1,110 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getDrivers, getRequests } from '../../api/api';
 import ExportButton from '../../components/ExportButton';
 import './adminTheme.css';
 import './driverPerformanceReport.css';
 
 const DriverPerformanceReport = () => {
-  const [performance] = useState([
-    { id: 1, driverName: 'John Doe', totalTrips: 45, completedOnTime: 42, lateTrips: 3, rating: 4.8, complaints: 2, commendations: 8, efficiency: '93%' },
-    { id: 2, driverName: 'Jane Smith', totalTrips: 38, completedOnTime: 35, lateTrips: 3, rating: 4.6, complaints: 3, commendations: 6, efficiency: '92%' },
-    { id: 3, driverName: 'Mike Johnson', totalTrips: 42, completedOnTime: 40, lateTrips: 2, rating: 4.9, complaints: 1, commendations: 10, efficiency: '95%' },
-    { id: 4, driverName: 'Sarah Williams', totalTrips: 35, completedOnTime: 31, lateTrips: 4, rating: 4.5, complaints: 4, commendations: 5, efficiency: '89%' },
-    { id: 5, driverName: 'David Brown', totalTrips: 40, completedOnTime: 38, lateTrips: 2, rating: 4.7, complaints: 2, commendations: 7, efficiency: '95%' },
-    { id: 6, driverName: 'Emily Davis', totalTrips: 33, completedOnTime: 29, lateTrips: 4, rating: 4.4, complaints: 5, commendations: 4, efficiency: '88%' },
-    { id: 7, driverName: 'Robert Wilson', totalTrips: 37, completedOnTime: 34, lateTrips: 3, rating: 4.6, complaints: 3, commendations: 6, efficiency: '92%' },
-    { id: 8, driverName: 'Lisa Anderson', totalTrips: 41, completedOnTime: 39, lateTrips: 2, rating: 4.8, complaints: 1, commendations: 9, efficiency: '95%' }
-  ]);
-
-  const [searchTerm, setSearchTerm] = useState('');
+  const [rows, setRows]         = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [searchTerm, setSearchTerm]   = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
 
-  const filteredPerformance = performance.filter(driver =>
-    driver.driverName.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => {
+    Promise.all([getDrivers(), getRequests()])
+      .then(([drivers, requests]) => {
+        const data = drivers.map(d => {
+          const driverTrips = requests.filter(r => r.driver?._id === d._id || r.driver === d._id);
+          const completed   = driverTrips.filter(r => r.status === 'completed').length;
+          const total       = driverTrips.length;
+          const efficiency  = total > 0 ? Math.round((completed / total) * 100) + '%' : '—';
+          return {
+            _id: d._id,
+            name: d.name,
+            totalTrips: total,
+            completed,
+            late: total - completed,
+            status: d.status,
+            efficiency,
+          };
+        });
+        setRows(data);
+      })
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = rows.filter(r =>
+    r.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredPerformance.length / itemsPerPage);
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentPerformance = filteredPerformance.slice(startIndex, endIndex);
-
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
-  };
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  const handleItemsPerPageChange = (e) => {
-    setItemsPerPage(Number(e.target.value));
-    setCurrentPage(1);
-  };
-
-  const getRatingClass = (rating) => {
-    if (rating >= 4.7) return 'rating-excellent';
-    if (rating >= 4.5) return 'rating-good';
-    return 'rating-average';
-  };
+  const current    = filtered.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <div className="driver-performance-container">
       <div className="report-header">
         <h1>Driver Performance Report</h1>
-        <ExportButton 
-          data={filteredPerformance}
-          filename="driver_performance_report"
-          reportTitle="Driver Performance Report"
-        />
+        <ExportButton data={filtered} filename="driver_performance_report" reportTitle="Driver Performance Report" />
       </div>
 
       <div className="controls-bar">
-        <input
-          type="text"
-          placeholder="Search by driver name..."
-          value={searchTerm}
-          onChange={handleSearchChange}
-          className="search-input"
-        />
+        <input type="text" placeholder="Search by driver name..."
+          value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+          className="search-input" />
       </div>
 
-      <div className="table-container">
-        <table className="performance-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Driver Name</th>
-              <th>Total Trips</th>
-              <th>On Time</th>
-              <th>Late</th>
-              <th>Rating</th>
-              <th>Complaints</th>
-              <th>Commendations</th>
-              <th>Efficiency</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentPerformance.map(driver => (
-              <tr key={driver.id}>
-                <td>{driver.id}</td>
-                <td>{driver.driverName}</td>
-                <td>{driver.totalTrips}</td>
-                <td><span className="badge-success">{driver.completedOnTime}</span></td>
-                <td><span className="badge-warning">{driver.lateTrips}</span></td>
-                <td>
-                  <span className={`rating-badge ${getRatingClass(driver.rating)}`}>
-                    ⭐ {driver.rating}
-                  </span>
-                </td>
-                <td><span className="badge-danger">{driver.complaints}</span></td>
-                <td><span className="badge-info">{driver.commendations}</span></td>
-                <td><span className="efficiency-badge">{driver.efficiency}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {filteredPerformance.length === 0 && (
-        <div className="no-results">No performance data found</div>
-      )}
-
-      {/* Compact Pagination */}
-      {filteredPerformance.length > 0 && (
-        <div className="pagination-compact">
-          <div className="pagination-info-compact">
-            <span>
-              {startIndex + 1}-{Math.min(endIndex, filteredPerformance.length)} of {filteredPerformance.length}
-            </span>
-            <select 
-              value={itemsPerPage} 
-              onChange={handleItemsPerPageChange}
-              className="items-per-page-compact"
-            >
-              <option value="5">5</option>
-              <option value="10">10</option>
-              <option value="20">20</option>
-              <option value="50">50</option>
-            </select>
+      {loading ? (
+        <p style={{ textAlign:'center', color:'#94a3b8', padding:40 }}>Loading...</p>
+      ) : (
+        <>
+          <div className="table-container">
+            <table className="performance-table">
+              <thead>
+                <tr>
+                  <th>#</th><th>Driver Name</th><th>Total Trips</th>
+                  <th>Completed</th><th>Incomplete</th><th>Efficiency</th><th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {current.map((d, i) => (
+                  <tr key={d._id}>
+                    <td>{startIndex + i + 1}</td>
+                    <td>{d.name}</td>
+                    <td>{d.totalTrips}</td>
+                    <td><span className="badge-success">{d.completed}</span></td>
+                    <td><span className="badge-warning">{d.late}</span></td>
+                    <td><span className="efficiency-badge">{d.efficiency}</span></td>
+                    <td><span className={`status-badge status-${d.status}`}>{d.status}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {filtered.length === 0 && <div className="no-results">No performance data found</div>}
           </div>
 
-          <div className="pagination-controls-compact">
-            <button
-              className="pagination-btn-compact"
-              onClick={() => handlePageChange(1)}
-              disabled={currentPage === 1}
-              title="First Page"
-            >
-              ⟪
-            </button>
-            <button
-              className="pagination-btn-compact"
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              title="Previous Page"
-            >
-              ‹
-            </button>
-
-            <span className="page-indicator-compact">
-              {currentPage} / {totalPages}
-            </span>
-
-            <button
-              className="pagination-btn-compact"
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              title="Next Page"
-            >
-              ›
-            </button>
-            <button
-              className="pagination-btn-compact"
-              onClick={() => handlePageChange(totalPages)}
-              disabled={currentPage === totalPages}
-              title="Last Page"
-            >
-              ⟫
-            </button>
-          </div>
-        </div>
+          {filtered.length > 0 && (
+            <div className="pagination-compact">
+              <div className="pagination-info-compact">
+                <span>{startIndex + 1}–{Math.min(startIndex + itemsPerPage, filtered.length)} of {filtered.length}</span>
+                <select value={itemsPerPage}
+                  onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                  className="items-per-page-compact">
+                  {[5,10,20,50].map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+              <div className="pagination-controls-compact">
+                <button className="pagination-btn-compact" onClick={() => setCurrentPage(1)} disabled={currentPage===1}>⟪</button>
+                <button className="pagination-btn-compact" onClick={() => setCurrentPage(p=>p-1)} disabled={currentPage===1}>‹</button>
+                <span className="page-indicator-compact">{currentPage} / {totalPages}</span>
+                <button className="pagination-btn-compact" onClick={() => setCurrentPage(p=>p+1)} disabled={currentPage===totalPages}>›</button>
+                <button className="pagination-btn-compact" onClick={() => setCurrentPage(totalPages)} disabled={currentPage===totalPages}>⟫</button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -1,485 +1,473 @@
-import { useState, useEffect } from 'react';
-import { getDrivers, deleteDriver, updateDriver } from '../../api/api';
+import { useState, useEffect, useRef } from 'react';
+import { getDrivers, createDriver, deleteDriver, updateDriver } from '../../api/api';
 import './adminTheme.css';
 import './manageDrivers.css';
 
-const ManageDrivers = () => {
-  const [drivers, setDrivers] = useState([]);
-  const [loading, setLoading] = useState(true);
+const EMPTY = {
+  name: '', licenseNumber: '', licenseExpiry: '',
+  phone: '', employeeId: '', dateOfBirth: '',
+};
+
+const Toast = ({ msg, type }) => msg ? (
+  <div style={{
+    position: 'fixed', top: 20, right: 20, zIndex: 9999,
+    background: type === 'error' ? '#ef4444' : '#22c55e',
+    color: '#fff', padding: '10px 20px', borderRadius: 10,
+    fontWeight: 600, fontSize: 14, boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+  }}>{msg}</div>
+) : null;
+
+const Field = ({ label, value }) => (
+  <div style={{ marginBottom: 14 }}>
+    <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>{label}</div>
+    <div style={{ fontSize: 14, color: '#1e293b', fontWeight: 500, wordBreak: 'break-all' }}>{value || '—'}</div>
+  </div>
+);
+
+const ActionsMenu = ({ driver, onAction }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef();
 
   useEffect(() => {
-    getDrivers()
-      .then(data => setDrivers(data))
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false));
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
   }, []);
 
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [licenseDocument, setLicenseDocument] = useState(null);
-  const [idDocument, setIdDocument] = useState(null);
-  const [newDriver, setNewDriver] = useState({
-    fullname: '',
-    licenseNumber: '',
-    phone: '',
-    email: '',
-    address: '',
-    idNumber: '',
-    idType: 'National ID',
-    dateOfBirth: '',
-    licenseExpiryDate: '',
-    username: '',
-    password: '',
-    confirmPassword: ''
-  });
-
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this driver?')) {
-      try {
-        await deleteDriver(id);
-        setDrivers(drivers.filter(d => d._id !== id));
-      } catch (err) {
-        alert('Failed to delete: ' + err.message);
-      }
-    }
-  };
-
-  const handleToggleActive = async (id) => {
-    const driver = drivers.find(d => d._id === id);
-    const newState = driver.isActive === false ? true : false;
-    try {
-      const updated = await updateDriver(id, { isActive: newState });
-      setDrivers(drivers.map(d => d._id === id ? updated : d));
-    } catch (err) {
-      alert('Failed to update driver: ' + err.message);
-    }
-  };
-
-  const handleLicenseUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('File size should be less than 5MB');
-        return;
-      }
-      setLicenseDocument(file);
-    }
-  };
-
-  const handleIdUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('File size should be less than 5MB');
-        return;
-      }
-      setIdDocument(file);
-    }
-  };
-
-  const handleAddDriver = (e) => {
-    e.preventDefault();
-    
-    // Validate password match
-    if (newDriver.password !== newDriver.confirmPassword) {
-      alert('Passwords do not match!');
-      return;
-    }
-
-    // Validate password strength
-    if (newDriver.password.length < 6) {
-      alert('Password must be at least 6 characters long!');
-      return;
-    }
-
-    // Validate documents
-    if (!licenseDocument) {
-      alert('Please upload driving license document!');
-      return;
-    }
-
-    if (!idDocument) {
-      alert('Please upload ID document!');
-      return;
-    }
-
-    const driver = {
-      id: drivers.length + 1,
-      fullname: newDriver.fullname,
-      licenseNumber: newDriver.licenseNumber,
-      phone: newDriver.phone,
-      status: 'Active',
-      vehicle: 'Unassigned',
-      totalTrips: 0
-    };
-    
-    setDrivers([...drivers, driver]);
-    setNewDriver({ 
-      fullname: '', 
-      licenseNumber: '', 
-      phone: '', 
-      email: '', 
-      address: '',
-      idNumber: '',
-      idType: 'National ID',
-      dateOfBirth: '',
-      licenseExpiryDate: '',
-      username: '',
-      password: '',
-      confirmPassword: ''
-    });
-    setLicenseDocument(null);
-    setIdDocument(null);
-    setShowAddForm(false);
-    alert('Driver added successfully with username: ' + newDriver.username);
-  };
-
-  const filteredDrivers = drivers.filter(driver =>
-    driver.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    driver.licenseNumber?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const activeDrivers = drivers.filter(d => d.status === 'available').length;
-
-  const getStatusClass = (status) => {
-    switch(status) {
-      case 'Active': return 'status-active';
-      case 'On Leave': return 'status-leave';
-      default: return '';
-    }
-  };
+  const act = (a) => { setOpen(false); onAction(a, driver); };
 
   return (
-    <div className="manage-drivers-container">
-      <div className="header-section">
-        <h1>Manage Drivers</h1>
-        <button 
-          className="btn-add-driver"
-          onClick={() => setShowAddForm(!showAddForm)}
-        >
-          {showAddForm ? 'Cancel' : '+ Add Driver'}
-        </button>
-      </div>
-
-      <div className="driver-stats">
-        <div className="stat-card">
-          <div className="stat-icon">👥</div>
-          <div className="stat-content">
-            <h3>{drivers.length}</h3>
-            <p>Total Drivers</p>
-          </div>
+    <div className="mu-actions-wrap" ref={ref}>
+      <button className="mu-actions-btn" onClick={() => setOpen(o => !o)}>Actions ▾</button>
+      {open && (
+        <div className="mu-actions-menu">
+          <button className="mu-menu-item" onClick={() => act('view')}>👁️ View Details</button>
+          <button className="mu-menu-item" onClick={() => act('edit')}>✏️ Edit Driver</button>
+          <div className="mu-menu-divider" />
+          {driver.isActive !== false
+            ? <button className="mu-menu-item mu-item-warn" onClick={() => act('deactivate')}>� Deactivate</button>
+            : <button className="mu-menu-item mu-item-success" onClick={() => act('activate')}>✅ Activate</button>
+          }
+          <div className="mu-menu-divider" />
+          <button className="mu-menu-item mu-item-danger" onClick={() => act('delete')}>🗑️ Delete Driver</button>
         </div>
-
-        <div className="stat-card">
-          <div className="stat-icon">✓</div>
-          <div className="stat-content">
-            <h3>{activeDrivers}</h3>
-            <p>Active Drivers</p>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon">🚗</div>
-          <div className="stat-content">
-            <h3>{drivers.filter(d => d.vehicle !== 'Unassigned').length}</h3>
-            <p>Assigned Vehicles</p>
-          </div>
-        </div>
-      </div>
-
-      {showAddForm && (
-        <div className="add-driver-form">
-          <h2>📝 Add New Driver</h2>
-          <form onSubmit={handleAddDriver}>
-            {/* Personal Information Section */}
-            <div className="form-section">
-              <h3>Personal Information</h3>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Full Name *</label>
-                  <input
-                    type="text"
-                    value={newDriver.fullname}
-                    onChange={(e) => setNewDriver({...newDriver, fullname: e.target.value})}
-                    placeholder="John Doe"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Date of Birth *</label>
-                  <input
-                    type="date"
-                    value={newDriver.dateOfBirth}
-                    onChange={(e) => setNewDriver({...newDriver, dateOfBirth: e.target.value})}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Phone *</label>
-                  <input
-                    type="tel"
-                    value={newDriver.phone}
-                    onChange={(e) => setNewDriver({...newDriver, phone: e.target.value})}
-                    placeholder="+251 912 345 678"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Email *</label>
-                  <input
-                    type="email"
-                    value={newDriver.email}
-                    onChange={(e) => setNewDriver({...newDriver, email: e.target.value})}
-                    placeholder="driver@example.com"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Address *</label>
-                <input
-                  type="text"
-                  value={newDriver.address}
-                  onChange={(e) => setNewDriver({...newDriver, address: e.target.value})}
-                  placeholder="Street, City, Region"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* ID Information Section */}
-            <div className="form-section">
-              <h3>ID Information</h3>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>ID Type *</label>
-                  <select
-                    value={newDriver.idType}
-                    onChange={(e) => setNewDriver({...newDriver, idType: e.target.value})}
-                    required
-                  >
-                    <option value="National ID">National ID</option>
-                    <option value="Passport">Passport</option>
-                    <option value="Driver License">Driver License</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>ID Number *</label>
-                  <input
-                    type="text"
-                    value={newDriver.idNumber}
-                    onChange={(e) => setNewDriver({...newDriver, idNumber: e.target.value})}
-                    placeholder="ID-123456789"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Upload ID Document * (PDF, JPG, PNG - Max 5MB)</label>
-                <div className="file-upload-wrapper">
-                  <input
-                    type="file"
-                    id="id-document"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={handleIdUpload}
-                    className="file-input"
-                    required
-                  />
-                  <label htmlFor="id-document" className="file-label">
-                    <span className="file-icon">📄</span>
-                    <span className="file-text">
-                      {idDocument ? idDocument.name : 'Choose ID Document'}
-                    </span>
-                  </label>
-                  {idDocument && (
-                    <span className="file-success">✓ Uploaded</span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* License Information Section */}
-            <div className="form-section">
-              <h3>Driving License Information</h3>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>License Number *</label>
-                  <input
-                    type="text"
-                    value={newDriver.licenseNumber}
-                    onChange={(e) => setNewDriver({...newDriver, licenseNumber: e.target.value})}
-                    placeholder="DL-123456"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>License Expiry Date *</label>
-                  <input
-                    type="date"
-                    value={newDriver.licenseExpiryDate}
-                    onChange={(e) => setNewDriver({...newDriver, licenseExpiryDate: e.target.value})}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Upload Driving License Document * (PDF, JPG, PNG - Max 5MB)</label>
-                <div className="file-upload-wrapper">
-                  <input
-                    type="file"
-                    id="license-document"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={handleLicenseUpload}
-                    className="file-input"
-                    required
-                  />
-                  <label htmlFor="license-document" className="file-label">
-                    <span className="file-icon">🪪</span>
-                    <span className="file-text">
-                      {licenseDocument ? licenseDocument.name : 'Choose License Document'}
-                    </span>
-                  </label>
-                  {licenseDocument && (
-                    <span className="file-success">✓ Uploaded</span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Account Credentials Section */}
-            <div className="form-section">
-              <h3>Account Credentials</h3>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Username *</label>
-                  <input
-                    type="text"
-                    value={newDriver.username}
-                    onChange={(e) => setNewDriver({...newDriver, username: e.target.value})}
-                    placeholder="driver_username"
-                    minLength="4"
-                    required
-                  />
-                  <small className="field-hint">Minimum 4 characters</small>
-                </div>
-
-                <div className="form-group">
-                  <label>Password *</label>
-                  <input
-                    type="password"
-                    value={newDriver.password}
-                    onChange={(e) => setNewDriver({...newDriver, password: e.target.value})}
-                    placeholder="••••••••"
-                    minLength="6"
-                    required
-                  />
-                  <small className="field-hint">Minimum 6 characters</small>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Confirm Password *</label>
-                <input
-                  type="password"
-                  value={newDriver.confirmPassword}
-                  onChange={(e) => setNewDriver({...newDriver, confirmPassword: e.target.value})}
-                  placeholder="••••••••"
-                  minLength="6"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="form-actions">
-              <button type="submit" className="btn-submit">
-                ✓ Add Driver
-              </button>
-              <button 
-                type="button" 
-                className="btn-cancel"
-                onClick={() => setShowAddForm(false)}
-              >
-                ✕ Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      <div className="controls-bar">
-        <input
-          type="text"
-          placeholder="Search by name or license number..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-input"
-        />
-      </div>
-
-      <div className="table-container">
-        <table className="drivers-table">
-          <thead>
-            <tr>
-              <th>Full Name</th>
-              <th>License Number</th>
-              <th>Phone</th>
-              <th>Status</th>
-              <th>Account</th>
-              <th>Assigned Vehicle</th>
-              <th>Total Trips</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredDrivers.map(driver => (
-              <tr key={driver._id}>
-                <td>{driver.name}</td>
-                <td>{driver.licenseNumber || '-'}</td>
-                <td>{driver.phone || '-'}</td>
-                <td>
-                  <span className={`status-badge ${driver.status === 'available' ? 'status-active' : 'status-leave'}`}>
-                    {driver.status}
-                  </span>
-                </td>
-                <td>
-                  <span className={`status-badge ${driver.isActive !== false ? 'status-active' : 'status-inactive'}`}>
-                    {driver.isActive !== false ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                <td>{driver.assignedVehiclePlate || 'Unassigned'}</td>
-                <td>{driver.totalTrips || 0}</td>
-                <td>
-                  <div className="action-buttons">
-                    <button
-                      className={driver.isActive !== false ? 'btn-lock' : 'btn-unlock'}
-                      onClick={() => handleToggleActive(driver._id)}
-                    >
-                      {driver.isActive !== false ? '🔒 Deactivate' : '🔓 Activate'}
-                    </button>
-                    <button className="btn-delete" onClick={() => handleDelete(driver._id)}>Delete</button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {filteredDrivers.length === 0 && (
-        <div className="no-results">No drivers found</div>
       )}
     </div>
   );
 };
 
-export default ManageDrivers;
+export default function ManageDrivers() {
+  const [drivers, setDrivers]   = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm]         = useState(EMPTY);
+  const [saving, setSaving]     = useState(false);
+  const [toast, setToast]       = useState({ msg: '', type: 'success' });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [modal, setModal]       = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [editSaving, setEditSaving] = useState(false);
+
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast({ msg: '', type: 'success' }), 3000);
+  };
+
+  useEffect(() => {
+    getDrivers().then(setDrivers).catch(console.error).finally(() => setLoading(false));
+  }, []);
+
+  const set = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  const closeModal = () => setModal(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim())          return showToast('Full name is required.', 'error');
+    if (!form.licenseNumber.trim()) return showToast('License number is required.', 'error');
+    if (!form.phone.trim())         return showToast('Phone is required.', 'error');
+    setSaving(true);
+    try {
+      const created = await createDriver({
+        name: form.name.trim(), licenseNumber: form.licenseNumber.trim(),
+        licenseExpiry: form.licenseExpiry, phone: form.phone.trim(),
+        employeeId: form.employeeId.trim() || undefined, status: 'available',
+      });
+      setDrivers(d => [created, ...d]);
+      setForm(EMPTY); setShowForm(false);
+      showToast(`Driver "${created.name}" added successfully`);
+    } catch (err) {
+      showToast(err.message || 'Failed to add driver', 'error');
+    } finally { setSaving(false); }
+  };
+
+  const handleAction = (action, driver) => {
+    if (action === 'view') {
+      setModal({ type: 'view', driver });
+      return;
+    }
+    if (action === 'edit') {
+      setEditForm({
+        name:          driver.name          || '',
+        phone:         driver.phone         || '',
+        licenseNumber: driver.licenseNumber || '',
+        licenseExpiry: driver.licenseExpiry || '',
+        employeeId:    driver.employeeId    || '',
+        status:        driver.status        || 'available',
+      });
+      setModal({ type: 'edit', driver });
+      return;
+    }
+    if (action === 'activate') {
+      updateDriver(driver._id, { isActive: true })
+        .then(u => { setDrivers(ds => ds.map(d => d._id === u._id ? u : d)); showToast(`${driver.name} activated`); })
+        .catch(err => showToast(err.message, 'error'));
+      return;
+    }
+    if (action === 'deactivate') { setModal({ type: 'deactivate', driver }); return; }
+    if (action === 'delete')     { setModal({ type: 'delete',     driver }); return; }
+  };
+
+  const handleDeactivate = async () => {
+    try {
+      const u = await updateDriver(modal.driver._id, { isActive: false });
+      setDrivers(ds => ds.map(d => d._id === u._id ? u : d));
+      showToast(`${modal.driver.name} deactivated`);
+      closeModal();
+    } catch (err) { showToast(err.message, 'error'); }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteDriver(modal.driver._id);
+      setDrivers(ds => ds.filter(d => d._id !== modal.driver._id));
+      showToast(`Driver "${modal.driver.name}" deleted`);
+      closeModal();
+    } catch (err) { showToast(err.message, 'error'); }
+  };
+
+  const handleEditSave = async () => {
+    if (!editForm.name.trim()) return showToast('Name is required', 'error');
+    setEditSaving(true);
+    try {
+      const updated = await updateDriver(modal.driver._id, {
+        name:          editForm.name.trim(),
+        phone:         editForm.phone.trim(),
+        licenseNumber: editForm.licenseNumber.trim(),
+        licenseExpiry: editForm.licenseExpiry,
+        employeeId:    editForm.employeeId.trim(),
+        status:        editForm.status,
+      });
+      setDrivers(ds => ds.map(d => d._id === updated._id ? updated : d));
+      showToast(`${updated.name} updated successfully`);
+      closeModal();
+    } catch (err) { showToast(err.message, 'error'); }
+    finally { setEditSaving(false); }
+  };
+
+  const filtered = drivers.filter(d =>
+    d.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    d.licenseNumber?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const statusColor = (s) =>
+    s === 'available' ? 'status-active' : s === 'on-trip' ? 'status-leave' : 'status-inactive';
+
+  const inp = { minHeight: 'unset', height: 40, resize: 'none' };
+  const lbl = { fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 };
+
+  return (
+    <div className="manage-drivers-container">
+      <Toast msg={toast.msg} type={toast.type} />
+
+      <div className="header-section">
+        <h1>Manage Drivers</h1>
+        <button className="btn-add-driver" onClick={() => { setShowForm(s => !s); setForm(EMPTY); }}>
+          {showForm ? '✕ Cancel' : '+ Add Driver'}
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div className="driver-stats">
+        <div className="stat-card">
+          <div className="stat-icon">👥</div>
+          <div className="stat-content"><h3>{drivers.length}</h3><p>Total Drivers</p></div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">✓</div>
+          <div className="stat-content"><h3>{drivers.filter(d => d.status === 'available').length}</h3><p>Available</p></div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">🚗</div>
+          <div className="stat-content"><h3>{drivers.filter(d => d.status === 'on-trip').length}</h3><p>On Trip</p></div>
+        </div>
+      </div>
+
+      {/* Add Driver Form */}
+      {showForm && (
+        <div className="add-driver-form">
+          <h2>📝 Add New Driver</h2>
+          <form onSubmit={handleSubmit}>
+            <div className="form-section">
+              <h3>Personal Information</h3>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Full Name <span style={{ color: '#ef4444' }}>*</span></label>
+                  <input type="text" name="name" value={form.name} onChange={set} placeholder="e.g. Abebe Kebede" required />
+                </div>
+                <div className="form-group">
+                  <label>Phone <span style={{ color: '#ef4444' }}>*</span></label>
+                  <input type="tel" name="phone" value={form.phone} onChange={set} placeholder="+251 912 345 678" required />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Employee ID</label>
+                  <input type="text" name="employeeId" value={form.employeeId} onChange={set} placeholder="e.g. DRV-0042" />
+                </div>
+                <div className="form-group">
+                  <label>Date of Birth</label>
+                  <input type="date" name="dateOfBirth" value={form.dateOfBirth} onChange={set} />
+                </div>
+              </div>
+            </div>
+            <div className="form-section">
+              <h3>Driving License</h3>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>License Number <span style={{ color: '#ef4444' }}>*</span></label>
+                  <input type="text" name="licenseNumber" value={form.licenseNumber} onChange={set} placeholder="e.g. DL-123456" required />
+                </div>
+                <div className="form-group">
+                  <label>License Expiry Date</label>
+                  <input type="date" name="licenseExpiry" value={form.licenseExpiry} onChange={set} />
+                </div>
+              </div>
+            </div>
+            <div className="form-actions">
+              <button type="submit" className="btn-submit" disabled={saving}>{saving ? 'Saving...' : '✓ Save Driver'}</button>
+              <button type="button" className="btn-cancel" onClick={() => { setShowForm(false); setForm(EMPTY); }}>✕ Cancel</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Search */}
+      <div className="controls-bar">
+        <input type="text" placeholder="Search by name or license number..."
+          value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="search-input" />
+      </div>
+
+      {/* Table */}
+      <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        {loading ? <p style={{ textAlign: 'center', color: '#94a3b8', padding: 40 }}>Loading...</p> : (
+          <table className="drivers-table" style={{ minWidth: 860 }}>
+            <thead>
+              <tr>
+                <th>#</th><th>Full Name</th><th>License No.</th><th>Expiry</th>
+                <th>Phone</th><th>Trip Status</th><th>Account</th><th>Vehicle</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((d, i) => (
+                <tr key={d._id}>
+                  <td>{i + 1}</td>
+                  <td>{d.name}</td>
+                  <td>{d.licenseNumber || '—'}</td>
+                  <td>{d.licenseExpiry || '—'}</td>
+                  <td>{d.phone || '—'}</td>
+                  <td><span className={`status-badge ${statusColor(d.status)}`}>{d.status}</span></td>
+                  <td>
+                    <span className={`status-badge ${d.isActive !== false ? 'status-active' : 'status-inactive'}`}>
+                      {d.isActive !== false ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td>{d.assignedVehiclePlate || 'Unassigned'}</td>
+                  <td><ActionsMenu driver={d} onAction={handleAction} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        {!loading && filtered.length === 0 && <div className="no-results">No drivers found</div>}
+      </div>
+
+      {/* ── Modals ── */}
+      {modal && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}
+            style={{ maxWidth: modal.type === 'view' || modal.type === 'edit' ? 560 : 460 }}>
+
+            {/* VIEW */}
+            {modal.type === 'view' && (
+              <>
+                <div className="modal-header">
+                  <h2>👁️ Driver Details</h2>
+                  <button className="modal-close" onClick={closeModal}>×</button>
+                </div>
+                <div className="modal-body">
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24,
+                    background: 'linear-gradient(135deg,#16a34a,#0ea5e9)', borderRadius: 12, padding: '16px 20px'
+                  }}>
+                    <div style={{
+                      width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,255,255,0.25)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 24, fontWeight: 800, color: '#fff', flexShrink: 0
+                    }}>
+                      {modal.driver.name?.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>{modal.driver.name}</div>
+                      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)' }}>
+                        {modal.driver.licenseNumber || 'No license on file'}
+                      </div>
+                      <span style={{
+                        display: 'inline-block', marginTop: 4, padding: '2px 10px',
+                        background: 'rgba(255,255,255,0.2)', borderRadius: 20, fontSize: 11, color: '#fff', fontWeight: 600
+                      }}>
+                        {modal.driver.status}
+                      </span>
+                    </div>
+                    <span style={{
+                      marginLeft: 'auto', padding: '4px 12px', borderRadius: 20, fontSize: 12,
+                      fontWeight: 700, background: modal.driver.isActive !== false ? '#22c55e' : '#ef4444', color: '#fff'
+                    }}>
+                      {modal.driver.isActive !== false ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
+                    <Field label="Full Name"        value={modal.driver.name} />
+                    <Field label="Phone"            value={modal.driver.phone} />
+                    <Field label="Employee ID"      value={modal.driver.employeeId} />
+                    <Field label="License Number"   value={modal.driver.licenseNumber} />
+                    <Field label="License Expiry"   value={modal.driver.licenseExpiry} />
+                    <Field label="Trip Status"      value={modal.driver.status} />
+                    <Field label="Account Status"   value={modal.driver.isActive !== false ? 'Active' : 'Inactive'} />
+                    <Field label="Assigned Vehicle" value={modal.driver.assignedVehiclePlate} />
+                    <Field label="Total Trips"      value={modal.driver.totalTrips ?? 0} />
+                    <Field label="Rating"           value={modal.driver.rating ? `${modal.driver.rating} / 5` : '—'} />
+                    <Field label="Added On"         value={modal.driver.createdAt ? new Date(modal.driver.createdAt).toLocaleDateString() : '—'} />
+                    <Field label="Last Updated"     value={modal.driver.updatedAt ? new Date(modal.driver.updatedAt).toLocaleDateString() : '—'} />
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button className="btn-modal-cancel" onClick={closeModal}>Close</button>
+                  <button className="btn-modal-submit" onClick={() => {
+                    setEditForm({
+                      name: modal.driver.name || '', phone: modal.driver.phone || '',
+                      licenseNumber: modal.driver.licenseNumber || '',
+                      licenseExpiry: modal.driver.licenseExpiry || '',
+                      employeeId: modal.driver.employeeId || '',
+                      status: modal.driver.status || 'available',
+                    });
+                    setModal({ type: 'edit', driver: modal.driver });
+                  }}>✏️ Edit Driver</button>
+                </div>
+              </>
+            )}
+
+            {/* EDIT */}
+            {modal.type === 'edit' && (
+              <>
+                <div className="modal-header">
+                  <h2>✏️ Edit Driver</h2>
+                  <button className="modal-close" onClick={closeModal}>×</button>
+                </div>
+                <div className="modal-body">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+                    <div style={{ marginBottom: 14, gridColumn: '1/-1' }}>
+                      <label style={lbl}>Full Name <span style={{ color: '#ef4444' }}>*</span></label>
+                      <input className="lock-reason-input" type="text" value={editForm.name}
+                        onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                        placeholder="Full name" style={inp} />
+                    </div>
+                    <div style={{ marginBottom: 14 }}>
+                      <label style={lbl}>Phone</label>
+                      <input className="lock-reason-input" type="text" value={editForm.phone}
+                        onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))}
+                        placeholder="+251 9XX XXX XXX" style={inp} />
+                    </div>
+                    <div style={{ marginBottom: 14 }}>
+                      <label style={lbl}>Employee ID</label>
+                      <input className="lock-reason-input" type="text" value={editForm.employeeId}
+                        onChange={e => setEditForm(f => ({ ...f, employeeId: e.target.value }))}
+                        placeholder="DRV-0001" style={inp} />
+                    </div>
+                    <div style={{ marginBottom: 14 }}>
+                      <label style={lbl}>License Number</label>
+                      <input className="lock-reason-input" type="text" value={editForm.licenseNumber}
+                        onChange={e => setEditForm(f => ({ ...f, licenseNumber: e.target.value }))}
+                        placeholder="DL-123456" style={inp} />
+                    </div>
+                    <div style={{ marginBottom: 14 }}>
+                      <label style={lbl}>License Expiry</label>
+                      <input className="lock-reason-input" type="date" value={editForm.licenseExpiry}
+                        onChange={e => setEditForm(f => ({ ...f, licenseExpiry: e.target.value }))}
+                        style={inp} />
+                    </div>
+                    <div style={{ marginBottom: 14, gridColumn: '1/-1' }}>
+                      <label style={lbl}>Trip Status</label>
+                      <select className="lock-reason-input" value={editForm.status}
+                        onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))}
+                        style={{ ...inp, cursor: 'pointer' }}>
+                        <option value="available">Available</option>
+                        <option value="on-trip">On Trip</option>
+                        <option value="off-duty">Off Duty</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button className="btn-modal-cancel" onClick={closeModal}>Cancel</button>
+                  <button className="btn-modal-submit" onClick={handleEditSave} disabled={editSaving}>
+                    {editSaving ? 'Saving...' : '✓ Save Changes'}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* DEACTIVATE */}
+            {modal.type === 'deactivate' && (
+              <>
+                <div className="modal-header">
+                  <h2>🚫 Deactivate Driver</h2>
+                  <button className="modal-close" onClick={closeModal}>×</button>
+                </div>
+                <div className="modal-body">
+                  <p className="modal-description">
+                    Are you sure you want to deactivate <strong>{modal.driver.name}</strong>?
+                    They will no longer be able to be assigned to trips.
+                  </p>
+                </div>
+                <div className="modal-footer">
+                  <button className="btn-modal-cancel" onClick={closeModal}>Cancel</button>
+                  <button className="btn-modal-submit" onClick={handleDeactivate}>Deactivate</button>
+                </div>
+              </>
+            )}
+
+            {/* DELETE */}
+            {modal.type === 'delete' && (
+              <>
+                <div className="modal-header" style={{ background: 'linear-gradient(135deg,#ef4444,#dc2626)' }}>
+                  <h2>🗑️ Delete Driver</h2>
+                  <button className="modal-close" onClick={closeModal}>×</button>
+                </div>
+                <div className="modal-body">
+                  <p className="modal-description">
+                    Permanently delete <strong>{modal.driver.name}</strong>? This action cannot be undone.
+                  </p>
+                </div>
+                <div className="modal-footer">
+                  <button className="btn-modal-cancel" onClick={closeModal}>Cancel</button>
+                  <button className="btn-modal-danger" onClick={handleDelete}>Delete</button>
+                </div>
+              </>
+            )}
+
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

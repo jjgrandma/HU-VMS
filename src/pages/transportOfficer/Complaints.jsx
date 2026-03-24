@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   Search, Filter, MessageSquare, AlertCircle, CheckCircle2,
-  Clock, ShieldAlert, Wrench, Users, Fuel, ChevronDown
+  Clock, ShieldAlert, Wrench, Users, Fuel, ChevronDown, RefreshCw
 } from 'lucide-react';
 import ComplaintResolutionToolkit from './ComplaintResolutionToolkit';
 import { getComplaints, updateComplaint } from '../../api/api';
@@ -33,11 +33,18 @@ export default function Complaints() {
   const [page, setPage] = useState(1);
   const PER_PAGE = 6;
 
-  useEffect(() => {
+  const fetchComplaints = () => {
     getComplaints()
       .then(data => setComplaints(data))
       .catch(err => console.error('Failed to load complaints:', err))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchComplaints();
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchComplaints, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const filtered = complaints.filter(c => {
@@ -58,6 +65,15 @@ export default function Complaints() {
     pending: complaints.filter(c => c.status === 'Pending').length,
     inProgress: complaints.filter(c => c.status === 'In Progress').length,
     resolved: complaints.filter(c => c.status === 'Resolved').length,
+  };
+
+  const handleMarkInProgress = async (complaint) => {
+    try {
+      const updated = await updateComplaint(complaint._id, { status: 'In Progress' });
+      setComplaints(prev => prev.map(c => c._id === updated._id ? updated : c));
+    } catch (err) {
+      alert('Failed to update: ' + err.message);
+    }
   };
 
   const handleResolve = async (resolution) => {
@@ -88,6 +104,17 @@ export default function Complaints() {
           <h1>Complaint Management</h1>
           <p>Review, investigate, and resolve transport complaints</p>
         </div>
+        <button
+          onClick={() => { setLoading(true); fetchComplaints(); }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',
+            color: '#818cf8', borderRadius: 8, padding: '0.5rem 0.9rem',
+            cursor: 'pointer', fontSize: 13, fontWeight: 600,
+          }}
+        >
+          <RefreshCw size={15} /> Refresh
+        </button>
       </div>
 
       {/* Stats */}
@@ -197,11 +224,21 @@ export default function Complaints() {
                 </td>
                 <td><span className="cp-date">{c.createdAt ? c.createdAt.slice(0, 10) : '—'}</span></td>
                 <td>
-                  {c.status !== 'Resolved' ? (
+                  {c.status === 'Resolved' ? (
+                    <span className="cp-resolved-tag"><CheckCircle2 size={13} /> Resolved</span>
+                  ) : c.status === 'Pending' ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <button className="cp-inprogress-btn" onClick={() => handleMarkInProgress(c)}>
+                        <Clock size={13} /> Mark In Progress
+                      </button>
+                      <button className="cp-toolkit-btn" onClick={() => setToolkitComplaint(c)}>
+                        <ShieldAlert size={13} /> Resolve
+                      </button>
+                    </div>
+                  ) : (
                     <button className="cp-toolkit-btn" onClick={() => setToolkitComplaint(c)}>
                       <ShieldAlert size={13} /> Resolution Toolkit
-                    </button>                  ) : (
-                    <span className="cp-resolved-tag"><CheckCircle2 size={13} /> Resolved</span>
+                    </button>
                   )}
                 </td>
               </tr>

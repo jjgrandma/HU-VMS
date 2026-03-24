@@ -1,37 +1,60 @@
 import { useState, useEffect } from 'react';
 import {
   X, Upload, AlertTriangle, CheckCircle, User, Car, Hash,
-  FileText, Zap, Bell, ShieldAlert, ChevronRight
+  FileText, Zap, Bell, ShieldAlert, ChevronRight, Sparkles
 } from 'lucide-react';
 import './complaints.css';
 
 // ─── Resolution actions per category ───────────────────────────────────────
 const CATEGORY_ACTIONS = {
   Resource: [
-    { id: 'fuel_deduction', label: 'Fuel Deduction', auto: false },
-    { id: 'security_referral', label: 'Security Referral', auto: false },
-    { id: 'audit', label: 'Conduct Audit', auto: false },
+    { id: 'fuel_deduction',    label: 'Fuel Deduction',    auto: false, keywords: ['fuel', 'theft', 'missing', 'stolen', 'deduct', 'resource', 'misuse'] },
+    { id: 'security_referral', label: 'Security Referral', auto: false, keywords: ['theft', 'stolen', 'security', 'police', 'report', 'missing'] },
+    { id: 'audit',             label: 'Conduct Audit',     auto: false, keywords: ['audit', 'check', 'verify', 'discrepancy', 'record', 'log'] },
   ],
   Safety: [
-    { id: 'warning_issued', label: 'Issue Warning', auto: false },
-    { id: 'suspension', label: 'Driver Suspension', auto: false },
-    { id: 'training', label: 'Schedule Safety Training', auto: false },
-    { id: 'inspection', label: 'Vehicle Inspection', auto: false },
+    { id: 'warning_issued', label: 'Issue Warning',             auto: false, keywords: ['warning', 'reckless', 'speed', 'fast', 'dangerous', 'unsafe', 'risk'] },
+    { id: 'suspension',     label: 'Driver Suspension',         auto: false, keywords: ['suspend', 'serious', 'accident', 'injury', 'drunk', 'assault', 'critical'] },
+    { id: 'training',       label: 'Schedule Safety Training',  auto: false, keywords: ['training', 'unsafe', 'reckless', 'speed', 'dangerous', 'careless'] },
+    { id: 'inspection',     label: 'Vehicle Inspection',        auto: false, keywords: ['brake', 'tire', 'vehicle', 'mechanical', 'inspection', 'fault', 'defect'] },
   ],
   Mechanical: [
-    { id: 'out_of_service', label: 'Mark Vehicle Out of Service', auto: true },
-    { id: 'maintenance_ticket', label: 'Create Maintenance Ticket', auto: true },
+    { id: 'out_of_service',     label: 'Mark Vehicle Out of Service', auto: true,  keywords: ['breakdown', 'broken', 'engine', 'accident', 'severe', 'critical'] },
+    { id: 'maintenance_ticket', label: 'Create Maintenance Ticket',   auto: true,  keywords: ['repair', 'fix', 'maintenance', 'service', 'fault', 'issue'] },
   ],
   Behavioral: [
-    { id: 'driver_file_record', label: 'Add to Driver File Record', auto: false },
-    { id: 'counseling', label: 'Schedule Counseling', auto: false },
-    { id: 'warning_behavioral', label: 'Issue Behavioral Warning', auto: false },
+    { id: 'driver_file_record',  label: 'Add to Driver File Record',  auto: false, keywords: ['record', 'repeat', 'again', 'history', 'pattern', 'multiple'] },
+    { id: 'counseling',          label: 'Schedule Counseling',        auto: false, keywords: ['rude', 'attitude', 'behavior', 'disrespect', 'argue', 'aggressive', 'counseling'] },
+    { id: 'warning_behavioral',  label: 'Issue Behavioral Warning',   auto: false, keywords: ['late', 'absent', 'unprofessional', 'rude', 'disrespect', 'behavior', 'conduct'] },
   ],
   Service: [
-    { id: 'route_optimization', label: 'Route Optimization', auto: false },
-    { id: 'schedule_adjustment', label: 'Schedule Adjustment', auto: false },
+    { id: 'route_optimization',  label: 'Route Optimization',   auto: false, keywords: ['route', 'wrong', 'detour', 'long', 'path', 'direction', 'lost'] },
+    { id: 'schedule_adjustment', label: 'Schedule Adjustment',  auto: false, keywords: ['late', 'delay', 'time', 'schedule', 'slow', 'waiting', 'early', 'missed'] },
   ],
 };
+
+// ─── Smart recommendation engine ───────────────────────────────────────────
+function getSmartRecommendations(complaint) {
+  const text = `${complaint.description} ${complaint.category} ${complaint.priority}`.toLowerCase();
+  const actions = CATEGORY_ACTIONS[complaint.category] || [];
+
+  return actions
+    .filter(a => !a.auto)
+    .map(action => {
+      const hits = action.keywords.filter(kw => text.includes(kw)).length;
+      // Boost score for high/critical priority
+      const priorityBoost = complaint.priority === 'Critical' ? 2
+        : complaint.priority === 'High' ? 1 : 0;
+      return { ...action, score: hits + priorityBoost };
+    })
+    .sort((a, b) => b.score - a.score);
+}
+
+// Returns ids of actions that should be pre-selected (score > 0, top 2 max)
+function getPreselectedIds(complaint) {
+  const recs = getSmartRecommendations(complaint);
+  return recs.filter(a => a.score > 0).slice(0, 2).map(a => a.id);
+}
 
 // ─── Message generators ─────────────────────────────────────────────────────
 function generateUserMessage(complaint, selectedActions) {
@@ -100,9 +123,11 @@ export default function ComplaintResolutionToolkit({ complaint, onClose, onResol
   const autoActions = actions.filter(a => a.auto);
   const manualActions = actions.filter(a => !a.auto);
 
-  // Auto-select automatic actions on mount
+  // Auto-select automatic actions + smart pre-selected manual actions on mount
   useEffect(() => {
-    setSelectedActions(autoActions);
+    const preIds = getPreselectedIds(complaint);
+    const preManual = manualActions.filter(a => preIds.includes(a.id));
+    setSelectedActions([...autoActions, ...preManual]);
   }, [complaint._id || complaint.id]);
 
   // Regenerate messages whenever relevant state changes
@@ -184,21 +209,23 @@ export default function ComplaintResolutionToolkit({ complaint, onClose, onResol
 
         {/* Complaint Summary */}
         <div className="rtk-summary">
-          <div className="rtk-summary-row">
-            <span className="rtk-label"><User size={13} /> Sender</span>
-            <span>{complaint.sender} <em className="rtk-role">({complaint.role})</em></span>
-          </div>
-          <div className="rtk-summary-row">
-            <span className="rtk-label"><Car size={13} /> Vehicle / Driver</span>
-            <span>{complaint.vehicle} / {complaint.driver}</span>
-          </div>
-          <div className="rtk-summary-row">
-            <span className="rtk-label"><Hash size={13} /> Trip ID</span>
-            <span>{complaint.tripId}</span>
-          </div>
-          <div className="rtk-summary-row">
-            <span className="rtk-label"><FileText size={13} /> Description</span>
-            <span className="rtk-desc">{complaint.description}</span>
+          <div className="rtk-summary-grid">
+            <div className="rtk-summary-item">
+              <span className="rtk-label"><User size={12} /> Sender</span>
+              <span className="rtk-val">{complaint.sender} <em className="rtk-role">({complaint.role})</em></span>
+            </div>
+            <div className="rtk-summary-item">
+              <span className="rtk-label"><Car size={12} /> Vehicle / Driver</span>
+              <span className="rtk-val">{complaint.vehicle || '—'} / {complaint.driver || '—'}</span>
+            </div>
+            <div className="rtk-summary-item">
+              <span className="rtk-label"><Hash size={12} /> Trip ID</span>
+              <span className="rtk-val">{complaint.tripId || '—'}</span>
+            </div>
+            <div className="rtk-summary-item">
+              <span className="rtk-label"><FileText size={12} /> Description</span>
+              <span className="rtk-val rtk-desc">{complaint.description}</span>
+            </div>
           </div>
           <div className="rtk-summary-badges">
             <span className="rtk-badge category">{complaint.category}</span>
@@ -246,22 +273,53 @@ export default function ComplaintResolutionToolkit({ complaint, onClose, onResol
                 </div>
               )}
 
-              {/* Manual Actions */}
-              {manualActions.length > 0 && (
-                <div className="rtk-action-group">
-                  <div className="rtk-group-label">Select Resolution Actions</div>
-                  {manualActions.map(action => (
-                    <label key={action.id} className={`rtk-action-item ${selectedActions.find(a => a.id === action.id) ? 'selected' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={!!selectedActions.find(a => a.id === action.id)}
-                        onChange={() => toggleAction(action)}
-                      />
-                      <span className="rtk-action-label">{action.label}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
+              {/* Manual Actions — Smart Recommendations */}
+              {manualActions.length > 0 && (() => {
+                const scored = getSmartRecommendations(complaint);
+                const topIds = scored.filter(a => a.score > 0).slice(0, 2).map(a => a.id);
+                return (
+                  <div className="rtk-action-group">
+                    <div className="rtk-group-label">
+                      <Sparkles size={13} /> Smart Resolution Actions
+                      <span className="rtk-smart-hint">AI-ranked by complaint analysis</span>
+                    </div>
+                    {scored.map((action, idx) => {
+                      const isSelected = !!selectedActions.find(a => a.id === action.id);
+                      const isTop = topIds.includes(action.id);
+                      return (
+                        <label
+                          key={action.id}
+                          className={`rtk-action-item ${isSelected ? 'selected' : ''} ${isTop ? 'smart-pick' : ''}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleAction(action)}
+                          />
+                          <span className="rtk-action-label">{action.label}</span>
+                          <div className="rtk-action-meta">
+                            {isTop && (
+                              <span className="rtk-smart-badge">
+                                <Sparkles size={10} /> Suggested
+                              </span>
+                            )}
+                            {action.score > 0 && (
+                              <span className="rtk-score-bar">
+                                {[...Array(Math.min(action.score, 4))].map((_, i) => (
+                                  <span key={i} className="rtk-score-dot filled" />
+                                ))}
+                                {[...Array(Math.max(0, 4 - action.score))].map((_, i) => (
+                                  <span key={i} className="rtk-score-dot" />
+                                ))}
+                              </span>
+                            )}
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
 
               {/* Driver at Fault */}
               <div className="rtk-fault-toggle">

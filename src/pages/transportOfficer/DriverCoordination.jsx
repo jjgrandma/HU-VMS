@@ -1,122 +1,90 @@
-import { useState } from 'react';
-import { 
-  Search, 
-  Filter, 
-  Phone, 
-  Clock, 
-  MapPin, 
-  Car, 
-  Briefcase, 
-  Calendar, 
-  MoreVertical,
-  User,
-  CheckCircle2,
-  AlertCircle
+import { useState, useEffect } from 'react';
+import {
+  Search, Filter, Phone, Clock, MapPin, Car, Briefcase,
+  User, CheckCircle2, AlertCircle, X, RefreshCw, Star, Hash, Shield
 } from 'lucide-react';
+import { getDrivers, getVehicles, updateDriver } from '../../api/api';
 import './DriverCoordination.css';
 
-const DriverCoordination = () => {
-  const [drivers, setDrivers] = useState([
-    {
-      id: 'DR-001',
-      name: 'Ato Mulugeta Tadesse',
-      assignedVehicle: 'HU-VH-001',
-      status: 'On Trip',
-      currentTrip: 'TRIP-001',
-      destination: 'Dire Dawa',
-      schedule: 'Full Day',
-      phone: '+251-911-123456',
-      experience: '5 years'
-    },
-    {
-      id: 'DR-002',
-      name: 'W/ro Hanan Ahmed',
-      assignedVehicle: 'HU-VH-002',
-      status: 'Available',
-      currentTrip: null,
-      destination: null,
-      schedule: 'Morning Shift',
-      phone: '+251-911-234567',
-      experience: '3 years'
-    },
-    {
-      id: 'DR-003',
-      name: 'Ato Bekele Worku',
-      assignedVehicle: 'HU-VH-003',
-      status: 'On Trip',
-      currentTrip: 'TRIP-002',
-      destination: 'Addis Ababa',
-      schedule: 'Full Day',
-      phone: '+251-911-345678',
-      experience: '7 years'
-    },
-    {
-      id: 'DR-004',
-      name: 'Ato Tesfaye Girma',
-      assignedVehicle: 'HU-VH-004',
-      status: 'Off Duty',
-      currentTrip: null,
-      destination: null,
-      schedule: 'Evening Shift',
-      phone: '+251-911-456789',
-      experience: '4 years'
-    },
-    {
-      id: 'DR-005',
-      name: 'W/ro Almaz Kebede',
-      assignedVehicle: 'HU-VH-005',
-      status: 'Available',
-      currentTrip: null,
-      destination: null,
-      schedule: 'Full Day',
-      phone: '+251-911-567890',
-      experience: '6 years'
-    }
-  ]);
+const STATUS_COLOR = {
+  available: 'var(--status-available)',
+  'on-trip':  'var(--primary-color)',
+  'off-duty': 'var(--text-secondary)',
+};
+const STATUS_LABEL = { available: 'Available', 'on-trip': 'On Trip', 'off-duty': 'Off Duty' };
 
-  const [searchTerm, setSearchTerm] = useState('');
+const getInitials = (name = '') =>
+  name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+export default function DriverCoordination() {
+  const [drivers, setDrivers]           = useState([]);
+  const [vehicles, setVehicles]         = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [searchTerm, setSearchTerm]     = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-  const [showAssignModal, setShowAssignModal] = useState(false);
-  const [selectedDriver, setSelectedDriver] = useState(null);
 
-  const filteredDrivers = drivers.filter(driver => {
-    const matchesSearch = driver.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         driver.assignedVehicle.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'All' || driver.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
+  // Modals
+  const [profileDriver, setProfileDriver]   = useState(null); // View Profile
+  const [assignDriver, setAssignDriver]     = useState(null); // Reassign Vehicle
+  const [selectedVehicleId, setSelectedVehicleId] = useState('');
+  const [saving, setSaving]                 = useState(false);
+
+  const fetchAll = async () => {
+    try {
+      setLoading(true);
+      const [drvs, vehs] = await Promise.all([getDrivers(), getVehicles()]);
+      setDrivers(drvs);
+      setVehicles(vehs);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchAll(); }, []);
+
+  const handleReassign = async () => {
+    if (!selectedVehicleId || !assignDriver) return;
+    const vehicle = vehicles.find(v => v._id === selectedVehicleId);
+    setSaving(true);
+    try {
+      const updated = await updateDriver(assignDriver._id, {
+        assignedVehicle: selectedVehicleId,
+        assignedVehiclePlate: vehicle?.plateNumber || '',
+      });
+      setDrivers(prev => prev.map(d => d._id === updated._id ? updated : d));
+      setAssignDriver(null);
+      setSelectedVehicleId('');
+    } catch (err) {
+      alert('Failed to reassign: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const filtered = drivers.filter(d => {
+    const q = searchTerm.toLowerCase();
+    const matchSearch =
+      (d.name || '').toLowerCase().includes(q) ||
+      (d.assignedVehiclePlate || '').toLowerCase().includes(q) ||
+      (d.employeeId || '').toLowerCase().includes(q);
+    const matchStatus = statusFilter === 'All' || d.status === statusFilter;
+    return matchSearch && matchStatus;
   });
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Available': return 'var(--status-available)';
-      case 'On Trip': return 'var(--primary-color)';
-      case 'Off Duty': return 'var(--text-secondary)';
-      case 'On Leave': return 'var(--status-pending)';
-      default: return 'var(--text-secondary)';
-    }
-  };
-
-  const getInitials = (name) => {
-    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-  };
-
-  const handleAssignDriver = (driver) => {
-    setSelectedDriver(driver);
-    setShowAssignModal(true);
-  };
-
-  const handleChangeDriver = (driverId) => {
-    console.log('Change driver:', driverId);
-  };
-
   const stats = {
-    total: drivers.length,
-    available: drivers.filter(d => d.status === 'Available').length,
-    onTrip: drivers.filter(d => d.status === 'On Trip').length,
-    offDuty: drivers.filter(d => ['Off Duty', 'On Leave'].includes(d.status)).length
+    total:     drivers.length,
+    available: drivers.filter(d => d.status === 'available').length,
+    onTrip:    drivers.filter(d => d.status === 'on-trip').length,
+    offDuty:   drivers.filter(d => d.status === 'off-duty').length,
   };
+
+  if (loading) return (
+    <div className="driver-coordination-page">
+      <p style={{ padding: '2rem', color: '#94a3b8' }}>Loading drivers...</p>
+    </div>
+  );
 
   return (
     <div className="driver-coordination-page">
@@ -125,187 +93,231 @@ const DriverCoordination = () => {
           <h1>Driver Directory</h1>
           <p>Manage personnel, assignments, and schedules</p>
         </div>
-        <button className="btn btn-primary">
-          + Add Driver
+        <button onClick={fetchAll} title="Refresh" style={{
+          background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',
+          color: '#818cf8', borderRadius: 8, padding: '0.5rem 0.75rem',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600,
+        }}>
+          <RefreshCw size={15} /> Refresh
         </button>
       </div>
 
+      {/* Stats */}
       <div className="driver-stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon-wrapper total">
-            <User size={24} />
+        {[
+          { icon: <User size={24} />, cls: 'total',     value: stats.total,     label: 'Total Drivers',   sub: 'Registered staff' },
+          { icon: <CheckCircle2 size={24} />, cls: 'available', value: stats.available, label: 'Available Now',   sub: 'Ready for dispatch' },
+          { icon: <MapPin size={24} />, cls: 'on-trip',  value: stats.onTrip,    label: 'Active on Trips', sub: 'Currently driving' },
+          { icon: <Clock size={24} />, cls: 'off-duty',  value: stats.offDuty,   label: 'Off Duty',        sub: 'Resting or leave' },
+        ].map((s, i) => (
+          <div key={i} className="stat-card">
+            <div className={`stat-icon-wrapper ${s.cls}`}>{s.icon}</div>
+            <div className="stat-info">
+              <h3>{s.label}</h3>
+              <div className="stat-value">{s.value}</div>
+              <span className="stat-trend">{s.sub}</span>
+            </div>
           </div>
-          <div className="stat-info">
-            <h3>Total Drivers</h3>
-            <div className="stat-value">{stats.total}</div>
-            <span className="stat-trend">Registered staff</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon-wrapper available">
-            <CheckCircle2 size={24} />
-          </div>
-          <div className="stat-info">
-            <h3>Available Now</h3>
-            <div className="stat-value">{stats.available}</div>
-            <span className="stat-trend positive">Ready for dispatch</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon-wrapper on-trip">
-            <MapPin size={24} />
-          </div>
-          <div className="stat-info">
-            <h3>Active on Trips</h3>
-            <div className="stat-value">{stats.onTrip}</div>
-            <span className="stat-trend">Currently driving</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon-wrapper off-duty">
-            <Clock size={24} />
-          </div>
-          <div className="stat-info">
-            <h3>Off Duty</h3>
-            <div className="stat-value">{stats.offDuty}</div>
-            <span className="stat-trend">Resting or leave</span>
-          </div>
-        </div>
+        ))}
       </div>
 
+      {/* Toolbar */}
       <div className="toolbar">
         <div className="search-bar">
           <Search size={16} className="search-icon" />
           <input
             type="text"
-            placeholder="Search drivers by name or vehicle..."
+            placeholder="Search by name, vehicle, or ID..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
-        
         <div className="filter-group">
           <div className="status-filter">
             <Filter size={16} className="filter-icon" />
-            <select 
-              value={statusFilter} 
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
               <option value="All">All Statuses</option>
-              <option value="Available">Available</option>
-              <option value="On Trip">On Trip</option>
-              <option value="Off Duty">Off Duty</option>
-              <option value="On Leave">On Leave</option>
+              <option value="available">Available</option>
+              <option value="on-trip">On Trip</option>
+              <option value="off-duty">Off Duty</option>
             </select>
           </div>
         </div>
       </div>
 
+      {/* Driver Cards */}
       <div className="drivers-grid">
-        {filteredDrivers.map((driver) => (
-          <div key={driver.id} className="driver-card">
-            <div className="dc-header">
-              <div className="dc-avatar-profile">
-                <div className="dc-avatar" style={ driver.status === 'On Trip' ? { borderColor: 'var(--primary-color)' } : {}}>
-                  {getInitials(driver.name)}
-                  <span className="dc-status-indicator" style={{ backgroundColor: getStatusColor(driver.status) }}></span>
+        {filtered.map(driver => {
+          const color = STATUS_COLOR[driver.status] || '#6b7280';
+          return (
+            <div key={driver._id} className="driver-card">
+              <div className="dc-header">
+                <div className="dc-avatar-profile">
+                  <div className="dc-avatar" style={{ borderColor: driver.status === 'on-trip' ? 'var(--primary-color)' : 'transparent' }}>
+                    {getInitials(driver.name)}
+                    <span className="dc-status-indicator" style={{ backgroundColor: color }}></span>
+                  </div>
+                  <div className="dc-info">
+                    <h3>{driver.name}</h3>
+                    <span className="dc-id">{driver.employeeId || driver._id.slice(-6).toUpperCase()}</span>
+                  </div>
                 </div>
-                <div className="dc-info">
-                  <h3>{driver.name}</h3>
-                  <span className="dc-id">{driver.id}</span>
-                </div>
-              </div>
-              <button className="btn-icon ghost">
-                <MoreVertical size={16} />
-              </button>
-            </div>
-            
-            <div className="dc-body">
-              <div className="dc-row">
-                <div className="dc-icon-wrapper"><Phone size={14} /></div>
-                <div className="dc-text">{driver.phone}</div>
-              </div>
-              <div className="dc-row">
-                <div className="dc-icon-wrapper"><Briefcase size={14} /></div>
-                <div className="dc-text">{driver.experience} exp</div>
-              </div>
-              <div className="dc-row">
-                <div className="dc-icon-wrapper"><Clock size={14} /></div>
-                <div className="dc-text">{driver.schedule}</div>
+                <span className="status-badge" style={{ background: `${color}22`, color, fontSize: 11, padding: '3px 8px', borderRadius: 20, fontWeight: 700 }}>
+                  {STATUS_LABEL[driver.status] || driver.status}
+                </span>
               </div>
 
-              <div className="dc-assignment-box">
-                <div className="assign-item">
-                  <span className="assign-label">Vehicle</span>
-                  <span className="assign-val vehicle-text"><Car size={14} /> {driver.assignedVehicle}</span>
+              <div className="dc-body">
+                {driver.phone && (
+                  <div className="dc-row">
+                    <div className="dc-icon-wrapper"><Phone size={14} /></div>
+                    <div className="dc-text">{driver.phone}</div>
+                  </div>
+                )}
+                {driver.licenseNumber && (
+                  <div className="dc-row">
+                    <div className="dc-icon-wrapper"><Shield size={14} /></div>
+                    <div className="dc-text">License: {driver.licenseNumber}</div>
+                  </div>
+                )}
+                <div className="dc-row">
+                  <div className="dc-icon-wrapper"><Star size={14} /></div>
+                  <div className="dc-text">Rating: {driver.rating ?? 5}/5 · {driver.totalTrips ?? 0} trips</div>
                 </div>
-                <div className="assign-divider"></div>
-                <div className="assign-item">
-                  <span className="assign-label">Current Trip</span>
-                  <span className={`assign-val ${driver.currentTrip ? 'trip-active' : 'no-trip'}`}>
-                    {driver.currentTrip ? (
-                      <><MapPin size={14} /> {driver.destination}</>
-                    ) : (
-                      'None'
-                    )}
-                  </span>
+
+                <div className="dc-assignment-box">
+                  <div className="assign-item">
+                    <span className="assign-label">Vehicle</span>
+                    <span className="assign-val vehicle-text">
+                      <Car size={14} /> {driver.assignedVehiclePlate || 'Unassigned'}
+                    </span>
+                  </div>
+                  <div className="assign-divider"></div>
+                  <div className="assign-item">
+                    <span className="assign-label">Status</span>
+                    <span className={`assign-val ${driver.status === 'on-trip' ? 'trip-active' : 'no-trip'}`}>
+                      {driver.status === 'on-trip' ? <><MapPin size={14} /> On Trip</> : STATUS_LABEL[driver.status] || driver.status}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="dc-footer">
-              <button 
-                className="btn btn-outline"
-                onClick={() => handleAssignDriver(driver)}
-              >
-                Reassign Vehicle
-              </button>
-              <button className="btn btn-secondary">
-                View Profile
-              </button>
+              <div className="dc-footer">
+                <button className="btn btn-outline" onClick={() => { setAssignDriver(driver); setSelectedVehicleId(''); }}>
+                  Reassign Vehicle
+                </button>
+                <button className="btn btn-secondary" onClick={() => setProfileDriver(driver)}>
+                  View Profile
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
-        {filteredDrivers.length === 0 && (
+          );
+        })}
+
+        {filtered.length === 0 && (
           <div className="empty-state">
             <AlertCircle size={32} />
-            <p>No drivers found matching your search</p>
+            <p>{drivers.length === 0 ? 'No drivers in database. Add drivers via Admin panel.' : 'No drivers match your search.'}</p>
           </div>
         )}
       </div>
 
-      {showAssignModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h3>Assign Vehicle</h3>
-            <div className="modal-driver-summary">
-              <div className="mds-avatar">{getInitials(selectedDriver?.name || '')}</div>
-              <div>
-                <h4>{selectedDriver?.name}</h4>
-                <p>Current: {selectedDriver?.assignedVehicle}</p>
+      {/* ── View Profile Modal ── */}
+      {profileDriver && (
+        <div className="modal-overlay" onClick={() => setProfileDriver(null)}>
+          <div className="profile-modal" onClick={e => e.stopPropagation()}>
+            <div className="profile-modal-header">
+              <h3>Driver Profile</h3>
+              <button className="profile-modal-close" onClick={() => setProfileDriver(null)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="profile-hero">
+              <div className="profile-avatar-lg">{getInitials(profileDriver.name)}</div>
+              <div className="profile-hero-info">
+                <h4>{profileDriver.name}</h4>
+                <div className="profile-emp-id">{profileDriver.employeeId || '—'}</div>
+                <span
+                  className="profile-status-badge"
+                  style={{
+                    background: `${STATUS_COLOR[profileDriver.status] || '#6b7280'}22`,
+                    color: STATUS_COLOR[profileDriver.status] || '#6b7280',
+                  }}
+                >
+                  {STATUS_LABEL[profileDriver.status] || profileDriver.status}
+                </span>
               </div>
             </div>
-            
+
+            <div className="profile-details-grid">
+              {[
+                { icon: <Phone size={15} />,        label: 'Phone',            value: profileDriver.phone || '—' },
+                { icon: <Shield size={15} />,        label: 'License No.',      value: profileDriver.licenseNumber || '—' },
+                { icon: <Clock size={15} />,         label: 'License Expiry',   value: profileDriver.licenseExpiry || '—' },
+                { icon: <Car size={15} />,           label: 'Assigned Vehicle', value: profileDriver.assignedVehiclePlate || 'Unassigned' },
+                { icon: <Star size={15} />,          label: 'Rating',           value: `${profileDriver.rating ?? 5} / 5` },
+                { icon: <Hash size={15} />,          label: 'Total Trips',      value: profileDriver.totalTrips ?? 0 },
+                { icon: <CheckCircle2 size={15} />,  label: 'Account',          value: profileDriver.isActive !== false ? '✅ Active' : '🔒 Inactive' },
+                { icon: <Briefcase size={15} />,     label: 'Joined',           value: profileDriver.createdAt ? new Date(profileDriver.createdAt).toLocaleDateString() : '—' },
+              ].map((item, i) => (
+                <div key={i} className="profile-detail-item">
+                  <div className="profile-detail-label">{item.icon} {item.label}</div>
+                  <div className="profile-detail-value">{item.value}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="profile-modal-footer">
+              <button className="btn btn-secondary" onClick={() => setProfileDriver(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Reassign Vehicle Modal ── */}
+      {assignDriver && (
+        <div className="modal-overlay" onClick={() => setAssignDriver(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ margin: 0 }}>Reassign Vehicle</h3>
+              <button onClick={() => setAssignDriver(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="modal-driver-summary">
+              <div className="mds-avatar">{getInitials(assignDriver.name)}</div>
+              <div>
+                <h4>{assignDriver.name}</h4>
+                <p>Current vehicle: {assignDriver.assignedVehiclePlate || 'Unassigned'}</p>
+              </div>
+            </div>
+
             <div className="vehicle-selection">
-              <label>Select New Vehicle</label>
-              <select className="modern-select">
-                <option value="">Choose from available vehicles...</option>
-                <option value="HU-VH-001">HU-VH-001 (Bus)</option>
-                <option value="HU-VH-002">HU-VH-002 (Minibus)</option>
-                <option value="HU-VH-003">HU-VH-003 (Car) - Available</option>
-                <option value="HU-VH-004">HU-VH-004 (Van) - Available</option>
+              <label>Select Vehicle</label>
+              <select
+                className="modern-select"
+                value={selectedVehicleId}
+                onChange={e => setSelectedVehicleId(e.target.value)}
+              >
+                <option value="">Choose a vehicle...</option>
+                {vehicles.map(v => (
+                  <option key={v._id} value={v._id}>
+                    {v.plateNumber} – {v.model} ({v.type}, {v.capacity} seats) [{v.status}]
+                  </option>
+                ))}
               </select>
             </div>
-            
+
             <div className="modal-actions">
-              <button 
-                className="btn btn-secondary"
-                onClick={() => setShowAssignModal(false)}
+              <button className="btn btn-secondary" onClick={() => setAssignDriver(null)}>Cancel</button>
+              <button
+                className="btn btn-primary"
+                onClick={handleReassign}
+                disabled={!selectedVehicleId || saving}
               >
-                Cancel
-              </button>
-              <button className="btn btn-primary">
-                Confirm Assignment
+                {saving ? 'Saving...' : 'Confirm Assignment'}
               </button>
             </div>
           </div>
@@ -313,6 +325,4 @@ const DriverCoordination = () => {
       )}
     </div>
   );
-};
-
-export default DriverCoordination;
+}

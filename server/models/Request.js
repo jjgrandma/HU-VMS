@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const requestSchema = new mongoose.Schema(
   {
     requester: { type: String, required: true },
+    requesterUsername: { type: String, default: '' },
     department: { type: String, required: true },
     destination: { type: String, required: true },
     purpose: String,
@@ -18,12 +19,16 @@ const requestSchema = new mongoose.Schema(
     specialRequirements: String,
     status: {
       type: String,
-      enum: ['pending', 'approved', 'rejected', 'completed'],
+      enum: ['pending', 'approved', 'rejected', 'in-progress', 'completed'],
       default: 'pending',
     },
     assignedVehicle: String,
+    assignedVehicleId: String,
     assignedDriver: String,
+    approvedBy: String,
     rejectionReason: String,
+    startedAt: Date,
+    completedAt: Date,
   },
   { timestamps: true }
 );

@@ -1,12 +1,45 @@
 import { useState } from 'react';
 import { useTheme } from '../../context/ThemeContext';
+import { getCurrentUser, updateUser } from '../../api/api';
 import './adminTheme.css';
 import './settings.css';
 
 const Settings = () => {
   const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('appearance');
-  const [profileImage, setProfileImage] = useState('https://via.placeholder.com/120');
+  const currentUser = getCurrentUser();
+  const [profileImage, setProfileImage] = useState(currentUser?.profilePicture || 'https://via.placeholder.com/120');
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast]   = useState('');
+
+  const [form, setForm] = useState({
+    firstName: currentUser?.firstName || currentUser?.name?.split(' ')[0] || '',
+    lastName:  currentUser?.lastName  || currentUser?.name?.split(' ')[1] || '',
+    email:     currentUser?.email     || '',
+    phone:     currentUser?.phone     || '',
+  });
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 3000);
+  };
+
+  const handleSave = async () => {
+    if (!currentUser?._id) return;
+    setSaving(true);
+    try {
+      await updateUser(currentUser._id, {
+        name: `${form.firstName} ${form.lastName}`.trim(),
+        email: form.email,
+        phone: form.phone,
+      });
+      showToast('Changes saved successfully');
+    } catch (err) {
+      showToast('Failed to save: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const themes = [
     { id: 'dark', name: 'Dark', icon: '🌙', color: '#0f172a' },
@@ -53,6 +86,13 @@ const Settings = () => {
   return (
     <div className="settings-container">
       <h1>Settings</h1>
+      {toast && (
+        <div style={{
+          position:'fixed', top:20, right:20, background:'#22c55e', color:'#fff',
+          padding:'10px 20px', borderRadius:10, zIndex:9999, fontWeight:600, fontSize:14,
+          boxShadow:'0 4px 16px rgba(0,0,0,0.15)',
+        }}>{toast}</div>
+      )}
 
       <div className="settings-tabs">
         <button 
@@ -194,71 +234,29 @@ const Settings = () => {
               <div className="form-row">
                 <div className="form-group">
                   <label>First Name</label>
-                  <input type="text" defaultValue="Admin" />
+                  <input type="text" value={form.firstName}
+                    onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} />
                 </div>
                 <div className="form-group">
                   <label>Last Name</label>
-                  <input type="text" defaultValue="User" />
+                  <input type="text" value={form.lastName}
+                    onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))} />
                 </div>
               </div>
               <div className="form-group">
                 <label>Email Address</label>
-                <input type="email" defaultValue="admin@haramaya.edu.et" />
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Phone Number</label>
-                  <input type="tel" defaultValue="+251 912 345 678" />
-                </div>
-                <div className="form-group">
-                  <label>Emergency Contact</label>
-                  <input type="tel" defaultValue="+251 911 234 567" placeholder="Emergency phone number" />
-                </div>
+                <input type="email" value={form.email}
+                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
               </div>
               <div className="form-group">
-                <label>Department</label>
-                <select defaultValue="administration">
-                  <option value="administration">Administration</option>
-                  <option value="transport">Transport</option>
-                  <option value="it">IT Department</option>
-                  <option value="hr">Human Resources</option>
-                </select>
+                <label>Phone Number</label>
+                <input type="tel" value={form.phone}
+                  onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
               </div>
               <div className="form-group">
-                <label>Job Title</label>
-                <input type="text" defaultValue="System Administrator" />
-              </div>
-              <div className="form-group">
-                <label>Bio</label>
-                <textarea rows="4" defaultValue="Experienced system administrator managing the university vehicle management system." placeholder="Tell us about yourself..."></textarea>
-              </div>
-            </div>
-
-            <div className="settings-group">
-              <h3>Address Information</h3>
-              <div className="form-group">
-                <label>Street Address</label>
-                <input type="text" defaultValue="Haramaya University Campus" />
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>City</label>
-                  <input type="text" defaultValue="Haramaya" />
-                </div>
-                <div className="form-group">
-                  <label>State/Region</label>
-                  <input type="text" defaultValue="Oromia" />
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Postal Code</label>
-                  <input type="text" defaultValue="138" />
-                </div>
-                <div className="form-group">
-                  <label>Country</label>
-                  <input type="text" defaultValue="Ethiopia" />
-                </div>
+                <label>Role</label>
+                <input type="text" value={currentUser?.role || '—'} readOnly
+                  style={{ background:'#f8fafc', cursor:'not-allowed' }} />
               </div>
             </div>
 
@@ -273,7 +271,9 @@ const Settings = () => {
       </div>
 
       <div className="settings-footer">
-        <button className="btn-primary">Save Changes</button>
+        <button className="btn-primary" onClick={handleSave} disabled={saving}>
+          {saving ? 'Saving...' : 'Save Changes'}
+        </button>
         <button className="btn-secondary">Reset to Default</button>
       </div>
     </div>

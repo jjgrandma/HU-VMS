@@ -36,4 +36,15 @@ router.patch('/:id', authMiddleware, async (req, res) => {
   }
 });
 
+// DELETE /api/drivers/:id
+router.delete('/:id', authMiddleware, async (req, res) => {
+  try {
+    const deleted = await Driver.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ message: 'Driver not found' });
+    res.json({ message: 'Driver deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 module.exports = router;

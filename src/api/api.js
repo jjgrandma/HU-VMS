@@ -63,6 +63,48 @@ export const updateRequest = async (id, updates) => {
   return data;
 };
 
+export const approveRequest = async (id, payload) => {
+  const res = await fetch(`${BASE_URL}/requests/${id}/approve`, {
+    method: 'PUT',
+    headers: headers(),
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const rejectRequest = async (id, rejectionReason) => {
+  const res = await fetch(`${BASE_URL}/requests/${id}/reject`, {
+    method: 'PUT',
+    headers: headers(),
+    body: JSON.stringify({ rejectionReason }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const startTrip = async (id) => {
+  const res = await fetch(`${BASE_URL}/requests/${id}/start`, {
+    method: 'PUT',
+    headers: headers(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const completeTrip = async (id) => {
+  const res = await fetch(`${BASE_URL}/requests/${id}/complete`, {
+    method: 'PUT',
+    headers: headers(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
 export const deleteRequest = async (id) => {
   const res = await fetch(`${BASE_URL}/requests/${id}`, {
     method: 'DELETE',
@@ -113,6 +155,17 @@ export const getDrivers = async (filters = {}) => {
   return data;
 };
 
+export const createDriver = async (driverData) => {
+  const res = await fetch(`${BASE_URL}/drivers`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify(driverData),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
 // ─── Users ───────────────────────────────────────────────
 export const getUsers = async () => {
   const res = await fetch(`${BASE_URL}/users`, { headers: headers() });
@@ -148,6 +201,28 @@ export const updateUser = async (id, updates) => {
     method: 'PATCH',
     headers: headers(),
     body: JSON.stringify(updates),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const resetUserPassword = async (id, newPassword) => {
+  const res = await fetch(`${BASE_URL}/users/${id}/reset-password`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({ newPassword }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const resetUsername = async (id, newUsername) => {
+  const res = await fetch(`${BASE_URL}/users/${id}/reset-username`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({ newUsername }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message);

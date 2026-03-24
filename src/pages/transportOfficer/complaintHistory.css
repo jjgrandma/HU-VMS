@@ -13,6 +13,10 @@
 }
 .ch-header h1 { font-size: 22px; font-weight: 700; color: #1e293b; margin: 0 0 4px; }
 .ch-header p  { font-size: 13px; color: #64748b; margin: 0; }
+.ch-export-wrap {
+  position: relative;
+}
+
 .ch-export-btn {
   display: inline-flex;
   align-items: center;
@@ -29,6 +33,38 @@
   white-space: nowrap;
 }
 .ch-export-btn:hover { background: #0f172a; transform: translateY(-1px); }
+
+.ch-export-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  overflow: hidden;
+  z-index: 200;
+  min-width: 190px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.ch-export-menu button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 11px 16px;
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+.ch-export-menu button:hover { background: #f8fafc; color: #6366f1; }
+.ch-export-menu button + button { border-top: 1px solid #f1f5f9; }
 
 /* Stats */
 .ch-stats {

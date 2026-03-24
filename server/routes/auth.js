@@ -43,14 +43,22 @@ router.post('/register', async (req, res) => {
   try {
     const { name, username, email, password, role, phone, department, employeeId } = req.body;
 
+    if (!name || !username || !email || !password || !role) {
+      return res.status(400).json({ message: 'name, username, email, password and role are required' });
+    }
+
     const exists = await User.findOne({ $or: [{ username }, { email }] });
-    if (exists) return res.status(400).json({ message: 'Username or email already exists' });
+    if (exists) {
+      const field = exists.username === username ? 'Username' : 'Email';
+      return res.status(400).json({ message: `${field} already exists` });
+    }
 
     const hashed = await bcrypt.hash(password, 10);
     const user = new User({ name, username, email, password: hashed, role, phone, department, employeeId });
     await user.save();
 
-    res.status(201).json({ message: 'User created', userId: user._id });
+    const { password: _pw, ...userOut } = user.toObject();
+    res.status(201).json({ message: 'User created successfully', user: userOut });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

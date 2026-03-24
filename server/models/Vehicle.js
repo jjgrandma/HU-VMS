@@ -13,11 +13,18 @@ const vehicleSchema = new mongoose.Schema(
     },
     assignedDriver: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     assignedDriverName: String,
-    fuelLevel: { type: Number, default: 100 }, // percentage
+    fuelLevel: { type: Number, default: 100 },
     mileage: { type: Number, default: 0 },
     department: String,
     year: Number,
     color: String,
+    location: {
+      name: { type: String, default: 'Haramaya University' },
+      lat:  { type: Number, default: 9.4140 },
+      lng:  { type: Number, default: 42.0360 },
+    },
+    speed: { type: Number, default: 0 },
+    destination: { type: String, default: '' },
   },
   { timestamps: true }
 );

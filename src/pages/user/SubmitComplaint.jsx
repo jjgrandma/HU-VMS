@@ -1,27 +1,42 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { createComplaint } from '../../api/api';
 import './SubmitComplaint.css';
+
+// Maps user-friendly labels to DB enum values
+const CATEGORY_MAP = {
+  'Vehicle Issue':    'Mechanical',
+  'Driver Behavior':  'Behavioral',
+  'Delay':            'Service',
+  'Route Problem':    'Service',
+  'Fuel / Resource':  'Resource',
+  'Safety Concern':   'Safety',
+  'Other':            'Service',
+};
+
+const PRIORITY_MAP = {
+  'Low': 'Low',
+  'Medium': 'Medium',
+  'High': 'High',
+  'Critical': 'Critical',
+};
 
 const SubmitComplaint = ({ onSubmit }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     category: '',
+    priority: 'Medium',
+    vehicle: '',
+    driver: '',
+    tripId: '',
     description: '',
-    attachments: []
   });
 
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState([]);
 
-  const categories = [
-    'Vehicle Issue',
-    'Driver Behavior',
-    'Delay',
-    'Billing Issue',
-    'Route Problem',
-    'Customer Service',
-    'Other'
-  ];
+  const categories = Object.keys(CATEGORY_MAP);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -54,25 +69,35 @@ const SubmitComplaint = ({ onSubmit }) => {
     const newErrors = {};
     if (!formData.category) newErrors.category = 'Category is required';
     if (!formData.description) newErrors.description = 'Description is required';
-    if (formData.description.length < 10) {
-      newErrors.description = 'Description must be at least 10 characters';
-    }
+    if (formData.description.length < 10) newErrors.description = 'Description must be at least 10 characters';
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validateForm();
-    
-    if (Object.keys(newErrors).length === 0) {
-      if (onSubmit) {
-        onSubmit({ ...formData, attachments: uploadedFiles });
-      }
-      alert('Complaint submitted successfully!');
-      navigate('/user');
-    } else {
+    if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      alert('Please fill in all required fields');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await createComplaint({
+        category: CATEGORY_MAP[formData.category],
+        priority: formData.priority,
+        description: formData.description,
+        vehicle: formData.vehicle,
+        driver: formData.driver,
+        tripId: formData.tripId,
+      });
+      if (onSubmit) onSubmit(formData);
+      alert('✅ Complaint submitted successfully!');
+      navigate('/user');
+    } catch (err) {
+      alert(`Failed to submit: ${err.message}`);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -82,10 +107,9 @@ const SubmitComplaint = ({ onSubmit }) => {
       
       <div className="form-container">
         <form onSubmit={handleSubmit}>
+
           <div className="form-group">
-            <label className="form-label">
-              Complaint Category <span className="required">*</span>
-            </label>
+            <label className="form-label">Complaint Category <span className="required">*</span></label>
             <select
               name="category"
               value={formData.category}
@@ -101,9 +125,57 @@ const SubmitComplaint = ({ onSubmit }) => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">
-              Complaint Description <span className="required">*</span>
-            </label>
+            <label className="form-label">Priority</label>
+            <select
+              name="priority"
+              value={formData.priority}
+              onChange={handleChange}
+              className="form-select"
+            >
+              {Object.keys(PRIORITY_MAP).map(p => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Vehicle Plate (optional)</label>
+            <input
+              type="text"
+              name="vehicle"
+              value={formData.vehicle}
+              onChange={handleChange}
+              placeholder="e.g. ET-AA-001 Toyota Coaster"
+              className="form-input"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Driver Name (optional)</label>
+            <input
+              type="text"
+              name="driver"
+              value={formData.driver}
+              onChange={handleChange}
+              placeholder="e.g. Abebe Kebede"
+              className="form-input"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Trip ID (optional)</label>
+            <input
+              type="text"
+              name="tripId"
+              value={formData.tripId}
+              onChange={handleChange}
+              placeholder="e.g. TRIP-2025-001"
+              className="form-input"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Description <span className="required">*</span></label>
             <textarea
               name="description"
               value={formData.description}
@@ -116,49 +188,9 @@ const SubmitComplaint = ({ onSubmit }) => {
             <p className="hint-text">Minimum 10 characters</p>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Attachments (Optional)</label>
-            <div className="upload-area">
-              <input
-                type="file"
-                id="file-upload"
-                multiple
-                accept="image/*,.pdf,.doc,.docx"
-                onChange={handleFileUpload}
-                className="file-input"
-              />
-              <label htmlFor="file-upload" className="upload-btn">
-                <span className="upload-icon">📎</span>
-                Upload Files
-              </label>
-              <p className="hint-text">Upload images, PDFs, or documents (Max 5 files)</p>
-            </div>
-
-            {uploadedFiles.length > 0 && (
-              <div className="file-list">
-                {uploadedFiles.map((file, index) => (
-                  <div key={index} className="file-item">
-                    <div className="file-info">
-                      <span className="file-icon">📄</span>
-                      <span className="file-name">{file.name}</span>
-                      <span className="file-size">({(file.size / 1024).toFixed(1)} KB)</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeFile(index)}
-                      className="remove-file"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
           <div className="form-actions">
-            <button type="submit" className="btn-submit">
-              Submit Complaint
+            <button type="submit" className="btn-submit" disabled={submitting}>
+              {submitting ? 'Submitting...' : 'Submit Complaint'}
             </button>
             <button type="button" onClick={() => navigate('/user')} className="btn-cancel">
               Cancel
