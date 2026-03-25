@@ -82,10 +82,11 @@ const ActionsMenu = ({ user, onAction }) => {
 export default function ManageUsersPage() {
   const [users, setUsers]   = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [toast, setToast]   = useState({ msg:'', type:'success' });
 
   // modal state
-  const [modal, setModal] = useState(null); // { type, user }
+  const [modal, setModal] = useState(null);
   const [inputVal, setInputVal] = useState('');
   const [inputVal2, setInputVal2] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -98,9 +99,12 @@ export default function ManageUsersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
 
-  useEffect(() => {
-    getUsers().then(setUsers).catch(console.error).finally(() => setLoading(false));
-  }, []);
+  const loadUsers = () => {
+    setRefreshing(true);
+    getUsers().then(setUsers).catch(console.error).finally(() => { setLoading(false); setRefreshing(false); });
+  };
+
+  useEffect(() => { loadUsers(); }, []);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -208,7 +212,16 @@ export default function ManageUsersPage() {
   return (
     <div className="manage-users-container" style={{ maxWidth:'100%', boxSizing:'border-box' }}>
       <Toast msg={toast.msg} type={toast.type} />
-      <h1>Manage Users</h1>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
+        <h1 style={{ margin:0 }}>Manage Users</h1>
+        <button onClick={loadUsers} disabled={refreshing}
+          style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 16px',
+            background:'#f0fdf4', color:'#16a34a', border:'1px solid #bbf7d0',
+            borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer' }}>
+          <span style={{ display:'inline-block', animation: refreshing ? 'spin 0.8s linear infinite' : 'none' }}>🔄</span>
+          {refreshing ? 'Refreshing...' : 'Refresh'}
+        </button>
+      </div>
 
       <div className="controls-bar">
         <input type="text" placeholder="Search by name, username, or email..."

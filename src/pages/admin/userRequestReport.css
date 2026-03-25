@@ -292,3 +292,11 @@
     justify-content: center;
   }
 }
+
+/* Horizontal scrollbar */
+.table-container { -webkit-overflow-scrolling: touch; }
+.table-container::-webkit-scrollbar { height: 6px; }
+.table-container::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+.table-container::-webkit-scrollbar-thumb { background: #16a34a; border-radius: 4px; }
+.table-container::-webkit-scrollbar-thumb:hover { background: #15803d; }
+.report-table td, .report-table th { white-space: nowrap; }

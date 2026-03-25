@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { registerUser } from '../../api/api';
 import './adminTheme.css';
 import './addUser.css';
 
@@ -19,39 +18,63 @@ const EMPTY = {
 };
 
 export default function AddUser() {
-  const navigate   = useNavigate();
+  const navigate = useNavigate();
   const [form, setForm]       = useState(EMPTY);
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw]   = useState(false);
-  const [msg, setMsg]         = useState(null); // { type, text }
+  const [error, setError]     = useState('');
+  const [success, setSuccess] = useState('');
 
-  const set = (e) => { setForm(f => ({ ...f, [e.target.name]: e.target.value })); setMsg(null); };
+  const set = (e) => {
+    setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.name.trim())     return setMsg({ type:'error', text:'Full name is required.' });
-    if (!form.username.trim()) return setMsg({ type:'error', text:'Username is required.' });
-    if (!form.email.trim())    return setMsg({ type:'error', text:'Email is required.' });
-    if (!form.role)            return setMsg({ type:'error', text:'Please select a role.' });
-    if (form.password.length < 6) return setMsg({ type:'error', text:'Password must be at least 6 characters.' });
-    if (form.password !== form.confirmPassword) return setMsg({ type:'error', text:'Passwords do not match.' });
+    if (e && e.preventDefault) e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    // Client-side validation
+    if (!form.name.trim())        { setError('Full name is required.');         return; }
+    if (!form.username.trim())    { setError('Username is required.');           return; }
+    if (!form.email.trim())       { setError('Email is required.');              return; }
+    if (!form.role)               { setError('Please select a role.');           return; }
+    if (form.password.length < 6) { setError('Password must be at least 6 characters.'); return; }
+    if (form.password !== form.confirmPassword) { setError('Passwords do not match.'); return; }
 
     setLoading(true);
     try {
-      await registerUser({
-        name:       form.name.trim(),
-        username:   form.username.trim(),
-        email:      form.email.trim(),
-        password:   form.password,
-        role:       form.role,
-        department: form.department.trim(),
-        phone:      form.phone.trim(),
-        employeeId: form.employeeId.trim(),
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          name:       form.name.trim(),
+          username:   form.username.trim(),
+          email:      form.email.trim(),
+          password:   form.password,
+          role:       form.role,
+          department: form.department.trim(),
+          phone:      form.phone.trim(),
+          employeeId: form.employeeId.trim(),
+        }),
       });
-      setMsg({ type:'success', text:`User "${form.username}" created successfully!` });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || 'Failed to create user.');
+        return;
+      }
+
+      setSuccess(`User "${data.user?.username || form.username}" created successfully! Redirecting in 3s...`);
       setForm(EMPTY);
+      setTimeout(() => navigate('/admin/manage-users'), 3000);
     } catch (err) {
-      setMsg({ type:'error', text: err.message || 'Failed to create user.' });
+      setError('Cannot connect to server. Make sure the backend is running on port 5000.');
     } finally {
       setLoading(false);
     }
@@ -62,76 +85,84 @@ export default function AddUser() {
       <h1>Add New User</h1>
 
       <div className="form-card">
-        {msg && (
+        {/* Error banner */}
+        {error && (
           <div style={{
-            padding:'12px 16px', borderRadius:8, marginBottom:20, fontSize:14, fontWeight:500,
-            background: msg.type === 'success' ? '#f0fdf4' : '#fef2f2',
-            color:      msg.type === 'success' ? '#16a34a' : '#dc2626',
-            border:    `1px solid ${msg.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
-            display:'flex', alignItems:'center', gap:8,
+            padding: '14px 18px', borderRadius: 10, marginBottom: 20,
+            background: '#fef2f2', color: '#dc2626',
+            border: '2px solid #fecaca', fontSize: 15, fontWeight: 600,
+            display: 'flex', alignItems: 'center', gap: 10,
           }}>
-            {msg.type === 'success' ? '✅' : '❌'} {msg.text}
-            {msg.type === 'success' && (
-              <button onClick={() => navigate('/admin/manage-users')}
-                style={{ marginLeft:'auto', background:'#16a34a', color:'#fff', border:'none',
-                  borderRadius:6, padding:'4px 12px', cursor:'pointer', fontSize:13 }}>
-                View Users →
-              </button>
-            )}
+            ❌ {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          {/* Row 1 */}
+        {/* Success banner */}
+        {success && (
+          <div style={{
+            padding: '14px 18px', borderRadius: 10, marginBottom: 20,
+            background: '#f0fdf4', color: '#15803d',
+            border: '2px solid #86efac', fontSize: 15, fontWeight: 600,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+          }}>
+            <span>✅ {success}</span>
+            <button onClick={() => navigate('/admin/manage-users')}
+              style={{ background: '#16a34a', color: '#fff', border: 'none',
+                borderRadius: 8, padding: '6px 16px', cursor: 'pointer',
+                fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>
+              View Users →
+            </button>
+          </div>
+        )}
+
+        <div>
           <div className="form-row">
             <div className="form-group">
-              <label>Full Name <span style={{color:'#ef4444'}}>*</span></label>
+              <label>Full Name <span style={{ color: '#ef4444' }}>*</span></label>
               <input type="text" name="name" value={form.name} onChange={set}
-                placeholder="e.g. Abebe Kebede" required />
+                placeholder="e.g. Abebe Kebede" />
             </div>
             <div className="form-group">
-              <label>Username <span style={{color:'#ef4444'}}>*</span></label>
+              <label>Username <span style={{ color: '#ef4444' }}>*</span></label>
               <input type="text" name="username" value={form.username} onChange={set}
-                placeholder="e.g. abebe.kebede" required />
+                placeholder="e.g. abebe.kebede" />
             </div>
           </div>
 
-          {/* Row 2 */}
           <div className="form-row">
             <div className="form-group">
-              <label>Email <span style={{color:'#ef4444'}}>*</span></label>
+              <label>Email <span style={{ color: '#ef4444' }}>*</span></label>
               <input type="email" name="email" value={form.email} onChange={set}
-                placeholder="abebe@haramaya.edu.et" required />
+                placeholder="abebe@haramaya.edu.et" />
             </div>
             <div className="form-group">
-              <label>Role <span style={{color:'#ef4444'}}>*</span></label>
-              <select name="role" value={form.role} onChange={set} required>
+              <label>Role <span style={{ color: '#ef4444' }}>*</span></label>
+              <select name="role" value={form.role} onChange={set}>
                 <option value="">Select Role</option>
                 {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
               </select>
             </div>
           </div>
 
-          {/* Row 3 — passwords */}
           <div className="form-row">
             <div className="form-group">
-              <label>Password <span style={{color:'#ef4444'}}>*</span></label>
-              <input type={showPw ? 'text' : 'password'} name="password" value={form.password}
-                onChange={set} placeholder="Min 6 characters" required />
+              <label>Password <span style={{ color: '#ef4444' }}>*</span></label>
+              <input type={showPw ? 'text' : 'password'} name="password"
+                value={form.password} onChange={set} placeholder="Min 6 characters" />
             </div>
             <div className="form-group">
-              <label>Confirm Password <span style={{color:'#ef4444'}}>*</span></label>
+              <label>Confirm Password <span style={{ color: '#ef4444' }}>*</span></label>
               <input type={showPw ? 'text' : 'password'} name="confirmPassword"
-                value={form.confirmPassword} onChange={set} placeholder="Repeat password" required />
+                value={form.confirmPassword} onChange={set} placeholder="Repeat password" />
             </div>
           </div>
-          <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:13,
-            color:'#6b7280', marginBottom:16, cursor:'pointer' }}>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13,
+            color: '#6b7280', marginBottom: 16, cursor: 'pointer' }}>
             <input type="checkbox" checked={showPw} onChange={e => setShowPw(e.target.checked)} />
             Show passwords
           </label>
 
-          {/* Row 4 */}
           <div className="form-row">
             <div className="form-group">
               <label>Department</label>
@@ -145,7 +176,6 @@ export default function AddUser() {
             </div>
           </div>
 
-          {/* Row 5 */}
           <div className="form-row">
             <div className="form-group">
               <label>Phone</label>
@@ -154,17 +184,16 @@ export default function AddUser() {
             </div>
           </div>
 
-          <div style={{ display:'flex', gap:12, marginTop:8 }}>
-            <button type="submit" className="btn-submit" disabled={loading}>
-              {loading ? 'Saving...' : '💾 Save User'}
+          <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            <button type="button" onClick={handleSubmit} className="btn-submit" disabled={loading}>
+              {loading ? '⏳ Saving...' : '💾 Save User'}
             </button>
-            <button type="button" className="btn-submit"
-              style={{ background:'#6b7280' }}
-              onClick={() => { setForm(EMPTY); setMsg(null); }}>
+            <button type="button" className="btn-submit" style={{ background: '#6b7280' }}
+              onClick={() => { setForm(EMPTY); setError(''); setSuccess(''); }}>
               🔄 Reset
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

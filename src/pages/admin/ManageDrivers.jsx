@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { getDrivers, createDriver, deleteDriver, updateDriver } from '../../api/api';
 import './adminTheme.css';
 import './manageDrivers.css';
@@ -186,21 +187,56 @@ export default function ManageDrivers() {
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="driver-stats">
-        <div className="stat-card">
-          <div className="stat-icon">👥</div>
-          <div className="stat-content"><h3>{drivers.length}</h3><p>Total Drivers</p></div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">✓</div>
-          <div className="stat-content"><h3>{drivers.filter(d => d.status === 'available').length}</h3><p>Available</p></div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">🚗</div>
-          <div className="stat-content"><h3>{drivers.filter(d => d.status === 'on-trip').length}</h3><p>On Trip</p></div>
-        </div>
-      </div>
+      {/* Stats — Pie Chart */}
+      {(() => {
+        const available = drivers.filter(d => d.status === 'available').length;
+        const onTrip    = drivers.filter(d => d.status === 'on-trip').length;
+        const offDuty   = drivers.filter(d => d.status === 'off-duty').length;
+        const inactive  = drivers.filter(d => d.isActive === false).length;
+        const pieData   = [
+          { name: 'Available', value: available, fill: '#22c55e' },
+          { name: 'On Trip',   value: onTrip,    fill: '#3b82f6' },
+          { name: 'Off Duty',  value: offDuty,   fill: '#f59e0b' },
+          { name: 'Inactive',  value: inactive,  fill: '#ef4444' },
+        ].filter(d => d.value > 0);
+
+        return (
+          <div style={{ display:'flex', alignItems:'center', gap:32, background:'#fff',
+            border:'1px solid #e2e8f0', borderRadius:14, padding:'20px 28px',
+            marginBottom:28, boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
+            {/* Donut */}
+            <div style={{ flexShrink:0 }}>
+              <PieChart width={160} height={160}>
+                <Pie data={pieData} cx={75} cy={75} innerRadius={48} outerRadius={72}
+                  dataKey="value" paddingAngle={3} stroke="none">
+                  {pieData.map((e, i) => <Cell key={i} fill={e.fill} />)}
+                </Pie>
+                <text x={80} y={70} textAnchor="middle" fill="#1e293b" fontSize={26} fontWeight={800}>{drivers.length}</text>
+                <text x={80} y={88} textAnchor="middle" fill="#94a3b8" fontSize={11}>Drivers</text>
+                <Tooltip formatter={(val, name) => [val, name]} />
+              </PieChart>
+            </div>
+            {/* Legend */}
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px 32px', flex:1 }}>
+              {[
+                { label:'Total Drivers', value: drivers.length,  color:'#6366f1' },
+                { label:'Available',     value: available,        color:'#22c55e' },
+                { label:'On Trip',       value: onTrip,           color:'#3b82f6' },
+                { label:'Off Duty',      value: offDuty,          color:'#f59e0b' },
+                { label:'Inactive',      value: inactive,         color:'#ef4444' },
+              ].map(({ label, value, color }) => (
+                <div key={label} style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  <span style={{ width:10, height:10, borderRadius:'50%', background:color, flexShrink:0 }} />
+                  <div>
+                    <div style={{ fontSize:20, fontWeight:800, color:'#1e293b', lineHeight:1 }}>{value}</div>
+                    <div style={{ fontSize:12, color:'#6b7280', marginTop:2 }}>{label}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Add Driver Form */}
       {showForm && (

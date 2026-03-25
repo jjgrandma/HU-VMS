@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   Cell, LabelList, ResponsiveContainer,
   PieChart, Pie, Sector,
 } from 'recharts';
+import { sankey, sankeyLinkHorizontal, sankeyLeft } from 'd3-sankey';
 import { getVehicles, getDrivers, getRequests, getUsers } from '../../api/api';
 import './adminTheme.css';
 import './adminDashboardOverview.css';
@@ -94,6 +95,144 @@ const PieLegend = ({ data }) => (
     ))}
   </div>
 );
+
+// ── Sankey Diagram ─────────────────────────────────────────────────────────
+const SankeyChart = ({ stats }) => {
+  const W = 680, H = 320;
+  const COLORS = {
+    Users:     '#6366f1',
+    Drivers:   '#22c55e',
+    Vehicles:  '#3b82f6',
+    Requests:  '#f59e0b',
+    Pending:   '#f59e0b',
+    Approved:  '#6366f1',
+    Completed: '#22c55e',
+    Rejected:  '#ef4444',
+    Available: '#22c55e',
+    'On Trip': '#3b82f6',
+    'Off Duty':'#94a3b8',
+  };
+
+  const nodes = [
+    { name: 'Users' },
+    { name: 'Drivers' },
+    { name: 'Vehicles' },
+    { name: 'Requests' },
+    { name: 'Pending' },
+    { name: 'Approved' },
+    { name: 'Completed' },
+    { name: 'Rejected' },
+  ];
+
+  const links = [
+    { source: 0, target: 3, value: Math.max(stats.totalRequests, 1) },
+    { source: 1, target: 3, value: Math.max(stats.activeDrivers, 1) },
+    { source: 2, target: 3, value: Math.max(stats.available, 1) },
+    { source: 3, target: 4, value: Math.max(stats.pending,   1) },
+    { source: 3, target: 5, value: Math.max(stats.approved,  1) },
+    { source: 3, target: 6, value: Math.max(stats.completed, 1) },
+    { source: 3, target: 7, value: Math.max(stats.rejected,  1) },
+  ];
+
+  const { nodes: sNodes, links: sLinks } = sankey()
+    .nodeWidth(18)
+    .nodePadding(22)
+    .nodeAlign(sankeyLeft)
+    .extent([[20, 20], [W - 20, H - 20]])
+    ({ nodes: nodes.map(n => ({ ...n })), links: links.map(l => ({ ...l })) });
+
+  const [hovered, setHovered] = useState(null);
+
+  return (
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }}>
+      <defs>
+        {sLinks.map((l, i) => {
+          const id = `sg${i}`;
+          const sc = COLORS[l.source.name] || '#94a3b8';
+          const tc = COLORS[l.target.name] || '#94a3b8';
+          return (
+            <linearGradient key={id} id={id} x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%"   stopColor={sc} stopOpacity="0.5" />
+              <stop offset="100%" stopColor={tc} stopOpacity="0.5" />
+            </linearGradient>
+          );
+        })}
+      </defs>
+
+      {/* Links */}
+      {sLinks.map((l, i) => {
+        const path = sankeyLinkHorizontal()(l);
+        const isHov = hovered === i;
+        return (
+          <g key={i}>
+            <path
+              d={path}
+              fill="none"
+              stroke={`url(#sg${i})`}
+              strokeWidth={Math.max(l.width, 2)}
+              opacity={hovered === null ? 0.55 : isHov ? 0.9 : 0.2}
+              style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
+              onMouseEnter={() => setHovered(i)}
+              onMouseLeave={() => setHovered(null)}
+            />
+            {isHov && (
+              <text
+                x={(l.source.x1 + l.target.x0) / 2}
+                y={l.y0 - 8}
+                textAnchor="middle"
+                fontSize={12}
+                fontWeight={700}
+                fill="#1e293b"
+              >
+                {l.source.name} → {l.target.name}: {l.value}
+              </text>
+            )}
+          </g>
+        );
+      })}
+
+      {/* Nodes */}
+      {sNodes.map((n, i) => {
+        const c = COLORS[n.name] || '#94a3b8';
+        const labelLeft = n.x0 > W / 2;
+        return (
+          <g key={i}>
+            <rect
+              x={n.x0} y={n.y0}
+              width={n.x1 - n.x0}
+              height={Math.max(n.y1 - n.y0, 4)}
+              fill={c}
+              rx={4}
+              opacity={0.9}
+            />
+            <text
+              x={labelLeft ? n.x0 - 8 : n.x1 + 8}
+              y={(n.y0 + n.y1) / 2}
+              dy="0.35em"
+              textAnchor={labelLeft ? 'end' : 'start'}
+              fontSize={12}
+              fontWeight={600}
+              fill="#374151"
+            >
+              {n.name}
+            </text>
+            <text
+              x={labelLeft ? n.x0 - 8 : n.x1 + 8}
+              y={(n.y0 + n.y1) / 2 + 14}
+              dy="0.35em"
+              textAnchor={labelLeft ? 'end' : 'start'}
+              fontSize={11}
+              fill={c}
+              fontWeight={700}
+            >
+              {n.value}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+};
 
 export default function AdminDashboardOverview() {
   const [stats, setStats]       = useState(null);
@@ -310,39 +449,16 @@ export default function AdminDashboardOverview() {
         </ResponsiveContainer>
       </div>
 
-      {/* ── Bottom summary row ── */}
-      <div className="adm-summary-row">
-        <div className="adm-summary-card">
-          <div className="adm-summary-icon" style={{ background:'#ede9fe', color:'#6366f1' }}>🚙</div>
+      {/* ── Sankey Flow Diagram ── */}
+      <div className="adm-chart-card adm-chart-full">
+        <div className="adm-chart-header">
           <div>
-            <div className="adm-summary-val">{stats.activeDrivers}</div>
-            <div className="adm-summary-lbl">Active Drivers</div>
-            <div className="adm-summary-sub">of {stats.totalDrivers} total</div>
+            <h2 className="adm-chart-title">System Flow Overview</h2>
+            <p className="adm-chart-sub">Users · Drivers · Vehicles → Requests → Outcomes</p>
           </div>
         </div>
-        <div className="adm-summary-card">
-          <div className="adm-summary-icon" style={{ background:'#dcfce7', color:'#22c55e' }}>✅</div>
-          <div>
-            <div className="adm-summary-val">{stats.completed}</div>
-            <div className="adm-summary-lbl">Completed Trips</div>
-            <div className="adm-summary-sub">{Math.round((stats.completed / (stats.totalRequests || 1)) * 100)}% completion rate</div>
-          </div>
-        </div>
-        <div className="adm-summary-card">
-          <div className="adm-summary-icon" style={{ background:'#fef3c7', color:'#f59e0b' }}>⏳</div>
-          <div>
-            <div className="adm-summary-val">{stats.pending}</div>
-            <div className="adm-summary-lbl">Pending Requests</div>
-            <div className="adm-summary-sub">Awaiting approval</div>
-          </div>
-        </div>
-        <div className="adm-summary-card">
-          <div className="adm-summary-icon" style={{ background:'#dbeafe', color:'#3b82f6' }}>👥</div>
-          <div>
-            <div className="adm-summary-val">{stats.totalUsers}</div>
-            <div className="adm-summary-lbl">Registered Users</div>
-            <div className="adm-summary-sub">System accounts</div>
-          </div>
+        <div style={{ padding: '8px 0 16px' }}>
+          <SankeyChart stats={stats} />
         </div>
       </div>
     </div>

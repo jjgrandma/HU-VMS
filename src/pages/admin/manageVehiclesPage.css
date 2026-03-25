@@ -1,9 +1,9 @@
 .manage-vehicles-container {
-  padding: 30px;
-  padding-left: 50px;
+  padding: 30px 30px 30px 50px;
   background: white;
   min-height: 100vh;
   color: #32CD32;
+  box-sizing: border-box;
 }
 
 .page-header {
@@ -81,31 +81,38 @@
   background: white;
   border-radius: 12px;
   overflow-x: auto;
-  border: 1px solid #32CD32;
-  box-shadow: 0 4px 20px rgba(50, 205, 50, 0.1);
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid #16a34a;
+  box-shadow: 0 4px 20px rgba(22, 163, 74, 0.1);
 }
 
 .vehicles-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1400px;
+  min-width: 1200px;
 }
 
 .vehicles-table th:last-child,
 .vehicles-table td:last-child {
   position: sticky;
   right: 0;
-  background: white;
-  z-index: 10;
-  box-shadow: -2px 0 8px rgba(50, 205, 50, 0.1);
-}
-
-.vehicles-table thead {
-  background: linear-gradient(135deg, #32CD32, #28a428);
+  background: #ffffff;
+  z-index: 2;
+  box-shadow: -3px 0 8px rgba(0,0,0,0.08);
 }
 
 .vehicles-table thead th:last-child {
-  background: linear-gradient(135deg, #32CD32, #28a428);
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  z-index: 3;
+}
+
+.vehicles-table thead {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+}
+
+.vehicles-table tbody tr:hover td:last-child {
+  background: #f8fafc;
 }
 
 .vehicles-table th {
@@ -114,7 +121,7 @@
   font-weight: 600;
   color: #fff;
   font-size: 13px;
-  border-bottom: 2px solid #32CD32;
+  border-bottom: 2px solid #16a34a;
   white-space: nowrap;
 }
 
@@ -185,21 +192,23 @@
 
 .action-buttons {
   display: flex;
-  gap: 8px;
-  align-items: center;
+  flex-direction: column;
+  gap: 5px;
+  align-items: stretch;
 }
 
 .btn-action {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border: none;
-  border-radius: 8px;
+  border-radius: 7px;
   cursor: pointer;
-  font-size: 16px;
-  transition: all 0.3s ease;
+  font-size: 15px;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  align-self: center;
 }
 
 .btn-view {
@@ -228,18 +237,19 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 30px 0;
-  padding: 20px;
+  margin: 24px 0;
+  padding: 16px 20px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 12px;
 }
 
-.table-footer {
-  color: #32CD32;
+.pagination-info-text {
+  color: #6b7280;
   font-size: 14px;
-}
-
-.table-footer p {
+  font-weight: 500;
   margin: 0;
 }
 
@@ -248,17 +258,17 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .pagination-btn {
-  min-width: 40px;
-  height: 40px;
-  padding: 0;
+  min-width: 38px;
+  height: 38px;
+  padding: 0 12px;
   background: #ffffff;
-  border: 1px solid #32CD32;
-  border-radius: 4px;
-  color: #32CD32;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #374151;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -266,36 +276,39 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
+  gap: 4px;
 }
 
 .pagination-arrow {
-  font-size: 18px;
-  font-weight: 700;
-  color: #32CD32;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
 }
 
 .pagination-number {
-  min-width: 40px;
+  min-width: 38px;
+  padding: 0;
 }
 
 .pagination-btn:hover:not(:disabled):not(.active) {
-  background: #32CD32;
-  color: white;
-  border-color: #32CD32;
+  background: #f0fdf4;
+  color: #16a34a;
+  border-color: #16a34a;
 }
 
 .pagination-btn.active {
-  background: #32CD32;
-  border-color: #32CD32;
+  background: #16a34a;
+  border-color: #16a34a;
   color: #fff;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .pagination-btn:disabled {
-  opacity: 0.3;
+  opacity: 0.4;
   cursor: not-allowed;
-  background: #f0f0f0;
-  color: #999;
+  background: #f8fafc;
+  color: #9ca3af;
 }
 
 .pagination-ellipsis {
@@ -788,7 +801,26 @@
   }
 
   .action-buttons {
-    flex-wrap: wrap;
+    flex-direction: column;
   }
 }
 
+
+/* ── Slim green horizontal scrollbar ── */
+.table-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: #16a34a;
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: #15803d;
+}

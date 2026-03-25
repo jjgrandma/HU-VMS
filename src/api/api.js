@@ -358,3 +358,32 @@ export const updateComplaint = async (id, updates) => {
   if (!res.ok) throw new Error(data.message);
   return data;
 };
+
+// ─── Fuel Records ─────────────────────────────────────────
+export const getFuelRecords = async () => {
+  const res = await fetch(`${BASE_URL}/fuel`, { headers: headers() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const createFuelRecord = async (payload) => {
+  const res = await fetch(`${BASE_URL}/fuel`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const deleteFuelRecord = async (id) => {
+  const res = await fetch(`${BASE_URL}/fuel/${id}`, {
+    method: 'DELETE',
+    headers: headers(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};

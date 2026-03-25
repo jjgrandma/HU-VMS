@@ -324,19 +324,21 @@ body {
 /* Smooth scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+  background: #f1f5f9;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #4CAF50, #2196F3);
+  background: #10b981;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #45a049, #1976D2);
+  background: #059669;
 }
 
 /* Global Dark Theme Support */

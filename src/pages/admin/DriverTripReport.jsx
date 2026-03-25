@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { getDrivers, getRequests } from '../../api/api';
 import ExportButton from '../../components/ExportButton';
+import Pagination from '../../components/Pagination';
+import ReportFilters, { filterByDate } from '../../components/ReportFilters';
 import './adminTheme.css';
 import './driverTripReport.css';
 
@@ -8,6 +10,7 @@ const DriverTripReport = () => {
   const [rows, setRows]         = useState([]);
   const [loading, setLoading]   = useState(true);
   const [searchTerm, setSearchTerm]   = useState('');
+  const [period, setPeriod]           = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
 
@@ -25,6 +28,8 @@ const DriverTripReport = () => {
             totalTrips: driverTrips.length,
             completed,
             status: d.status,
+            completedAt: driverTrips.filter(r => r.status === 'completed' && r.completedAt)
+              .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))[0]?.completedAt || null,
           };
         });
         setRows(data);
@@ -51,6 +56,8 @@ const DriverTripReport = () => {
         <ExportButton data={filtered} filename="driver_trip_report" reportTitle="Driver Trip Report" />
       </div>
 
+      <ReportFilters period={period} onPeriod={p => { setPeriod(p); setCurrentPage(1); }} />
+
       <div className="controls-bar">
         <input type="text" placeholder="Search by driver name, license, or vehicle..."
           value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
@@ -61,12 +68,12 @@ const DriverTripReport = () => {
         <p style={{ textAlign:'center', color:'#94a3b8', padding:40 }}>Loading...</p>
       ) : (
         <>
-          <div className="table-container">
-            <table className="report-table">
+          <div style={{ width:'100%', overflowX:'auto', WebkitOverflowScrolling:'touch', borderRadius:12, border:'2px solid #16a34a', boxShadow:'0 2px 8px rgba(0,0,0,0.06)' }}>
+            <table className="report-table" style={{ minWidth:800, width:'100%', borderCollapse:'collapse' }}>
               <thead>
                 <tr>
                   <th>#</th><th>Driver Name</th><th>License Number</th>
-                  <th>Assigned Vehicle</th><th>Total Trips</th><th>Completed</th><th>Status</th>
+                  <th>Assigned Vehicle</th><th>Total Trips</th><th>Completed</th><th>Status</th><th>Date Added</th>
                 </tr>
               </thead>
               <tbody>
@@ -79,6 +86,7 @@ const DriverTripReport = () => {
                     <td>{d.totalTrips}</td>
                     <td>{d.completed}</td>
                     <td><span className={`status-badge status-${d.status}`}>{d.status}</span></td>
+                    <td>{d.createdAt ? new Date(d.createdAt).toLocaleDateString() : '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -87,23 +95,12 @@ const DriverTripReport = () => {
           </div>
 
           {filtered.length > 0 && (
-            <div className="pagination-compact">
-              <div className="pagination-info-compact">
-                <span>{startIndex + 1}–{Math.min(startIndex + itemsPerPage, filtered.length)} of {filtered.length}</span>
-                <select value={itemsPerPage}
-                  onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                  className="items-per-page-compact">
-                  {[5,10,20,50].map(n => <option key={n} value={n}>{n}</option>)}
-                </select>
-              </div>
-              <div className="pagination-controls-compact">
-                <button className="pagination-btn-compact" onClick={() => setCurrentPage(1)} disabled={currentPage===1}>⟪</button>
-                <button className="pagination-btn-compact" onClick={() => setCurrentPage(p=>p-1)} disabled={currentPage===1}>‹</button>
-                <span className="page-indicator-compact">{currentPage} / {totalPages}</span>
-                <button className="pagination-btn-compact" onClick={() => setCurrentPage(p=>p+1)} disabled={currentPage===totalPages}>›</button>
-                <button className="pagination-btn-compact" onClick={() => setCurrentPage(totalPages)} disabled={currentPage===totalPages}>⟫</button>
-              </div>
-            </div>
+            <Pagination
+              currentPage={currentPage} totalPages={totalPages}
+              onPageChange={setCurrentPage} totalItems={filtered.length}
+              startIndex={startIndex} itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={n => { setItemsPerPage(n); setCurrentPage(1); }}
+            />
           )}
         </>
       )}

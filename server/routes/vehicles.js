@@ -7,7 +7,7 @@ router.get('/', authMiddleware, async (req, res) => {
   try {
     const filter = {};
     if (req.query.status) filter.status = req.query.status;
-    const vehicles = await Vehicle.find(filter);
+    const vehicles = await Vehicle.find(filter).populate('assignedDriver', 'name phone');
     res.json(vehicles);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
