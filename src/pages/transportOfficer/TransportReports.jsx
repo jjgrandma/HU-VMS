@@ -239,13 +239,13 @@ const TransportReports = () => {
                   <FileText size={24} />
                 </div>
                 <span className="rc-badge" style={{ background: 'rgba(30,64,175,0.12)', color: '#1e40af' }}>
-                  {report.reportType === 'vehicle_usage' ? 'Vehicle Usage' : 'Driver Activity'}
+                  {report.reportType?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Report'}
                 </span>
               </div>
 
               <div className="rc-body">
                 <h3>{report.reportName}</h3>
-                <p>Sent by {report.sentBy}</p>
+                <p>Sent by <strong>{report.sentBy}</strong></p>
               </div>
 
               <div className="rc-meta">

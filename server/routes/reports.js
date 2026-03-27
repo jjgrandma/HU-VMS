@@ -81,8 +81,6 @@ router.get('/requests-summary', authMiddleware, async (req, res) => {
   }
 });
 
-module.exports = router;
-
 // POST /api/reports/send — admin sends a report to an officer
 router.post('/send', authMiddleware, async (req, res) => {
   try {
@@ -105,7 +103,13 @@ router.post('/send', authMiddleware, async (req, res) => {
 // GET /api/reports/received — officer fetches reports sent to them
 router.get('/received', authMiddleware, async (req, res) => {
   try {
-    const username = req.user?.username || req.query.username;
+    // Look up the actual username from the DB using the JWT user id
+    const User = require('../models/User');
+    const user = await User.findById(req.user.id).select('username');
+    const username = user?.username;
+
+    if (!username) return res.status(400).json({ message: 'User not found' });
+
     const reports = await SentReport.find({ sentTo: username }).sort({ createdAt: -1 });
     res.json(reports);
   } catch (err) {
@@ -150,3 +154,5 @@ router.patch('/requests/:id', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
+
+module.exports = router;

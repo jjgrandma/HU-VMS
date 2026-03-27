@@ -73,7 +73,7 @@ const DriverTripReport = () => {
               <thead>
                 <tr>
                   <th>#</th><th>Driver Name</th><th>License Number</th>
-                  <th>Assigned Vehicle</th><th>Total Trips</th><th>Completed</th><th>Status</th><th>Date Added</th>
+                  <th>Assigned Vehicle</th><th>Total Trips</th><th>Completed</th><th>Status</th><th>Completed Date</th>
                 </tr>
               </thead>
               <tbody>
@@ -86,7 +86,7 @@ const DriverTripReport = () => {
                     <td>{d.totalTrips}</td>
                     <td>{d.completed}</td>
                     <td><span className={`status-badge status-${d.status}`}>{d.status}</span></td>
-                    <td>{d.createdAt ? new Date(d.createdAt).toLocaleDateString() : '—'}</td>
+                    <td>{d.completedAt ? new Date(d.completedAt).toLocaleDateString() : '—'}</td>
                   </tr>
                 ))}
               </tbody>

@@ -36,10 +36,6 @@ const AdminHeader = () => {
                   <span>👤</span>
                   <span>My Profile</span>
                 </Link>
-                <Link to="/admin/settings" className="dropdown-menu-item">
-                  <span>⚙️</span>
-                  <span>Settings</span>
-                </Link>
                 <div className="dropdown-divider"></div>
                 <button className="dropdown-menu-item logout-item">
                   <span>🚪</span>

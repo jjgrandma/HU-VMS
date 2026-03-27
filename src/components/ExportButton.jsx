@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { FileDown } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { FileDown, Send } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { sendReport, getCurrentUser } from '../api/api';
 import './ExportButton.css';
 
 const ExportButton = ({ data, filename, reportTitle }) => {
@@ -10,6 +11,10 @@ const ExportButton = ({ data, filename, reportTitle }) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [exportedFile, setExportedFile] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [shareSuccess, setShareSuccess] = useState(false);
+  const [shareError, setShareError] = useState('');
+  const currentUser = getCurrentUser();
 
   const handleExportPDF = async () => {
     setExporting(true);
@@ -121,15 +126,49 @@ const ExportButton = ({ data, filename, reportTitle }) => {
     }
   };
 
-  const handleShareWithOfficer = () => {
-    alert(`Report "${exportedFile.filename}" has been shared with Transport Officer successfully!`);
-    setShowShareModal(false);
-    setExportedFile(null);
+  const handleShareWithOfficer = async () => {
+    setSharing(true);
+    setShareError('');
+    try {
+      // Fetch transport officers from backend
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/users', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const users = await res.json();
+      const officers = users.filter(u => u.role === 'TRANSPORT' && u.isActive);
+
+      if (officers.length === 0) {
+        setShareError('No active Transport Officers found.');
+        setSharing(false);
+        return;
+      }
+
+      // Send report to each transport officer
+      const columns = data && data.length > 0 ? Object.keys(data[0]) : [];
+      await Promise.all(officers.map(officer =>
+        sendReport({
+          reportType: filename,
+          reportName: reportTitle || filename,
+          sentTo: officer.username,
+          data,
+          columns,
+        })
+      ));
+
+      setShareSuccess(true);
+    } catch (err) {
+      setShareError(err.message || 'Failed to share report.');
+    } finally {
+      setSharing(false);
+    }
   };
 
-  const handleSkipShare = () => {
+  const handleCloseModal = () => {
     setShowShareModal(false);
     setExportedFile(null);
+    setShareSuccess(false);
+    setShareError('');
   };
 
   return (
@@ -161,35 +200,63 @@ const ExportButton = ({ data, filename, reportTitle }) => {
 
       {/* Share Modal */}
       {showShareModal && (
-        <div className="share-modal-overlay" onClick={handleSkipShare}>
+        <div className="share-modal-overlay" onClick={handleCloseModal}>
           <div className="share-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="share-modal-header">
-              <h3>Export Successful!</h3>
-              <button className="modal-close-btn" onClick={handleSkipShare}>×</button>
+              <h3>{shareSuccess ? 'Report Shared!' : 'Export Successful!'}</h3>
+              <button className="modal-close-btn" onClick={handleCloseModal}>×</button>
             </div>
             <div className="share-modal-body">
-              <div className="success-icon">✅</div>
-              <p className="success-message">
-                Your report has been exported as <strong>{exportedFile?.type}</strong>
-              </p>
-              <p className="share-question">
-                Would you like to share this report with the Transport Officer?
-              </p>
-              <div className="officer-preview">
-                <div className="officer-preview-icon">🚗</div>
-                <div className="officer-preview-info">
-                  <div className="officer-preview-name">Transport Officer</div>
-                  <div className="officer-preview-email">transport@haramaya.edu.et</div>
-                </div>
-              </div>
+              {shareSuccess ? (
+                <>
+                  <div className="success-icon">✅</div>
+                  <p className="success-message">
+                    Report successfully shared with all active Transport Officers.
+                  </p>
+                  <p style={{ fontSize: 13, color: '#64748b', textAlign: 'center' }}>
+                    They can view it in their Reports section.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="success-icon">✅</div>
+                  <p className="success-message">
+                    Your report has been exported as <strong>{exportedFile?.type}</strong>
+                  </p>
+                  <p className="share-question">
+                    Would you like to share this report with the Transport Officer?
+                  </p>
+                  <div className="officer-preview">
+                    <div className="officer-preview-icon">🚗</div>
+                    <div className="officer-preview-info">
+                      <div className="officer-preview-name">Transport Officer(s)</div>
+                      <div className="officer-preview-email">All active transport officers will receive this report</div>
+                    </div>
+                  </div>
+                  {shareError && (
+                    <p style={{ color: '#dc2626', fontSize: 13, textAlign: 'center', marginTop: 8 }}>
+                      {shareError}
+                    </p>
+                  )}
+                </>
+              )}
             </div>
             <div className="share-modal-footer">
-              <button className="btn-skip" onClick={handleSkipShare}>
-                No, Thanks
-              </button>
-              <button className="btn-share-officer" onClick={handleShareWithOfficer}>
-                Yes, Share Report
-              </button>
+              {shareSuccess ? (
+                <button className="btn-share-officer" onClick={handleCloseModal}>
+                  Done
+                </button>
+              ) : (
+                <>
+                  <button className="btn-skip" onClick={handleCloseModal} disabled={sharing}>
+                    No, Thanks
+                  </button>
+                  <button className="btn-share-officer" onClick={handleShareWithOfficer} disabled={sharing}>
+                    <Send size={16} style={{ marginRight: 6 }} />
+                    {sharing ? 'Sharing...' : 'Yes, Share Report'}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

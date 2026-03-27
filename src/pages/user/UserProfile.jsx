@@ -1,405 +1,304 @@
-import { useState } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
+import { getCurrentUser } from '../../api/api';
 import './UserProfile.css';
 
-const UserProfile = () => {
-  const [activeTab, setActiveTab] = useState('personal');
-  const [profileData, setProfileData] = useState({
-    // Personal Information
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@example.com',
-    phone: '+1234567890',
-    department: 'Engineering',
-    employeeId: 'EMP-001',
-    
-    // Address
-    address: '123 Main Street',
-    city: 'New York',
-    state: 'NY',
-    zipCode: '10001',
-    
-    // Password
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-    
-    // Profile Picture
-    profilePicture: null
-  });
+const BASE = 'http://localhost:5000/api';
+const token = () => localStorage.getItem('token');
 
+const UserProfile = () => {
+  const currentUser = getCurrentUser();
+  const [activeTab, setActiveTab] = useState('personal');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [toast, setToast] = useState(null);
+  const fileRef = useRef();
+
+  const [profileData, setProfileData] = useState({
+    name: '', email: '', phone: '', department: '', employeeId: '',
+    username: '', role: '', createdAt: '',
+    profilePhoto: null,
+    currentPassword: '', newPassword: '', confirmPassword: '',
+  });
   const [errors, setErrors] = useState({});
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setProfileData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
   };
 
-  const handleProfilePictureChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileData(prev => ({
-          ...prev,
-          profilePicture: reader.result
+  // Load real user data from DB
+  useEffect(() => {
+    fetch(`${BASE}/users/me`, { headers: { Authorization: `Bearer ${token()}` } })
+      .then(r => r.json())
+      .then(user => {
+        setProfileData(p => ({
+          ...p,
+          name: user.name || '',
+          email: user.email || '',
+          phone: user.phone || '',
+          department: user.department || '',
+          employeeId: user.employeeId || '',
+          username: user.username || '',
+          role: user.role || '',
+          createdAt: user.createdAt || '',
+          profilePhoto: user.profilePhoto || null,
         }));
-      };
-      reader.readAsDataURL(file);
-    }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleChange = (e) => {
+    setProfileData(p => ({ ...p, [e.target.name]: e.target.value }));
+    setErrors(p => ({ ...p, [e.target.name]: '' }));
   };
 
-  const handlePersonalInfoSubmit = (e) => {
+  // Convert image to base64 and save to DB
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { showToast('Image must be under 2MB', 'error'); return; }
+
+    setUploadingPhoto(true);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64 = reader.result;
+      try {
+        const res = await fetch(`${BASE}/users/me`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
+          body: JSON.stringify({ profilePhoto: base64 }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        setProfileData(p => ({ ...p, profilePhoto: base64 }));
+        // Update localStorage
+        const stored = JSON.parse(localStorage.getItem('user') || '{}');
+        localStorage.setItem('user', JSON.stringify({ ...stored, profilePhoto: base64 }));
+        showToast('Profile photo updated!');
+      } catch (err) {
+        showToast(err.message || 'Failed to upload photo', 'error');
+      } finally {
+        setUploadingPhoto(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handlePersonalSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
-    
-    if (!profileData.firstName) newErrors.firstName = 'First name is required';
-    if (!profileData.lastName) newErrors.lastName = 'Last name is required';
+    if (!profileData.name) newErrors.name = 'Name is required';
     if (!profileData.email) newErrors.email = 'Email is required';
-    if (!profileData.phone) newErrors.phone = 'Phone is required';
-    
-    if (Object.keys(newErrors).length === 0) {
-      alert('Personal information updated successfully!');
-    } else {
-      setErrors(newErrors);
+    if (Object.keys(newErrors).length) { setErrors(newErrors); return; }
+
+    setSaving(true);
+    try {
+      const res = await fetch(`${BASE}/users/me`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
+        body: JSON.stringify({ name: profileData.name, email: profileData.email, phone: profileData.phone }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      const stored = JSON.parse(localStorage.getItem('user') || '{}');
+      localStorage.setItem('user', JSON.stringify({ ...stored, name: data.name, email: data.email }));
+      showToast('Profile updated successfully!');
+    } catch (err) {
+      showToast(err.message || 'Failed to save', 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handlePasswordSubmit = (e) => {
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
-    
-    if (!profileData.currentPassword) newErrors.currentPassword = 'Current password is required';
-    if (!profileData.newPassword) newErrors.newPassword = 'New password is required';
-    if (!profileData.confirmPassword) newErrors.confirmPassword = 'Confirm password is required';
-    if (profileData.newPassword !== profileData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-    if (profileData.newPassword && profileData.newPassword.length < 8) {
-      newErrors.newPassword = 'Password must be at least 8 characters';
-    }
-    
-    if (Object.keys(newErrors).length === 0) {
-      alert('Password changed successfully!');
-      setProfileData(prev => ({
-        ...prev,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      }));
-    } else {
-      setErrors(newErrors);
+    if (!profileData.currentPassword) newErrors.currentPassword = 'Required';
+    if (!profileData.newPassword) newErrors.newPassword = 'Required';
+    if (profileData.newPassword.length < 8) newErrors.newPassword = 'Min 8 characters';
+    if (profileData.newPassword !== profileData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+    if (Object.keys(newErrors).length) { setErrors(newErrors); return; }
+
+    setSaving(true);
+    try {
+      const res = await fetch(`${BASE}/users/me/change-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
+        body: JSON.stringify({ currentPassword: profileData.currentPassword, newPassword: profileData.newPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      setProfileData(p => ({ ...p, currentPassword: '', newPassword: '', confirmPassword: '' }));
+      showToast('Password changed successfully!');
+    } catch (err) {
+      showToast(err.message || 'Failed to change password', 'error');
+    } finally {
+      setSaving(false);
     }
   };
+
+  const initials = profileData.name
+    ? profileData.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'U';
+
+  if (loading) return <div style={{ padding: 60, textAlign: 'center', color: '#6b7280' }}>Loading...</div>;
 
   return (
     <div className="user-profile-page">
+      {toast && (
+        <div style={{
+          position: 'fixed', top: 20, right: 20, zIndex: 9999,
+          background: toast.type === 'error' ? '#dc2626' : '#16a34a',
+          color: '#fff', padding: '12px 20px', borderRadius: 10,
+          fontWeight: 600, fontSize: 14, boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+        }}>{toast.msg}</div>
+      )}
+
       <h1 className="profile-page-title">My Account</h1>
-      
+
       <div className="profile-container">
-        {/* Profile Header with Picture */}
+        {/* Profile Header */}
         <div className="profile-header">
           <div className="profile-picture-section">
-            <div className="profile-picture">
-              {profileData.profilePicture ? (
-                <img src={profileData.profilePicture} alt="Profile" />
+            <div className="profile-picture" onClick={() => fileRef.current.click()} title="Click to change photo">
+              {profileData.profilePhoto ? (
+                <img src={profileData.profilePhoto} alt="Profile" />
               ) : (
-                <span className="profile-initials">
-                  {profileData.firstName[0]}{profileData.lastName[0]}
-                </span>
+                <span className="profile-initials">{initials}</span>
               )}
+              <div className="profile-picture-overlay">
+                {uploadingPhoto ? '...' : '📷'}
+              </div>
             </div>
-            <input
-              type="file"
-              id="profilePictureInput"
-              accept="image/*"
-              onChange={handleProfilePictureChange}
-              style={{ display: 'none' }}
-            />
-            <button
-              type="button"
-              className="btn-upload-picture"
-              onClick={() => document.getElementById('profilePictureInput').click()}
-            >
-              Change Picture
+            <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: 'none' }} />
+            <button type="button" className="btn-upload-picture" onClick={() => fileRef.current.click()} disabled={uploadingPhoto}>
+              {uploadingPhoto ? 'Uploading...' : 'Change Photo'}
             </button>
+            <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>Max 2MB</p>
           </div>
           <div className="profile-header-info">
-            <h2>{profileData.firstName} {profileData.lastName}</h2>
-            <p className="profile-email">{profileData.email}</p>
-            <p className="profile-department">{profileData.department} • {profileData.employeeId}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+              <h2 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: '#111827' }}>
+                {profileData.name || '—'}
+              </h2>
+              <span style={{
+                padding: '3px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+                background: '#dcfce7', color: '#16a34a', textTransform: 'uppercase'
+              }}>
+                {profileData.role || 'USER'}
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px 24px' }}>
+              <div className="profile-info-item">
+                <span className="profile-info-label">Username</span>
+                <span className="profile-info-value">@{profileData.username || '—'}</span>
+              </div>
+              <div className="profile-info-item">
+                <span className="profile-info-label">Email</span>
+                <span className="profile-info-value">{profileData.email || '—'}</span>
+              </div>
+              <div className="profile-info-item">
+                <span className="profile-info-label">Department</span>
+                <span className="profile-info-value">{profileData.department || '—'}</span>
+              </div>
+              <div className="profile-info-item">
+                <span className="profile-info-label">Employee ID</span>
+                <span className="profile-info-value">{profileData.employeeId || '—'}</span>
+              </div>
+              <div className="profile-info-item">
+                <span className="profile-info-label">Phone</span>
+                <span className="profile-info-value">{profileData.phone || '—'}</span>
+              </div>
+              <div className="profile-info-item">
+                <span className="profile-info-label">Member Since</span>
+                <span className="profile-info-value">
+                  {profileData.createdAt ? new Date(profileData.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Tabs */}
         <div className="profile-tabs">
-          <button
-            className={`profile-tab ${activeTab === 'personal' ? 'active' : ''}`}
-            onClick={() => setActiveTab('personal')}
-          >
-            <span>👤</span> Personal Information
+          <button className={`profile-tab ${activeTab === 'personal' ? 'active' : ''}`} onClick={() => setActiveTab('personal')}>
+            👤 Personal Info
           </button>
-          <button
-            className={`profile-tab ${activeTab === 'password' ? 'active' : ''}`}
-            onClick={() => setActiveTab('password')}
-          >
-            <span>🔒</span> Change Password
-          </button>
-          <button
-            className={`profile-tab ${activeTab === 'preferences' ? 'active' : ''}`}
-            onClick={() => setActiveTab('preferences')}
-          >
-            <span>⚙️</span> Preferences
+          <button className={`profile-tab ${activeTab === 'password' ? 'active' : ''}`} onClick={() => setActiveTab('password')}>
+            🔒 Change Password
           </button>
         </div>
 
-        {/* Tab Content */}
         <div className="profile-content">
-          {/* Personal Information Tab */}
           {activeTab === 'personal' && (
-            <form onSubmit={handlePersonalInfoSubmit} className="profile-form">
+            <form onSubmit={handlePersonalSubmit} className="profile-form">
               <h3 className="section-title">Personal Information</h3>
-              
               <div className="form-grid">
                 <div className="form-group">
-                  <label className="form-label">First Name <span className="required">*</span></label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={profileData.firstName}
-                    onChange={handleChange}
-                    className={`form-input ${errors.firstName ? 'error' : ''}`}
-                  />
-                  {errors.firstName && <p className="error-message">{errors.firstName}</p>}
+                  <label className="form-label">Full Name <span className="required">*</span></label>
+                  <input type="text" name="name" value={profileData.name} onChange={handleChange}
+                    className={`form-input ${errors.name ? 'error' : ''}`} />
+                  {errors.name && <p className="error-message">{errors.name}</p>}
                 </div>
-
-                <div className="form-group">
-                  <label className="form-label">Last Name <span className="required">*</span></label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={profileData.lastName}
-                    onChange={handleChange}
-                    className={`form-input ${errors.lastName ? 'error' : ''}`}
-                  />
-                  {errors.lastName && <p className="error-message">{errors.lastName}</p>}
-                </div>
-
                 <div className="form-group">
                   <label className="form-label">Email <span className="required">*</span></label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={profileData.email}
-                    onChange={handleChange}
-                    className={`form-input ${errors.email ? 'error' : ''}`}
-                  />
+                  <input type="email" name="email" value={profileData.email} onChange={handleChange}
+                    className={`form-input ${errors.email ? 'error' : ''}`} />
                   {errors.email && <p className="error-message">{errors.email}</p>}
                 </div>
-
                 <div className="form-group">
-                  <label className="form-label">Phone <span className="required">*</span></label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={profileData.phone}
-                    onChange={handleChange}
-                    className={`form-input ${errors.phone ? 'error' : ''}`}
-                  />
-                  {errors.phone && <p className="error-message">{errors.phone}</p>}
+                  <label className="form-label">Phone</label>
+                  <input type="tel" name="phone" value={profileData.phone} onChange={handleChange} className="form-input" />
                 </div>
-
                 <div className="form-group">
                   <label className="form-label">Department</label>
-                  <input
-                    type="text"
-                    name="department"
-                    value={profileData.department}
-                    onChange={handleChange}
-                    className="form-input"
-                    disabled
-                  />
+                  <input type="text" value={profileData.department} className="form-input" disabled />
                 </div>
-
                 <div className="form-group">
                   <label className="form-label">Employee ID</label>
-                  <input
-                    type="text"
-                    name="employeeId"
-                    value={profileData.employeeId}
-                    onChange={handleChange}
-                    className="form-input"
-                    disabled
-                  />
+                  <input type="text" value={profileData.employeeId} className="form-input" disabled />
                 </div>
               </div>
-
-              <h3 className="section-title">Address</h3>
-              
-              <div className="form-grid">
-                <div className="form-group full-width">
-                  <label className="form-label">Street Address</label>
-                  <input
-                    type="text"
-                    name="address"
-                    value={profileData.address}
-                    onChange={handleChange}
-                    className="form-input"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">City</label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={profileData.city}
-                    onChange={handleChange}
-                    className="form-input"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">State</label>
-                  <input
-                    type="text"
-                    name="state"
-                    value={profileData.state}
-                    onChange={handleChange}
-                    className="form-input"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Zip Code</label>
-                  <input
-                    type="text"
-                    name="zipCode"
-                    value={profileData.zipCode}
-                    onChange={handleChange}
-                    className="form-input"
-                  />
-                </div>
-              </div>
-
               <div className="form-actions">
-                <button type="submit" className="btn-submit">Save Changes</button>
+                <button type="submit" className="btn-submit" disabled={saving}>
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
               </div>
             </form>
           )}
 
-          {/* Change Password Tab */}
           {activeTab === 'password' && (
             <form onSubmit={handlePasswordSubmit} className="profile-form">
               <h3 className="section-title">Change Password</h3>
-              
               <div className="form-grid-single">
                 <div className="form-group">
                   <label className="form-label">Current Password <span className="required">*</span></label>
-                  <input
-                    type="password"
-                    name="currentPassword"
-                    value={profileData.currentPassword}
-                    onChange={handleChange}
-                    className={`form-input ${errors.currentPassword ? 'error' : ''}`}
-                  />
+                  <input type="password" name="currentPassword" value={profileData.currentPassword}
+                    onChange={handleChange} className={`form-input ${errors.currentPassword ? 'error' : ''}`} />
                   {errors.currentPassword && <p className="error-message">{errors.currentPassword}</p>}
                 </div>
-
                 <div className="form-group">
                   <label className="form-label">New Password <span className="required">*</span></label>
-                  <input
-                    type="password"
-                    name="newPassword"
-                    value={profileData.newPassword}
-                    onChange={handleChange}
-                    className={`form-input ${errors.newPassword ? 'error' : ''}`}
-                  />
+                  <input type="password" name="newPassword" value={profileData.newPassword}
+                    onChange={handleChange} className={`form-input ${errors.newPassword ? 'error' : ''}`} />
                   {errors.newPassword && <p className="error-message">{errors.newPassword}</p>}
-                  <p className="input-hint">Password must be at least 8 characters long</p>
+                  <p className="input-hint">At least 8 characters</p>
                 </div>
-
                 <div className="form-group">
                   <label className="form-label">Confirm New Password <span className="required">*</span></label>
-                  <input
-                    type="password"
-                    name="confirmPassword"
-                    value={profileData.confirmPassword}
-                    onChange={handleChange}
-                    className={`form-input ${errors.confirmPassword ? 'error' : ''}`}
-                  />
+                  <input type="password" name="confirmPassword" value={profileData.confirmPassword}
+                    onChange={handleChange} className={`form-input ${errors.confirmPassword ? 'error' : ''}`} />
                   {errors.confirmPassword && <p className="error-message">{errors.confirmPassword}</p>}
                 </div>
               </div>
-
               <div className="form-actions">
-                <button type="submit" className="btn-submit">Change Password</button>
-              </div>
-            </form>
-          )}
-
-          {/* Preferences Tab */}
-          {activeTab === 'preferences' && (
-            <div className="profile-form">
-              <h3 className="section-title">Notification Preferences</h3>
-              
-              <div className="preference-item">
-                <div className="preference-info">
-                  <h4>Email Notifications</h4>
-                  <p>Receive email updates about your requests</p>
-                </div>
-                <label className="toggle-switch">
-                  <input type="checkbox" defaultChecked />
-                  <span className="toggle-slider"></span>
-                </label>
-              </div>
-
-              <div className="preference-item">
-                <div className="preference-info">
-                  <h4>Request Status Updates</h4>
-                  <p>Get notified when your request status changes</p>
-                </div>
-                <label className="toggle-switch">
-                  <input type="checkbox" defaultChecked />
-                  <span className="toggle-slider"></span>
-                </label>
-              </div>
-
-              <div className="preference-item">
-                <div className="preference-info">
-                  <h4>Complaint Updates</h4>
-                  <p>Receive updates on your submitted complaints</p>
-                </div>
-                <label className="toggle-switch">
-                  <input type="checkbox" defaultChecked />
-                  <span className="toggle-slider"></span>
-                </label>
-              </div>
-
-              <h3 className="section-title">Display Preferences</h3>
-
-              <div className="preference-item">
-                <div className="preference-info">
-                  <h4>Dark Mode</h4>
-                  <p>Use dark theme for the interface</p>
-                </div>
-                <label className="toggle-switch">
-                  <input type="checkbox" />
-                  <span className="toggle-slider"></span>
-                </label>
-              </div>
-
-              <div className="form-actions">
-                <button type="button" className="btn-submit" onClick={() => alert('Preferences saved!')}>
-                  Save Preferences
+                <button type="submit" className="btn-submit" disabled={saving}>
+                  {saving ? 'Saving...' : 'Change Password'}
                 </button>
               </div>
-            </div>
+            </form>
           )}
         </div>
       </div>

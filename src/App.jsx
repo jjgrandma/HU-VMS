@@ -10,6 +10,9 @@ import LandingPage from './pages/landing/LandingPage';
 
 // Auth
 import Login from './pages/auth/Login';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
+import ContactSupport from './pages/auth/ContactSupport';
 
 // Components
 import AdminHeader from './components/AdminHeader';
@@ -24,6 +27,8 @@ import VehicleTripHistory from './pages/admin/VehicleTripHistory';
 import ManageUsersPage from './pages/admin/ManageUsersPage';
 import AddUser from './pages/admin/AddUser';
 import ManageDrivers from './pages/admin/ManageDrivers';
+import ContactMessages from './pages/admin/ContactMessages';
+import PasswordResetManagement from './pages/admin/PasswordResetManagement';
 import UserRequestReport from './pages/admin/UserRequestReport';
 import VehicleTripReport from './pages/admin/VehicleTripReport';
 import DriverTripReport from './pages/admin/DriverTripReport';
@@ -99,6 +104,9 @@ function App() {
       {/* Landing Page - Always accessible */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login onLogin={handleLogin} />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
+      <Route path="/contact-support" element={<ContactSupport />} />
 
       {!user && (
         <>
@@ -244,6 +252,24 @@ function App() {
               </div>
             </div>
           } />
+          <Route path="/admin/contact-messages" element={
+            <div className="app">
+              <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
+              <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
+                <AdminHeader />
+                <ContactMessages />
+              </div>
+            </div>
+          } />
+          <Route path="/admin/password-reset-management" element={
+            <div className="app">
+              <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
+              <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
+                <AdminHeader />
+                <PasswordResetManagement />
+              </div>
+            </div>
+          } />
         </>
       )}
 
@@ -285,6 +311,7 @@ function App() {
             <Route path="submit-complaint" element={<SubmitComplaint />} />
             <Route path="notifications" element={<Notifications />} />
             <Route path="profile" element={<UserProfile />} />
+            <Route path="settings" element={<UserProfile />} />
           </Route>
         </>
       )}

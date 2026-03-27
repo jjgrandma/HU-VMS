@@ -15,6 +15,9 @@ const userSchema = new mongoose.Schema(
     department: String,
     employeeId: String,
     isActive: { type: Boolean, default: true },
+    profilePhoto: { type: String, default: null },
+    resetPasswordToken: String,
+    resetPasswordExpires: Date,
   },
   { timestamps: true }
 );

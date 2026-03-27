@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { Mail } from "lucide-react";
 import busLogo from "../../assets/bus.png";
 import { login } from "../../api/api";
 import "./login.css";
 
 export default function Login({ onLogin }) {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ username: "", password: "", role: "" });
+  const [formData, setFormData] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -17,11 +18,10 @@ export default function Login({ onLogin }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.role) { setError("Please select your role"); return; }
 
     setLoading(true);
     try {
-      const data = await login(formData.username, formData.password, formData.role);
+      const data = await login(formData.username, formData.password);
       onLogin({ username: data.user.username, role: data.user.role });
 
       const routes = {
@@ -32,7 +32,12 @@ export default function Login({ onLogin }) {
         FUEL_OFFICER: '/fuel/dashboard',
         GATE_OFFICER: '/gate/dashboard',
       };
-      navigate(routes[data.user.role] || '/');
+      const destination = routes[data.user.role];
+      if (!destination) {
+        setError(`Unknown role: ${data.user.role}. Contact admin.`);
+        return;
+      }
+      navigate(destination);
     } catch (err) {
       setError(err.message || "Login failed. Check your credentials.");
     } finally {
@@ -82,24 +87,8 @@ export default function Login({ onLogin }) {
               minLength={6}
             />
 
-            <label>Role</label>
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select your role</option>
-              <option value="ADMIN">Admin</option>
-              <option value="TRANSPORT">Transport Officer</option>
-              <option value="DRIVER">Driver</option>
-              <option value="USER">User</option>
-              <option value="FUEL_OFFICER">Fuel Station Officer</option>
-              <option value="GATE_OFFICER">Gate Security Officer</option>
-            </select>
-
             <div className="login-actions">
-              <a href="#">Forgot Password?</a>
+              <Link to="/forgot-password">Forgot Password?</Link>
             </div>
 
             <button type="submit" disabled={loading}>
@@ -107,7 +96,18 @@ export default function Login({ onLogin }) {
             </button>
           </form>
 
-          <div className="support" style={{display:'none'}}></div>
+          <div className="support">
+            <div className="support-divider">
+              <span>Need Help?</span>
+            </div>
+            <Link to="/contact-support" className="support-link">
+              <Mail size={18} />
+              Contact Admin Support
+            </Link>
+            <p className="support-text">
+              Having trouble accessing your account? Contact our admin team for assistance with password resets, account issues, or system access.
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -3,6 +3,51 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const { authMiddleware, requireRole } = require('../middleware/auth');
 
+// GET /api/users/me — get own profile
+router.get('/me', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// PATCH /api/users/me — update own profile
+router.patch('/me', authMiddleware, async (req, res) => {
+  try {
+    const allowed = ['name', 'email', 'phone', 'department', 'profilePhoto'];
+    const updates = {};
+    allowed.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; });
+    const updated = await User.findByIdAndUpdate(req.user.id, updates, { new: true }).select('-password');
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// POST /api/users/me/change-password — change own password
+router.post('/me/change-password', authMiddleware, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword)
+      return res.status(400).json({ message: 'Both current and new password are required' });
+    if (newPassword.length < 8)
+      return res.status(400).json({ message: 'New password must be at least 8 characters' });
+
+    const user = await User.findById(req.user.id);
+    const valid = await bcrypt.compare(currentPassword, user.password);
+    if (!valid) return res.status(400).json({ message: 'Current password is incorrect' });
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    res.json({ message: 'Password changed successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 // GET /api/users  (admin only)
 router.get('/', authMiddleware, requireRole('ADMIN'), async (req, res) => {
   try {

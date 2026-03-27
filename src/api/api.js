@@ -9,11 +9,14 @@ const headers = () => ({
 });
 
 // ─── Auth ────────────────────────────────────────────────
-export const login = async (username, password, role) => {
+export const login = async (username, password, role = null) => {
+  const body = { username, password };
+  if (role) body.role = role;
+  
   const res = await fetch(`${BASE_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password, role }),
+    body: JSON.stringify(body),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message);
@@ -167,6 +170,35 @@ export const createDriver = async (driverData) => {
 };
 
 // ─── Users ───────────────────────────────────────────────
+export const getMe = async () => {
+  const res = await fetch(`${BASE_URL}/users/me`, { headers: headers() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const updateMe = async (updates) => {
+  const res = await fetch(`${BASE_URL}/users/me`, {
+    method: 'PATCH',
+    headers: headers(),
+    body: JSON.stringify(updates),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const changePassword = async (currentPassword, newPassword) => {
+  const res = await fetch(`${BASE_URL}/users/me/change-password`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
 export const getUsers = async () => {
   const res = await fetch(`${BASE_URL}/users`, { headers: headers() });
   const data = await res.json();
