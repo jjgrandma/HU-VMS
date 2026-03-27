@@ -1,0 +1,51 @@
+.driver-schedule-page { max-width: 1200px; }
+
+.driver-schedule-section {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.driver-schedule-section h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #16a34a;
+  display: inline-block;
+}
+
+.driver-schedule-empty {
+  color: #9ca3af;
+  font-size: 14px;
+  padding: 20px 0;
+  text-align: center;
+}
+
+.driver-schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.driver-schedule-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.driver-schedule-table td {
+  padding: 12px 16px;
+  color: #111827;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.driver-schedule-table tbody tr:hover { background: #f9fafb; }

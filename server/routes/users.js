@@ -58,13 +58,16 @@ router.get('/', authMiddleware, requireRole('ADMIN'), async (req, res) => {
   }
 });
 
-// PATCH /api/users/:id
+// PATCH /api/users/:id — admin update user (guard against 'me')
 router.patch('/:id', authMiddleware, async (req, res) => {
   try {
+    const id = req.params.id;
+    // If somehow 'me' slips through, handle it
+    const targetId = id === 'me' ? req.user.id : id;
     if (req.body.password) {
       req.body.password = await bcrypt.hash(req.body.password, 10);
     }
-    const updated = await User.findByIdAndUpdate(req.params.id, req.body, { new: true }).select('-password');
+    const updated = await User.findByIdAndUpdate(targetId, req.body, { new: true }).select('-password');
     if (!updated) return res.status(404).json({ message: 'User not found' });
     res.json(updated);
   } catch (err) {
@@ -110,6 +113,19 @@ router.delete('/:id', authMiddleware, requireRole('ADMIN'), async (req, res) => 
   try {
     await User.findByIdAndDelete(req.params.id);
     res.json({ message: 'Deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// POST /api/users/profile — update own profile (avoids /:id conflict)
+router.post('/profile', authMiddleware, async (req, res) => {
+  try {
+    const allowed = ['name', 'email', 'phone', 'department', 'profilePhoto'];
+    const updates = {};
+    allowed.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; });
+    const updated = await User.findByIdAndUpdate(req.user.id, updates, { new: true }).select('-password');
+    res.json(updated);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

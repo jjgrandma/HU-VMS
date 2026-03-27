@@ -29,8 +29,13 @@ const UserProfile = () => {
 
   // Load real user data from DB
   useEffect(() => {
-    fetch(`${BASE}/users/me`, { headers: { Authorization: `Bearer ${token()}` } })
-      .then(r => r.json())
+    const t = token();
+    if (!t) { setLoading(false); return; }
+    fetch(`${BASE}/users/me`, { headers: { Authorization: `Bearer ${t}` } })
+      .then(async r => {
+        const text = await r.text();
+        try { return JSON.parse(text); } catch { throw new Error('Server error'); }
+      })
       .then(user => {
         setProfileData(p => ({
           ...p,
@@ -58,22 +63,44 @@ const UserProfile = () => {
   const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { showToast('Image must be under 2MB', 'error'); return; }
+    if (file.size > 5 * 1024 * 1024) { showToast('Image must be under 5MB', 'error'); return; }
 
     setUploadingPhoto(true);
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64 = reader.result;
+
+    // Compress image using canvas before base64 encoding
+    const compressImage = (file) => new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX = 400;
+        let { width, height } = img;
+        if (width > height) { if (width > MAX) { height = (height * MAX) / width; width = MAX; } }
+        else { if (height > MAX) { width = (width * MAX) / height; height = MAX; } }
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.src = url;
+    });
+
+    try {
+      const base64 = await compressImage(file);
       try {
-        const res = await fetch(`${BASE}/users/me`, {
-          method: 'PATCH',
+        const res = await fetch(`${BASE}/users/profile`, {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
           body: JSON.stringify({ profilePhoto: base64 }),
         });
-        const data = await res.json();
+        const text = await res.text();
+        console.log('Upload response status:', res.status);
+        console.log('Upload response text (first 200):', text.slice(0, 200));
+        let data;
+        try { data = JSON.parse(text); } catch { throw new Error(`Server error (${res.status}): ${text.slice(0, 100)}`); }
         if (!res.ok) throw new Error(data.message);
         setProfileData(p => ({ ...p, profilePhoto: base64 }));
-        // Update localStorage
         const stored = JSON.parse(localStorage.getItem('user') || '{}');
         localStorage.setItem('user', JSON.stringify({ ...stored, profilePhoto: base64 }));
         showToast('Profile photo updated!');
@@ -82,8 +109,10 @@ const UserProfile = () => {
       } finally {
         setUploadingPhoto(false);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      showToast(err.message || 'Failed to process image', 'error');
+      setUploadingPhoto(false);
+    }
   };
 
   const handlePersonalSubmit = async (e) => {
@@ -95,8 +124,8 @@ const UserProfile = () => {
 
     setSaving(true);
     try {
-      const res = await fetch(`${BASE}/users/me`, {
-        method: 'PATCH',
+      const res = await fetch(`${BASE}/users/profile`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
         body: JSON.stringify({ name: profileData.name, email: profileData.email, phone: profileData.phone }),
       });
@@ -172,11 +201,11 @@ const UserProfile = () => {
                 {uploadingPhoto ? '...' : '📷'}
               </div>
             </div>
-            <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: 'none' }} />
+            <input ref={fileRef} type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/avif,image/bmp,image/svg+xml,image/tiff,image/heic,image/heif" onChange={handlePhotoChange} style={{ display: 'none' }} />
             <button type="button" className="btn-upload-picture" onClick={() => fileRef.current.click()} disabled={uploadingPhoto}>
               {uploadingPhoto ? 'Uploading...' : 'Change Photo'}
             </button>
-            <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>Max 2MB</p>
+            <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>Max 5MB · JPG, PNG, WEBP, GIF...</p>
           </div>
           <div className="profile-header-info">
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>

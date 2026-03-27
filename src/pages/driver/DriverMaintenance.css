@@ -1,0 +1,43 @@
+.driver-maintenance-page { max-width: 1200px; }
+
+.driver-urgency-btns {
+  display: flex;
+  gap: 10px;
+}
+
+.driver-urgency-btn {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #6b7280;
+}
+
+.driver-urgency-btn:hover { border-color: #16a34a; color: #16a34a; }
+.driver-urgency-btn.selected { font-weight: 700; }
+
+.driver-report-item {
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  transition: all 0.2s;
+}
+
+.driver-report-item:hover { border-color: #16a34a; }
+
+.driver-report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.driver-report-vehicle { font-size: 14px; font-weight: 700; color: #111827; }
+.driver-report-desc    { font-size: 13px; color: #374151; margin: 0 0 8px; line-height: 1.5; }
+.driver-report-date    { font-size: 11px; color: #9ca3af; }

@@ -48,8 +48,15 @@ import ComplaintHistory from './pages/transportOfficer/ComplaintHistory';
 import TransportReports from './pages/transportOfficer/TransportReports';
 
 // Driver
-import DriverDashboard from './pages/driver/DriverDashboard';
-import DriverSettings from './pages/driver/DriverSettings';
+import DriverLayout from './pages/driver/DriverLayout';
+import NewDriverDashboard from './pages/driver/NewDriverDashboard';
+import DriverTrips from './pages/driver/DriverTrips';
+import DriverSchedule from './pages/driver/DriverSchedule';
+import DriverInspection from './pages/driver/DriverInspection';
+import DriverFuelLog from './pages/driver/DriverFuelLog';
+import DriverMaintenance from './pages/driver/DriverMaintenance';
+import DriverComplaints from './pages/driver/DriverComplaints';
+import DriverProfile from './pages/driver/DriverProfile';
 
 // User
 import UserLayout from './pages/user/UserLayout';
@@ -294,9 +301,18 @@ function App() {
       {/* Driver Routes */}
       {user?.role === 'DRIVER' && (
         <>
-          <Route path="/driver" element={<DriverDashboard onLogout={handleLogout} />} />
-          <Route path="/driver/dashboard" element={<DriverDashboard onLogout={handleLogout} />} />
-          <Route path="*" element={<Navigate to="/driver" replace />} />
+          <Route path="/driver" element={<DriverLayout onLogout={handleLogout} />}>
+            <Route index element={<NewDriverDashboard />} />
+            <Route path="dashboard"   element={<NewDriverDashboard />} />
+            <Route path="trips"       element={<DriverTrips />} />
+            <Route path="schedule"    element={<DriverSchedule />} />
+            <Route path="inspection"  element={<DriverInspection />} />
+            <Route path="fuel"        element={<DriverFuelLog />} />
+            <Route path="maintenance" element={<DriverMaintenance />} />
+            <Route path="complaints"  element={<DriverComplaints />} />
+            <Route path="profile"     element={<DriverProfile />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/driver/dashboard" replace />} />
         </>
       )}
 

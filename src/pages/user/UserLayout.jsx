@@ -27,6 +27,7 @@ const UserLayout = ({ onLogout }) => {
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [profilePhoto, setProfilePhoto] = useState(null);
   const [readIds, setReadIds] = useState(() => {
     try { return JSON.parse(localStorage.getItem('notif_read') || '[]'); } catch { return []; }
   });
@@ -35,6 +36,18 @@ const UserLayout = ({ onLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const currentUser = getCurrentUser();
+
+  // Fetch profile photo from DB on mount and on route change (catches updates from settings page)
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    fetch('http://localhost:5000/api/users/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(user => { if (user.profilePhoto) setProfilePhoto(user.profilePhoto); })
+      .catch(console.error);
+  }, [location.pathname]); // re-fetch whenever user navigates (picks up photo changes)
 
   // Fetch notifications and poll every 30s
   const fetchNotifs = () => {
@@ -230,7 +243,12 @@ const UserLayout = ({ onLogout }) => {
 
             {/* Profile + Name */}
             <div className="user-header-profile">
-              <div className="user-avatar">{initials}</div>
+              <div className="user-avatar">
+                {profilePhoto
+                  ? <img src={profilePhoto} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                  : initials
+                }
+              </div>
               <div className="user-header-info">
                 <span className="user-header-name">{currentUser?.name || 'User'}</span>
                 <span className="user-header-role">USER</span>
