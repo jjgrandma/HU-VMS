@@ -26,7 +26,9 @@ app.use('/api/drivers',   require('./routes/drivers'));
 app.use('/api/users',     require('./routes/users'));
 app.use('/api/reports',   require('./routes/reports'));
 app.use('/api/complaints',require('./routes/complaints'));
-app.use('/api/fuel',      require('./routes/fuel'));
+app.use('/api/fuel',          require('./routes/fuel'));
+app.use('/api/fuel-requests', require('./routes/fuelRequests'));
+app.use('/api/fuel-inventory', require('./routes/fuelInventory'));
 app.use('/api/contact',   require('./routes/contact'));
 app.use('/api/driver',    require('./routes/driverPortal'));
 

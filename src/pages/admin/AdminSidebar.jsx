@@ -249,6 +249,18 @@ const AdminSidebar = ({ onLogout, collapsed, onToggleCollapse }) => {
           <Icon d={ICONS.settings} />
           {!collapsed && <span>Settings</span>}
         </Link>
+
+        <button
+          className="nav-item"
+          onClick={() => { closeMobileMenu(); onLogout && onLogout(); }}
+          title="Logout"
+          style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', marginTop: 8 }}
+        >
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9" />
+          </svg>
+          {!collapsed && <span>Logout</span>}
+        </button>
       </nav>
     </div>
     </>

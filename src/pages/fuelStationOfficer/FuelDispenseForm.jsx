@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getDrivers, getVehicles } from '../../api/api';
 import './FuelDispenseForm.css';
 import './fuelstation.css';
 
@@ -17,33 +18,13 @@ const FuelDispenseForm = () => {
   const [errors, setErrors] = useState({});
   const [authStatus, setAuthStatus] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [vehicles, setVehicles] = useState([]);
+  const [drivers, setDrivers] = useState([]);
 
-  // Mock data
-  const vehicles = [
-    { id: 'VH-001', plateNumber: 'AA-001-ET' },
-    { id: 'VH-002', plateNumber: 'AA-002-ET' },
-    { id: 'VH-003', plateNumber: 'AA-003-ET' },
-    { id: 'VH-004', plateNumber: 'AA-004-ET' },
-    { id: 'VH-005', plateNumber: 'AA-005-ET' },
-    { id: 'VH-006', plateNumber: 'AA-006-ET' },
-    { id: 'VH-007', plateNumber: 'AA-007-ET' },
-    { id: 'VH-008', plateNumber: 'AA-008-ET' },
-    { id: 'VH-009', plateNumber: 'AA-009-ET' },
-    { id: 'VH-010', plateNumber: 'AA-010-ET' }
-  ];
-
-  const drivers = [
-    'John Smith',
-    'Sarah Johnson',
-    'Mike Wilson',
-    'Lisa Brown',
-    'David Lee',
-    'Emma Davis',
-    'James Miller',
-    'Anna Garcia',
-    'Robert Taylor',
-    'Maria Rodriguez'
-  ];
+  useEffect(() => {
+    getVehicles().then(setVehicles).catch(() => {});
+    getDrivers().then(setDrivers).catch(() => {});
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -195,8 +176,8 @@ const FuelDispenseForm = () => {
               >
                 <option value="">Select vehicle</option>
                 {vehicles.map(vehicle => (
-                  <option key={vehicle.id} value={vehicle.id}>
-                    {vehicle.id} - {vehicle.plateNumber}
+                  <option key={vehicle._id} value={vehicle._id}>
+                    {vehicle.plateNumber} — {vehicle.model}
                   </option>
                 ))}
               </select>
@@ -216,7 +197,7 @@ const FuelDispenseForm = () => {
               >
                 <option value="">Select driver</option>
                 {drivers.map(driver => (
-                  <option key={driver} value={driver}>{driver}</option>
+                  <option key={driver._id} value={driver.name}>{driver.name}</option>
                 ))}
               </select>
               {errors.driverName && <p className="fuel-error-message">{errors.driverName}</p>}
@@ -370,7 +351,7 @@ const FuelDispenseForm = () => {
                   className="fuel-form-input"
                 />
                 <p className="fuel-help-text">
-                  Valid codes: AUTH-2024-001, AUTH-2024-002, AUTH-2024-003
+                  Enter the authorization code provided by the transport office
                 </p>
               </div>
             </div>

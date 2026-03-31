@@ -34,6 +34,8 @@ async function seed() {
   // Clear existing
   await User.deleteMany({});
   await Vehicle.deleteMany({});
+  // Drop stale indexes (e.g. old vehicleId_1 from previous schema)
+  try { await Vehicle.collection.dropIndex('vehicleId_1'); } catch (_) {}
   await Driver.deleteMany({});
 
   // Create users with hashed password "password123"

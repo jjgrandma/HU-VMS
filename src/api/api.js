@@ -419,3 +419,85 @@ export const deleteFuelRecord = async (id) => {
   if (!res.ok) throw new Error(data.message);
   return data;
 };
+
+// ─── Fuel Requests ────────────────────────────────────────
+export const getFuelRequests = async (filters = {}) => {
+  const params = new URLSearchParams(filters).toString();
+  const res = await fetch(`${BASE_URL}/fuel-requests?${params}`, { headers: headers() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const createFuelRequest = async (payload) => {
+  const res = await fetch(`${BASE_URL}/fuel-requests`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const approveFuelRequest = async (id, permittedLiters, approvedBy) => {
+  const res = await fetch(`${BASE_URL}/fuel-requests/${id}/approve`, {
+    method: 'PUT',
+    headers: headers(),
+    body: JSON.stringify({ permittedLiters, approvedBy }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const rejectFuelRequest = async (id, rejectionReason) => {
+  const res = await fetch(`${BASE_URL}/fuel-requests/${id}/reject`, {
+    method: 'PUT',
+    headers: headers(),
+    body: JSON.stringify({ rejectionReason }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const dispenseFuel = async (id, dispensedLiters, dispensedBy) => {
+  const res = await fetch(`${BASE_URL}/fuel-requests/${id}/dispense`, {
+    method: 'PUT',
+    headers: headers(),
+    body: JSON.stringify({ dispensedLiters, dispensedBy }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+// ─── Fuel Inventory ───────────────────────────────────────
+export const getFuelInventory = async () => {
+  const res = await fetch(`${BASE_URL}/fuel-inventory`, { headers: headers() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const updateFuelInventory = async (fuelType, updates) => {
+  const res = await fetch(`${BASE_URL}/fuel-inventory/${fuelType}`, {
+    method: 'PATCH',
+    headers: headers(),
+    body: JSON.stringify(updates),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const confirmFuelReceipt = async (id) => {
+  const res = await fetch(`${BASE_URL}/fuel-requests/${id}/confirm`, {
+    method: 'PUT',
+    headers: headers(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};

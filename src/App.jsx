@@ -46,6 +46,7 @@ import DriverCoordination from './pages/transportOfficer/DriverCoordination';
 import TransportComplaints from './pages/transportOfficer/TransportComplaints';
 import ComplaintHistory from './pages/transportOfficer/ComplaintHistory';
 import TransportReports from './pages/transportOfficer/TransportReports';
+import FuelApprovals from './pages/transportOfficer/FuelApprovals';
 
 // Driver
 import DriverLayout from './pages/driver/DriverLayout';
@@ -57,6 +58,7 @@ import DriverFuelLog from './pages/driver/DriverFuelLog';
 import DriverMaintenance from './pages/driver/DriverMaintenance';
 import DriverComplaints from './pages/driver/DriverComplaints';
 import DriverProfile from './pages/driver/DriverProfile';
+import DriverFuelRequest from './pages/driver/DriverFuelRequest';
 
 // User
 import UserLayout from './pages/user/UserLayout';
@@ -104,6 +106,7 @@ function App() {
   const handleLogout = () => {
     apiLogout();
     setUser(null);
+    window.location.href = '/login';
   };
 
   return (
@@ -292,6 +295,7 @@ function App() {
             <Route path="complaints" element={<TransportComplaints />} />
             <Route path="complaint-history" element={<ComplaintHistory />} />
             <Route path="reports" element={<TransportReports />} />
+            <Route path="fuel-approvals" element={<FuelApprovals />} />
             <Route index element={<Navigate to="dashboard" replace />} />
           </Route>
           <Route path="*" element={<Navigate to="/transport/dashboard" replace />} />
@@ -308,6 +312,7 @@ function App() {
             <Route path="schedule"    element={<DriverSchedule />} />
             <Route path="inspection"  element={<DriverInspection />} />
             <Route path="fuel"        element={<DriverFuelLog />} />
+            <Route path="fuel-request" element={<DriverFuelRequest />} />
             <Route path="maintenance" element={<DriverMaintenance />} />
             <Route path="complaints"  element={<DriverComplaints />} />
             <Route path="profile"     element={<DriverProfile />} />

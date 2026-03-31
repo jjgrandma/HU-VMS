@@ -188,51 +188,8 @@ const FuelStationLayout = ({ onLogout }) => {
 
   const loadNotifications = () => {
     // Mock notifications for fuel station officer
-    const mockNotifications = [
-      {
-        id: 1,
-        title: 'New Fuel Request',
-        message: 'Vehicle VH-012 has requested 45L of diesel',
-        createdAt: new Date(Date.now() - 5 * 60000).toISOString(),
-        read: false,
-        type: 'request'
-      },
-      {
-        id: 2,
-        title: 'Low Inventory Alert',
-        message: 'Petrol inventory is below 20% threshold',
-        createdAt: new Date(Date.now() - 15 * 60000).toISOString(),
-        read: false,
-        type: 'alert'
-      },
-      {
-        id: 3,
-        title: 'Authorization Approved',
-        message: 'Fuel request TXN-004 has been authorized by Admin',
-        createdAt: new Date(Date.now() - 30 * 60000).toISOString(),
-        read: false,
-        type: 'info'
-      },
-      {
-        id: 4,
-        title: 'Daily Report Generated',
-        message: 'Your daily fuel report has been generated successfully',
-        createdAt: new Date(Date.now() - 2 * 3600000).toISOString(),
-        read: true,
-        type: 'success'
-      },
-      {
-        id: 5,
-        title: 'Maintenance Reminder',
-        message: 'Fuel pump maintenance scheduled for tomorrow',
-        createdAt: new Date(Date.now() - 4 * 3600000).toISOString(),
-        read: true,
-        type: 'info'
-      }
-    ];
-
-    setNotifications(mockNotifications);
-    setUnreadCount(mockNotifications.filter(n => !n.read).length);
+    setNotifications([]);
+    setUnreadCount(0);
   };
 
   const markAsRead = (notificationId) => {

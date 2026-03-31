@@ -1,276 +1,182 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getFuelInventory, updateFuelInventory, getCurrentUser } from '../../api/api';
 import './FuelInventory.css';
 import './fuelstation.css';
 
 const FuelInventory = () => {
-  const [inventory, setInventory] = useState({
-    diesel: {
-      available: 5000,
-      capacity: 10000,
-      lastUpdated: '2026-03-08T08:00:00'
-    },
-    petrol: {
-      available: 3500,
-      capacity: 8000,
-      lastUpdated: '2026-03-08T08:00:00'
-    }
-  });
-
+  const currentUser = getCurrentUser();
+  const [inventory, setInventory] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [modalData, setModalData] = useState({
-    fuelType: '',
-    litersAdded: '',
-    reason: ''
-  });
+  const [modalData, setModalData] = useState({ fuelType: '', litersToAdd: '', capacity: '', reason: '' });
   const [modalErrors, setModalErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  const fetchInventory = async () => {
+    try {
+      const data = await getFuelInventory();
+      setInventory(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchInventory(); }, []);
 
   const handleUpdateStock = (fuelType) => {
-    setModalData({
-      fuelType: fuelType,
-      litersAdded: '',
-      reason: ''
-    });
+    const record = inventory.find(i => i.fuelType === fuelType) || {};
+    setModalData({ fuelType, litersToAdd: '', capacity: record.capacity || '', reason: '' });
     setModalErrors({});
     setShowModal(true);
   };
 
   const handleModalChange = (e) => {
     const { name, value } = e.target;
-    setModalData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    if (modalErrors[name]) {
-      setModalErrors(prev => ({ ...prev, [name]: '' }));
-    }
+    setModalData(prev => ({ ...prev, [name]: value }));
+    if (modalErrors[name]) setModalErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  const validateModal = () => {
+  const validate = () => {
     const errors = {};
-
-    if (!modalData.litersAdded) errors.litersAdded = 'Liters added is required';
     if (!modalData.reason) errors.reason = 'Reason is required';
-
-    if (modalData.litersAdded) {
-      const liters = parseFloat(modalData.litersAdded);
-      if (liters <= 0) errors.litersAdded = 'Liters must be positive';
-
-      const currentStock = inventory[modalData.fuelType].available;
-      const capacity = inventory[modalData.fuelType].capacity;
-
-      if (currentStock + liters > capacity) {
-        errors.litersAdded = `Cannot exceed capacity. Maximum: ${capacity - currentStock}L`;
-      }
-    }
-
+    if (modalData.litersToAdd && parseFloat(modalData.litersToAdd) < 0)
+      errors.litersToAdd = 'Cannot be negative';
+    if (modalData.capacity && parseFloat(modalData.capacity) <= 0)
+      errors.capacity = 'Capacity must be positive';
     return errors;
   };
 
-  const handleModalSubmit = (e) => {
+  const handleModalSubmit = async (e) => {
     e.preventDefault();
-    const errors = validateModal();
-
-    if (Object.keys(errors).length === 0) {
-      const litersAdded = parseFloat(modalData.litersAdded);
-
-      setInventory(prev => ({
-        ...prev,
-        [modalData.fuelType]: {
-          ...prev[modalData.fuelType],
-          available: prev[modalData.fuelType].available + litersAdded,
-          lastUpdated: new Date().toISOString()
-        }
-      }));
-
-      alert(`Stock updated successfully!\n${modalData.fuelType.charAt(0).toUpperCase() + modalData.fuelType.slice(1)}: +${litersAdded}L\nReason: ${modalData.reason}`);
+    const errors = validate();
+    if (Object.keys(errors).length) { setModalErrors(errors); return; }
+    setSaving(true);
+    try {
+      const updates = { updatedBy: currentUser?.name || currentUser?.username };
+      if (modalData.litersToAdd) updates.litersToAdd = parseFloat(modalData.litersToAdd);
+      if (modalData.capacity) updates.capacity = parseFloat(modalData.capacity);
+      const updated = await updateFuelInventory(modalData.fuelType, updates);
+      setInventory(prev => prev.map(i => i.fuelType === updated.fuelType ? updated : i));
       setShowModal(false);
-    } else {
-      setModalErrors(errors);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSaving(false);
     }
   };
 
   const getStockLevel = (available, capacity) => {
-    const percentage = (available / capacity) * 100;
-    if (percentage > 50) return 'high';
-    if (percentage > 20) return 'medium';
+    if (!capacity) return 'medium';
+    const pct = (available / capacity) * 100;
+    if (pct > 50) return 'high';
+    if (pct > 20) return 'medium';
     return 'low';
   };
 
   const getStockPercentage = (available, capacity) => {
+    if (!capacity) return '0.0';
     return ((available / capacity) * 100).toFixed(1);
   };
+
+  if (loading) return <p style={{ textAlign: 'center', color: '#94a3b8', padding: 40 }}>Loading...</p>;
 
   return (
     <div className="fuel-inventory-page">
       <div className="fuel-page-header">
         <h2>Fuel Inventory Management</h2>
-        <p>Monitor and update fuel stock levels</p>
+        <p>Track tank stock levels. Add fuel when a delivery arrives. Stock automatically decreases when fuel is dispensed to drivers.</p>
       </div>
 
-      {/* Inventory Cards */}
       <div className="fuel-inventory-grid">
-        {/* Diesel Card */}
-        <div className="fuel-inventory-card">
-          <div className="fuel-inventory-header">
-            <div className="fuel-type-info">
-              <span className="fuel-type-icon diesel">🟢</span>
-              <h3>Diesel</h3>
-            </div>
-            <span className={`stock-level-badge ${getStockLevel(inventory.diesel.available, inventory.diesel.capacity)}`}>
-              {getStockPercentage(inventory.diesel.available, inventory.diesel.capacity)}%
-            </span>
-          </div>
-
-          <div className="fuel-inventory-content">
-            <div className="fuel-amount">
-              <span className="amount-value">{inventory.diesel.available.toLocaleString()}</span>
-              <span className="amount-unit">Liters</span>
+        {inventory.map(item => (
+          <div key={item.fuelType} className="fuel-inventory-card">
+            <div className="fuel-inventory-header">
+              <div className="fuel-type-info">
+                <span className="fuel-type-icon">{item.fuelType === 'Diesel' ? '🟢' : '🟠'}</span>
+                <h3>{item.fuelType}</h3>
+              </div>
+              <span className={`stock-level-badge ${getStockLevel(item.available, item.capacity)}`}>
+                {getStockPercentage(item.available, item.capacity)}%
+              </span>
             </div>
 
-            <div className="fuel-capacity">
-              <span>Capacity: {inventory.diesel.capacity.toLocaleString()}L</span>
-            </div>
+            <div className="fuel-inventory-content">
+              <div className="fuel-amount">
+                <span className="amount-value">{item.available.toLocaleString()}</span>
+                <span className="amount-unit">Liters</span>
+              </div>
+              <div className="fuel-capacity">
+                <span>Capacity: {item.capacity ? `${item.capacity.toLocaleString()}L` : 'Not set'}</span>
+              </div>
 
-            <div className="fuel-progress-bar">
-              <div
-                className={`fuel-progress-fill ${getStockLevel(inventory.diesel.available, inventory.diesel.capacity)}`}
-                style={{ width: `${getStockPercentage(inventory.diesel.available, inventory.diesel.capacity)}%` }}
-              ></div>
-            </div>
+              {item.capacity > 0 && (
+                <div className="fuel-progress-bar">
+                  <div className={`fuel-progress-fill ${getStockLevel(item.available, item.capacity)}`}
+                    style={{ width: `${getStockPercentage(item.available, item.capacity)}%` }} />
+                </div>
+              )}
 
-            <div className="fuel-last-updated">
-              Last Updated: {new Date(inventory.diesel.lastUpdated).toLocaleString()}
-            </div>
+              <div className="fuel-last-updated">
+                Last Updated: {item.updatedAt ? new Date(item.updatedAt).toLocaleString() : 'Never'}
+                {item.updatedBy && ` by ${item.updatedBy}`}
+              </div>
 
-            <button
-              className="fuel-btn-update"
-              onClick={() => handleUpdateStock('diesel')}
-            >
-              <span>📦</span> Update Stock
-            </button>
-          </div>
-        </div>
-
-        {/* Petrol Card */}
-        <div className="fuel-inventory-card">
-          <div className="fuel-inventory-header">
-            <div className="fuel-type-info">
-              <span className="fuel-type-icon petrol">🟠</span>
-              <h3>Petrol</h3>
-            </div>
-            <span className={`stock-level-badge ${getStockLevel(inventory.petrol.available, inventory.petrol.capacity)}`}>
-              {getStockPercentage(inventory.petrol.available, inventory.petrol.capacity)}%
-            </span>
-          </div>
-
-          <div className="fuel-inventory-content">
-            <div className="fuel-amount">
-              <span className="amount-value">{inventory.petrol.available.toLocaleString()}</span>
-              <span className="amount-unit">Liters</span>
-            </div>
-
-            <div className="fuel-capacity">
-              <span>Capacity: {inventory.petrol.capacity.toLocaleString()}L</span>
-            </div>
-
-            <div className="fuel-progress-bar">
-              <div
-                className={`fuel-progress-fill ${getStockLevel(inventory.petrol.available, inventory.petrol.capacity)}`}
-                style={{ width: `${getStockPercentage(inventory.petrol.available, inventory.petrol.capacity)}%` }}
-              ></div>
-            </div>
-
-            <div className="fuel-last-updated">
-              Last Updated: {new Date(inventory.petrol.lastUpdated).toLocaleString()}
-            </div>
-
-            <button
-              className="fuel-btn-update"
-              onClick={() => handleUpdateStock('petrol')}
-            >
-              <span>📦</span> Update Stock
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Update Stock Modal */}
-      {showModal && (
-        <div className="fuel-modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="fuel-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="fuel-modal-header">
-              <h3>Update {modalData.fuelType.charAt(0).toUpperCase() + modalData.fuelType.slice(1)} Stock</h3>
-              <button
-                className="fuel-modal-close"
-                onClick={() => setShowModal(false)}
-              >
-                ×
+              <button className="fuel-btn-update" onClick={() => handleUpdateStock(item.fuelType)}>
+                <span>📦</span> Update Stock
               </button>
             </div>
+          </div>
+        ))}
+      </div>
 
+      {showModal && (
+        <div className="fuel-modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="fuel-modal" onClick={e => e.stopPropagation()}>
+            <div className="fuel-modal-header">
+              <h3>Update {modalData.fuelType} Stock</h3>
+              <button className="fuel-modal-close" onClick={() => setShowModal(false)}>×</button>
+            </div>
             <form onSubmit={handleModalSubmit}>
               <div className="fuel-modal-content">
                 <div className="fuel-form-group">
-                  <label className="fuel-form-label">
-                    Fuel Type
-                  </label>
-                  <input
-                    type="text"
-                    value={modalData.fuelType.charAt(0).toUpperCase() + modalData.fuelType.slice(1)}
-                    disabled
-                    className="fuel-form-input disabled"
-                  />
+                  <label className="fuel-form-label">Liters to Add</label>
+                  <input type="number" name="litersToAdd" value={modalData.litersToAdd}
+                    onChange={handleModalChange} placeholder="e.g. 500" step="0.1" min="0"
+                    className={`fuel-form-input ${modalErrors.litersToAdd ? 'error' : ''}`} />
+                  {modalErrors.litersToAdd && <p className="fuel-error-message">{modalErrors.litersToAdd}</p>}
                 </div>
 
                 <div className="fuel-form-group">
-                  <label className="fuel-form-label">
-                    Liters Added <span className="required">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="litersAdded"
-                    value={modalData.litersAdded}
-                    onChange={handleModalChange}
-                    placeholder="Enter liters to add"
-                    step="0.1"
-                    min="0"
-                    className={`fuel-form-input ${modalErrors.litersAdded ? 'error' : ''}`}
-                  />
-                  {modalErrors.litersAdded && <p className="fuel-error-message">{modalErrors.litersAdded}</p>}
+                  <label className="fuel-form-label">Set Tank Capacity (L)</label>
+                  <input type="number" name="capacity" value={modalData.capacity}
+                    onChange={handleModalChange} placeholder="e.g. 10000" min="0"
+                    className={`fuel-form-input ${modalErrors.capacity ? 'error' : ''}`} />
+                  <p style={{ fontSize: 12, color: '#6b7280', margin: '4px 0 0' }}>Leave blank to keep current capacity</p>
+                  {modalErrors.capacity && <p className="fuel-error-message">{modalErrors.capacity}</p>}
                 </div>
 
                 <div className="fuel-form-group">
-                  <label className="fuel-form-label">
-                    Reason <span className="required">*</span>
-                  </label>
-                  <select
-                    name="reason"
-                    value={modalData.reason}
-                    onChange={handleModalChange}
-                    className={`fuel-form-select ${modalErrors.reason ? 'error' : ''}`}
-                  >
+                  <label className="fuel-form-label">Reason <span className="required">*</span></label>
+                  <select name="reason" value={modalData.reason} onChange={handleModalChange}
+                    className={`fuel-form-select ${modalErrors.reason ? 'error' : ''}`}>
                     <option value="">Select reason</option>
                     <option value="Fuel Delivery">Fuel Delivery</option>
                     <option value="Tank Refill">Tank Refill</option>
                     <option value="Emergency Refill">Emergency Refill</option>
                     <option value="Inventory Correction">Inventory Correction</option>
+                    <option value="Capacity Update">Capacity Update</option>
                     <option value="Other">Other</option>
                   </select>
                   {modalErrors.reason && <p className="fuel-error-message">{modalErrors.reason}</p>}
                 </div>
               </div>
-
               <div className="fuel-modal-actions">
-                <button type="submit" className="fuel-btn-primary">
-                  Update Stock
+                <button type="submit" className="fuel-btn-primary" disabled={saving}>
+                  {saving ? 'Saving...' : 'Update Stock'}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="fuel-btn-secondary"
-                >
-                  Cancel
-                </button>
+                <button type="button" onClick={() => setShowModal(false)} className="fuel-btn-secondary">Cancel</button>
               </div>
             </form>
           </div>
