@@ -10,7 +10,8 @@ import {
   Truck,
   ChevronLeft,
   ChevronRight,
-  History
+  History,
+  Fuel
 } from 'lucide-react';
 import './TransportSidebar.css';
 
@@ -25,7 +26,8 @@ const TransportSidebar = ({ isOpen, toggleSidebar }) => {
     { path: '/transport/drivers', icon: <Users size={20} />, label: 'Driver Coordination' },
     { path: '/transport/complaints', icon: <AlertTriangle size={20} />, label: 'Complaints' },
     { path: '/transport/complaint-history', icon: <History size={20} />, label: 'Complaint History' },
-    { path: '/transport/reports', icon: <FileText size={20} />, label: 'Reports' }
+    { path: '/transport/reports', icon: <FileText size={20} />, label: 'Reports' },
+    { path: '/transport/fuel-approvals', icon: <Fuel size={20} />, label: 'Fuel Approvals' }
   ];
 
   return (

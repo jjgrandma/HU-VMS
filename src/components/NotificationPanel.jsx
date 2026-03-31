@@ -5,46 +5,7 @@ import { getVehicleUsageReport, getDriverActivityReport, sendReport, getReportRe
 import './NotificationPanel.css';
 
 const NotificationPanel = ({ isOpen, onClose }) => {
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: 'access_denied',
-      role: 'Driver',
-      username: 'john_driver',
-      fullName: 'John Smith',
-      message: 'Cannot access account - Login failed multiple times',
-      timestamp: '5 minutes ago',
-      status: 'pending',
-      priority: 'high',
-      avatar: '👨‍✈️'
-    },
-    {
-      id: 2,
-      type: 'password_reset',
-      role: 'User',
-      username: 'jane_user',
-      fullName: 'Jane Doe',
-      requestType: 'password',
-      message: 'Password reset request',
-      timestamp: '15 minutes ago',
-      status: 'pending',
-      priority: 'medium',
-      avatar: '👩'
-    },
-    {
-      id: 3,
-      type: 'username_reset',
-      role: 'Driver',
-      username: 'mike_driver',
-      fullName: 'Mike Johnson',
-      requestType: 'both',
-      message: 'Username and Password reset request',
-      timestamp: '1 hour ago',
-      status: 'pending',
-      priority: 'high',
-      avatar: '👨‍✈️'
-    },
-  ]);
+  const [notifications, setNotifications] = useState([]);
 
   // Load real report requests from DB and merge into notifications
   useEffect(() => {

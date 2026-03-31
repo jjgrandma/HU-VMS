@@ -76,7 +76,8 @@ const DriverLayout = ({ onLogout }) => {
     { to: '/driver/trips',     icon: <Car size={18} />,             label: 'My Trips' },
     { to: '/driver/schedule',  icon: <Calendar size={18} />,        label: 'Schedule' },
     { to: '/driver/inspection',icon: <ClipboardCheck size={18} />,  label: 'Inspection' },
-    { to: '/driver/fuel',      icon: <Fuel size={18} />,            label: 'Fuel Log' },
+    { to: '/driver/fuel',         icon: <Fuel size={18} />,            label: 'Fuel Log' },
+    { to: '/driver/fuel-request', icon: <Fuel size={18} />,            label: 'Fuel Request' },
     { to: '/driver/maintenance',icon: <Wrench size={18} />,                label: 'Maintenance' },
     { to: '/driver/complaints', icon: <MessageSquareWarning size={18} />,  label: 'Complaints' },
   ];
