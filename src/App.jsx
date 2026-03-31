@@ -347,11 +347,9 @@ function App() {
             <Route index element={<Navigate to="/fuel/dashboard" replace />} />
             <Route path="dashboard" element={<FuelDashboard />} />
             <Route path="requests" element={<FuelRequests />} />
-            <Route path="dispense" element={<FuelDispenseForm />} />
             <Route path="inventory" element={<FuelInventory />} />
             <Route path="reports" element={<FuelReports />} />
             <Route path="notifications" element={<FuelNotifications />} />
-            <Route path="transactions" element={<FuelTransactionHistory />} />
             <Route path="profile" element={<FuelStationProfile />} />
             <Route path="settings" element={<FuelStationSettings />} />
             <Route path="performance" element={<FuelDashboard />} />

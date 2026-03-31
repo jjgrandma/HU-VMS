@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
+import { getFuelRequests, getFuelInventory, getMe, getCurrentUser } from '../../api/api';
 import './fuelstation.css';
 
 const FuelStationLayout = ({ onLogout }) => {
@@ -8,41 +9,37 @@ const FuelStationLayout = ({ onLogout }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [fuelOfficerInfo, setFuelOfficerInfo] = useState(() => {
-    // Initialize from localStorage if available
-    const savedSettings = localStorage.getItem('fuelStationSettings');
-    const savedProfilePhoto = localStorage.getItem('fuelStationProfilePhoto');
-    
-    let initialInfo = {
-      name: 'Sarah Mohammed',
-      email: 'sarah.mohammed@university.edu.et',
-      employeeId: 'FS-2024-001',
-      role: 'Fuel Station Officer',
-      fuelStationName: 'Main Campus Fuel Station',
-      avatar: savedProfilePhoto || null
-    };
-
-    if (savedSettings) {
-      try {
-        const parsed = JSON.parse(savedSettings);
-        if (parsed.account) {
-          initialInfo = {
-            ...initialInfo,
-            name: parsed.account.name || initialInfo.name,
-            email: parsed.account.email || initialInfo.email,
-            employeeId: parsed.account.employeeId || initialInfo.employeeId,
-            fuelStationName: parsed.account.fuelStationName || initialInfo.fuelStationName
-          };
-        }
-      } catch (e) {
-        console.error('Error loading settings:', e);
-      }
-    }
-
-    return initialInfo;
+  const [fuelOfficerInfo, setFuelOfficerInfo] = useState({
+    name: '', email: '', employeeId: '', role: 'Fuel Station Officer', avatar: null
   });
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Load real user info from DB
+  useEffect(() => {
+    getMe()
+      .then(user => {
+        setFuelOfficerInfo({
+          name: user.name || '',
+          email: user.email || '',
+          employeeId: user.employeeId || '',
+          role: user.role || 'Fuel Station Officer',
+          avatar: user.profilePhoto || localStorage.getItem('fuelStationProfilePhoto') || null,
+        });
+      })
+      .catch(() => {
+        // Fallback to localStorage token data
+        const u = getCurrentUser();
+        if (u) setFuelOfficerInfo(prev => ({ ...prev, name: u.name || '', email: u.email || '' }));
+      });
+  }, [location.pathname]); // refresh on navigation so photo updates reflect
+
+  // Listen for photo updates from profile page
+  useEffect(() => {
+    const handler = (e) => setFuelOfficerInfo(prev => ({ ...prev, avatar: e.detail.profilePhoto }));
+    window.addEventListener('fuelProfilePhotoUpdated', handler);
+    return () => window.removeEventListener('fuelProfilePhotoUpdated', handler);
+  }, []);
 
   // Apply theme on component mount and when settings change
   useEffect(() => {
@@ -186,10 +183,26 @@ const FuelStationLayout = ({ onLogout }) => {
     return () => clearInterval(interval);
   }, []);
 
-  const loadNotifications = () => {
-    // Mock notifications for fuel station officer
-    setNotifications([]);
-    setUnreadCount(0);
+  const loadNotifications = async () => {
+    try {
+      const [requests, inventory] = await Promise.all([getFuelRequests(), getFuelInventory()]);
+      const notifs = [];
+
+      requests.filter(r => r.status === 'approved').forEach(r => {
+        notifs.push({ id: `approved-${r._id}`, title: 'Ready to Dispense', message: `${r.driverName} — ${r.permittedLiters}L ${r.fuelType}`, read: false, type: 'request' });
+      });
+      requests.filter(r => r.status === 'pending').forEach(r => {
+        notifs.push({ id: `pending-${r._id}`, title: 'New Fuel Request', message: `${r.driverName} requested ${r.requestedLiters}L ${r.fuelType}`, read: false, type: 'request' });
+      });
+      inventory.forEach(inv => {
+        if (inv.capacity && (inv.available / inv.capacity) * 100 <= 20) {
+          notifs.push({ id: `inv-${inv.fuelType}`, title: `${inv.fuelType} Low`, message: `Only ${inv.available}L remaining`, read: false, type: 'alert' });
+        }
+      });
+
+      setNotifications(notifs);
+      setUnreadCount(notifs.filter(n => !n.read).length);
+    } catch (_) {}
   };
 
   const markAsRead = (notificationId) => {
@@ -308,14 +321,6 @@ const FuelStationLayout = ({ onLogout }) => {
             <span>Reports</span>
           </Link>
 
-          <Link
-            to="/fuel/transactions"
-            className={`fuel-nav-item ${location.pathname === '/fuel/transactions' ? 'active' : ''}`}
-            onClick={closeMobileMenu}
-          >
-            <span className="fuel-nav-icon">📜</span>
-            <span>Transactions</span>
-          </Link>
         </nav>
 
         <div className="fuel-sidebar-footer">

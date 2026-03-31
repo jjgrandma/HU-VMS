@@ -1,310 +1,212 @@
 import { useState, useEffect } from 'react';
+import { getMe, updateMe, changePassword, getCurrentUser } from '../../api/api';
 import './FuelStationProfile.css';
 
 const FuelStationProfile = () => {
-    const [profileData, setProfileData] = useState({
-        fullName: 'Sarah Mohammed',
-        employeeId: 'FS-2024-001',
-        role: 'Fuel Station Officer',
-        fuelStationName: 'Main Campus Fuel Station',
-        phoneNumber: '+251-911-345678',
-        email: 'sarah.mohammed@university.edu.et',
-        profilePhoto: null,
-        shiftStart: '08:00',
-        shiftEnd: '16:00',
-        joinDate: '2024-02-01',
-        totalFuelDispensed: 15420,
-        monthlyFuelDispensed: 2340,
-        lastLogin: '2026-03-09 09:15:00'
-    });
-
+    const [profile, setProfile] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
-    const [editData, setEditData] = useState({ ...profileData });
+    const [editData, setEditData] = useState({});
+    const [saving, setSaving] = useState(false);
+    const [successMsg, setSuccessMsg] = useState('');
+    const [errorMsg, setErrorMsg] = useState('');
 
-    // Load saved profile photo on component mount
+    // Password change state
+    const [showPwdForm, setShowPwdForm] = useState(false);
+    const [pwdData, setPwdData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    const [pwdError, setPwdError] = useState('');
+    const [pwdSuccess, setPwdSuccess] = useState('');
+
     useEffect(() => {
-        const savedProfilePhoto = localStorage.getItem('fuelStationProfilePhoto');
-        if (savedProfilePhoto) {
-            setProfileData(prev => ({
-                ...prev,
-                profilePhoto: savedProfilePhoto
-            }));
-            setEditData(prev => ({
-                ...prev,
-                profilePhoto: savedProfilePhoto
-            }));
-        } else {
-            // Set a default profile photo for demonstration
-            const defaultPhoto = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iNTAiIGZpbGw9IiM4YjVjZjYiLz4KPHN2ZyB4PSIyNSIgeT0iMjAiIHdpZHRoPSI1MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzEzLjEgMiAxNCAyLjkgMTQgNEMxNCA1LjEgMTMuMSA2IDEyIDZDMTAuOSA2IDEwIDUuMSAxMCA0QzEwIDIuOSAxMC45IDIgMTIgMlpNMjEgOVYyMkgzVjlDMyA4IDQgNyA1IDdIMTlDMjAgNyAyMSA4IDIxIDlaIi8+Cjwvc3ZnPgo8L3N2Zz4K';
-            setProfileData(prev => ({
-                ...prev,
-                profilePhoto: defaultPhoto
-            }));
-            setEditData(prev => ({
-                ...prev,
-                profilePhoto: defaultPhoto
-            }));
-            localStorage.setItem('fuelStationProfilePhoto', defaultPhoto);
-
-            // Notify the header about the default photo
-            window.dispatchEvent(new CustomEvent('fuelProfilePhotoUpdated', {
-                detail: { profilePhoto: defaultPhoto }
-            }));
-        }
+        getMe()
+            .then(data => {
+                setProfile(data);
+                setEditData({
+                    name: data.name || '',
+                    email: data.email || '',
+                    phone: data.phone || '',
+                    department: data.department || '',
+                });
+            })
+            .catch(err => setErrorMsg(err.message))
+            .finally(() => setLoading(false));
     }, []);
 
-    const handleEdit = () => {
-        setIsEditing(true);
-        setEditData({ ...profileData });
-    };
-
-    const handleSave = () => {
-        setProfileData({ ...editData });
-
-        // Save profile photo to localStorage
-        if (editData.profilePhoto) {
-            localStorage.setItem('fuelStationProfilePhoto', editData.profilePhoto);
-
-            // Dispatch custom event to notify other components
-            window.dispatchEvent(new CustomEvent('fuelProfilePhotoUpdated', {
-                detail: { profilePhoto: editData.profilePhoto }
-            }));
-        }
-
-        setIsEditing(false);
-    };
-
-    const handleCancel = () => {
-        setEditData({ ...profileData });
-        setIsEditing(false);
-    };
-
-    const handleInputChange = (field, value) => {
-        setEditData(prev => ({
-            ...prev,
-            [field]: value
-        }));
-    };
-
-    const handlePhotoUpload = (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const photoData = e.target.result;
-                setEditData(prev => ({
-                    ...prev,
-                    profilePhoto: photoData
-                }));
-            };
-            reader.readAsDataURL(file);
+    const handleSave = async () => {
+        setSaving(true);
+        setErrorMsg('');
+        try {
+            const updated = await updateMe(editData);
+            setProfile(updated);
+            setIsEditing(false);
+            setSuccessMsg('Profile updated successfully!');
+            setTimeout(() => setSuccessMsg(''), 3000);
+        } catch (err) {
+            setErrorMsg(err.message);
+        } finally {
+            setSaving(false);
         }
     };
+
+    const handlePhotoUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+            const photoData = ev.target.result;
+            try {
+                const updated = await updateMe({ profilePhoto: photoData });
+                setProfile(updated);
+                localStorage.setItem('fuelStationProfilePhoto', photoData);
+                window.dispatchEvent(new CustomEvent('fuelProfilePhotoUpdated', { detail: { profilePhoto: photoData } }));
+                setSuccessMsg('Photo updated!');
+                setTimeout(() => setSuccessMsg(''), 3000);
+            } catch (err) {
+                setErrorMsg(err.message);
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleChangePassword = async (e) => {
+        e.preventDefault();
+        setPwdError('');
+        if (pwdData.newPassword !== pwdData.confirmPassword) { setPwdError('Passwords do not match'); return; }
+        if (pwdData.newPassword.length < 8) { setPwdError('Password must be at least 8 characters'); return; }
+        try {
+            await changePassword(pwdData.currentPassword, pwdData.newPassword);
+            setPwdSuccess('Password changed successfully!');
+            setPwdData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+            setTimeout(() => { setPwdSuccess(''); setShowPwdForm(false); }, 3000);
+        } catch (err) {
+            setPwdError(err.message);
+        }
+    };
+
+    const initials = profile?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'FO';
+
+    if (loading) return <p style={{ textAlign: 'center', color: '#94a3b8', padding: 40 }}>Loading...</p>;
 
     return (
         <div className="fuel-profile-container">
             <div className="fuel-profile-header">
                 <div className="fuel-profile-title">
-                    <h2>⛽ Fuel Station Profile</h2>
-                    <p>Fuel Officer Information & Account Management</p>
+                    <h2>⛽ My Profile</h2>
+                    <p>Manage your account information</p>
                 </div>
                 {!isEditing ? (
-                    <button className="fuel-btn-edit" onClick={handleEdit}>
-                        <span>✏️</span> Edit Profile
+                    <button className="fuel-btn-edit" onClick={() => setIsEditing(true)}>
+                        ✏️ Edit Profile
                     </button>
                 ) : (
                     <div className="fuel-edit-actions">
-                        <button className="fuel-btn-save" onClick={handleSave}>
-                            <span>💾</span> Save
+                        <button className="fuel-btn-save" onClick={handleSave} disabled={saving}>
+                            {saving ? 'Saving...' : '💾 Save'}
                         </button>
-                        <button className="fuel-btn-cancel" onClick={handleCancel}>
-                            <span>❌</span> Cancel
+                        <button className="fuel-btn-cancel" onClick={() => { setIsEditing(false); setEditData({ name: profile.name, email: profile.email, phone: profile.phone || '', department: profile.department || '' }); }}>
+                            ❌ Cancel
                         </button>
                     </div>
                 )}
             </div>
 
+            {successMsg && <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a', padding: '10px 16px', borderRadius: 8, marginBottom: 16 }}>{successMsg}</div>}
+            {errorMsg && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', padding: '10px 16px', borderRadius: 8, marginBottom: 16 }}>{errorMsg}</div>}
+
             <div className="fuel-profile-content">
-                {/* Profile Photo Section */}
+                {/* Photo */}
                 <div className="fuel-profile-photo-section">
                     <div className="fuel-profile-photo">
-                        {profileData.profilePhoto ? (
-                            <img src={profileData.profilePhoto} alt="Profile" />
-                        ) : (
-                            <div className="fuel-profile-photo-placeholder">
-                                <span>👤</span>
-                            </div>
-                        )}
+                        {profile?.profilePhoto
+                            ? <img src={profile.profilePhoto} alt="Profile" />
+                            : <div className="fuel-profile-photo-placeholder" style={{ background: '#84cc16', color: '#fff', fontSize: 32, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', borderRadius: '50%' }}>{initials}</div>
+                        }
                     </div>
-                    {isEditing && (
-                        <div className="fuel-photo-upload">
-                            <input
-                                type="file"
-                                id="fuelPhotoUpload"
-                                accept="image/*"
-                                onChange={handlePhotoUpload}
-                                style={{ display: 'none' }}
-                            />
-                            <label htmlFor="fuelPhotoUpload" className="fuel-photo-upload-btn">
-                                <span>📷</span> Upload Photo
-                            </label>
-                        </div>
-                    )}
+                    <input type="file" id="fuelPhotoUpload" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+                    <label htmlFor="fuelPhotoUpload" className="fuel-photo-upload-btn" style={{ cursor: 'pointer' }}>
+                        📷 Change Photo
+                    </label>
                 </div>
 
-                {/* Profile Information */}
                 <div className="fuel-profile-info-grid">
-                    {/* Personal Information */}
+                    {/* Personal Info */}
                     <div className="fuel-info-section">
                         <h3>👤 Personal Information</h3>
                         <div className="fuel-info-grid">
                             <div className="fuel-info-item">
                                 <label>Full Name</label>
-                                {isEditing ? (
-                                    <input
-                                        type="text"
-                                        value={editData.fullName}
-                                        onChange={(e) => handleInputChange('fullName', e.target.value)}
-                                        className="fuel-input"
-                                    />
-                                ) : (
-                                    <span className="fuel-info-value">{profileData.fullName}</span>
-                                )}
+                                {isEditing
+                                    ? <input type="text" value={editData.name} onChange={e => setEditData(p => ({ ...p, name: e.target.value }))} className="fuel-input" />
+                                    : <span className="fuel-info-value">{profile?.name}</span>}
                             </div>
-
                             <div className="fuel-info-item">
-                                <label>Employee ID</label>
-                                <span className="fuel-info-value fuel-readonly">{profileData.employeeId}</span>
+                                <label>Username</label>
+                                <span className="fuel-info-value fuel-readonly">{profile?.username}</span>
                             </div>
-
                             <div className="fuel-info-item">
                                 <label>Role</label>
-                                <span className="fuel-info-value fuel-readonly">{profileData.role}</span>
+                                <span className="fuel-info-value fuel-readonly">{profile?.role}</span>
                             </div>
-
                             <div className="fuel-info-item">
-                                <label>Fuel Station Name</label>
-                                {isEditing ? (
-                                    <input
-                                        type="text"
-                                        value={editData.fuelStationName}
-                                        onChange={(e) => handleInputChange('fuelStationName', e.target.value)}
-                                        className="fuel-input"
-                                    />
-                                ) : (
-                                    <span className="fuel-info-value">{profileData.fuelStationName}</span>
-                                )}
+                                <label>Employee ID</label>
+                                <span className="fuel-info-value fuel-readonly">{profile?.employeeId || '—'}</span>
                             </div>
-
                             <div className="fuel-info-item">
-                                <label>Phone Number</label>
-                                {isEditing ? (
-                                    <input
-                                        type="tel"
-                                        value={editData.phoneNumber}
-                                        onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                                        className="fuel-input"
-                                    />
-                                ) : (
-                                    <span className="fuel-info-value">{profileData.phoneNumber}</span>
-                                )}
+                                <label>Email</label>
+                                {isEditing
+                                    ? <input type="email" value={editData.email} onChange={e => setEditData(p => ({ ...p, email: e.target.value }))} className="fuel-input" />
+                                    : <span className="fuel-info-value">{profile?.email}</span>}
                             </div>
-
                             <div className="fuel-info-item">
-                                <label>Email (Optional)</label>
-                                {isEditing ? (
-                                    <input
-                                        type="email"
-                                        value={editData.email}
-                                        onChange={(e) => handleInputChange('email', e.target.value)}
-                                        className="fuel-input"
-                                    />
-                                ) : (
-                                    <span className="fuel-info-value">{profileData.email}</span>
-                                )}
+                                <label>Phone</label>
+                                {isEditing
+                                    ? <input type="tel" value={editData.phone} onChange={e => setEditData(p => ({ ...p, phone: e.target.value }))} className="fuel-input" placeholder="+251-9xx-xxxxxx" />
+                                    : <span className="fuel-info-value">{profile?.phone || '—'}</span>}
+                            </div>
+                            <div className="fuel-info-item">
+                                <label>Department</label>
+                                {isEditing
+                                    ? <input type="text" value={editData.department} onChange={e => setEditData(p => ({ ...p, department: e.target.value }))} className="fuel-input" />
+                                    : <span className="fuel-info-value">{profile?.department || '—'}</span>}
+                            </div>
+                            <div className="fuel-info-item">
+                                <label>Member Since</label>
+                                <span className="fuel-info-value fuel-readonly">{profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : '—'}</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Work Information */}
+                    {/* Change Password */}
                     <div className="fuel-info-section">
-                        <h3>💼 Work Information</h3>
-                        <div className="fuel-info-grid">
-                            <div className="fuel-info-item">
-                                <label>Shift Start</label>
-                                {isEditing ? (
-                                    <input
-                                        type="time"
-                                        value={editData.shiftStart}
-                                        onChange={(e) => handleInputChange('shiftStart', e.target.value)}
-                                        className="fuel-input"
-                                    />
-                                ) : (
-                                    <span className="fuel-info-value">{profileData.shiftStart}</span>
-                                )}
-                            </div>
-
-                            <div className="fuel-info-item">
-                                <label>Shift End</label>
-                                {isEditing ? (
-                                    <input
-                                        type="time"
-                                        value={editData.shiftEnd}
-                                        onChange={(e) => handleInputChange('shiftEnd', e.target.value)}
-                                        className="fuel-input"
-                                    />
-                                ) : (
-                                    <span className="fuel-info-value">{profileData.shiftEnd}</span>
-                                )}
-                            </div>
-
-                            <div className="fuel-info-item">
-                                <label>Join Date</label>
-                                <span className="fuel-info-value fuel-readonly">{profileData.joinDate}</span>
-                            </div>
-
-                            <div className="fuel-info-item">
-                                <label>Last Login</label>
-                                <span className="fuel-info-value fuel-readonly">{profileData.lastLogin}</span>
-                            </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                            <h3>🔒 Security</h3>
+                            <button onClick={() => setShowPwdForm(!showPwdForm)}
+                                style={{ background: 'none', border: '1px solid #d1d5db', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#374151' }}>
+                                {showPwdForm ? 'Cancel' : 'Change Password'}
+                            </button>
                         </div>
-                    </div>
-
-                    {/* Performance Statistics */}
-                    <div className="fuel-info-section">
-                        <h3>📊 Performance Statistics</h3>
-                        <div className="fuel-stats-grid">
-                            <div className="fuel-stat-card">
-                                <div className="fuel-stat-icon">⛽</div>
-                                <div className="fuel-stat-info">
-                                    <span className="fuel-stat-number">{profileData.totalFuelDispensed.toLocaleString()}L</span>
-                                    <span className="fuel-stat-label">Total Fuel Dispensed</span>
+                        {showPwdForm && (
+                            <form onSubmit={handleChangePassword}>
+                                {pwdError && <p style={{ color: '#dc2626', fontSize: 13, marginBottom: 8 }}>{pwdError}</p>}
+                                {pwdSuccess && <p style={{ color: '#16a34a', fontSize: 13, marginBottom: 8 }}>{pwdSuccess}</p>}
+                                <div className="fuel-info-grid">
+                                    <div className="fuel-info-item">
+                                        <label>Current Password</label>
+                                        <input type="password" value={pwdData.currentPassword} onChange={e => setPwdData(p => ({ ...p, currentPassword: e.target.value }))} className="fuel-input" required />
+                                    </div>
+                                    <div className="fuel-info-item">
+                                        <label>New Password</label>
+                                        <input type="password" value={pwdData.newPassword} onChange={e => setPwdData(p => ({ ...p, newPassword: e.target.value }))} className="fuel-input" required />
+                                    </div>
+                                    <div className="fuel-info-item">
+                                        <label>Confirm New Password</label>
+                                        <input type="password" value={pwdData.confirmPassword} onChange={e => setPwdData(p => ({ ...p, confirmPassword: e.target.value }))} className="fuel-input" required />
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div className="fuel-stat-card">
-                                <div className="fuel-stat-icon">📅</div>
-                                <div className="fuel-stat-info">
-                                    <span className="fuel-stat-number">{profileData.monthlyFuelDispensed.toLocaleString()}L</span>
-                                    <span className="fuel-stat-label">This Month</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Information Notice */}
-                <div className="fuel-profile-notice">
-                    <div className="fuel-notice-icon">ℹ️</div>
-                    <div className="fuel-notice-content">
-                        <h4>Why This Information is Needed</h4>
-                        <ul>
-                            <li><strong>Fuel Officer Identification:</strong> To identify which officer dispensed fuel to vehicles</li>
-                            <li><strong>Accountability & Tracking:</strong> To provide accountability and fuel distribution tracking</li>
-                            <li><strong>Authentication:</strong> To allow secure login and system access</li>
-                            <li><strong>Station Management:</strong> To manage fuel station operations and officer assignments</li>
-                            <li><strong>Performance Monitoring:</strong> To track fuel dispensing performance and efficiency</li>
-                        </ul>
+                                <button type="submit" className="fuel-btn-save" style={{ marginTop: 12 }}>Update Password</button>
+                            </form>
+                        )}
+                        {!showPwdForm && <p style={{ color: '#6b7280', fontSize: 13 }}>Keep your account secure by using a strong password.</p>}
                     </div>
                 </div>
             </div>
