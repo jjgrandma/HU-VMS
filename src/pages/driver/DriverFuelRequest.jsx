@@ -10,7 +10,7 @@ export default function DriverFuelRequest() {
   const [submitting, setSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
-    vehicleId: '', fuelType: 'Diesel', requestedLiters: '', destination: '', purpose: '', odometer: '',
+    vehicleType: '', fuelType: 'Diesel', requestedLiters: '', destination: '', purpose: '', odometer: '',
   });
   const [errors, setErrors] = useState({});
 
@@ -35,7 +35,7 @@ export default function DriverFuelRequest() {
 
   const validate = () => {
     const e = {};
-    if (!formData.vehicleId) e.vehicleId = 'Select a vehicle';
+    if (!formData.vehicleType) e.vehicleType = 'Select a vehicle type';
     if (!formData.fuelType) e.fuelType = 'Select fuel type';
     if (!formData.requestedLiters || formData.requestedLiters <= 0) e.requestedLiters = 'Enter valid liters';
     if (!formData.destination) e.destination = 'Enter destination';
@@ -48,12 +48,9 @@ export default function DriverFuelRequest() {
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setSubmitting(true);
     try {
-      const vehicle = vehicles.find(v => v._id === formData.vehicleId);
       await createFuelRequest({
         driverName: currentUser?.name || currentUser?.username,
-        ...(formData.vehicleId && { vehicle: formData.vehicleId }),
-        vehiclePlate: vehicle?.plateNumber || '',
-        vehicleModel: vehicle?.model || '',
+        vehicleType: formData.vehicleType,
         fuelType: formData.fuelType,
         requestedLiters: Number(formData.requestedLiters),
         destination: formData.destination,
@@ -61,7 +58,7 @@ export default function DriverFuelRequest() {
         odometer: Number(formData.odometer) || 0,
       });
       setShowForm(false);
-      setFormData({ vehicleId: '', fuelType: 'Diesel', requestedLiters: '', destination: '', purpose: '', odometer: '' });
+      setFormData({ vehicleType: '', fuelType: 'Diesel', requestedLiters: '', destination: '', purpose: '', odometer: '' });
       setErrors({});
       fetchData();
     } catch (err) {
@@ -102,13 +99,19 @@ export default function DriverFuelRequest() {
           <form onSubmit={handleSubmit}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Vehicle *</label>
-                <select value={formData.vehicleId} onChange={e => setFormData(p => ({ ...p, vehicleId: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: errors.vehicleId ? '1px solid #ef4444' : '1px solid #d1d5db' }}>
-                  <option value="">Select vehicle</option>
-                  {vehicles.map(v => <option key={v._id} value={v._id}>{v.plateNumber} — {v.model}</option>)}
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Vehicle Type *</label>
+                <select value={formData.vehicleType} onChange={e => setFormData(p => ({ ...p, vehicleType: e.target.value }))}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: errors.vehicleType ? '1px solid #ef4444' : '1px solid #d1d5db' }}>
+                  <option value="">Select vehicle type</option>
+                  <option value="Bus">Bus</option>
+                  <option value="Minibus">Minibus</option>
+                  <option value="Car">Car</option>
+                  <option value="Truck">Truck</option>
+                  <option value="Van">Van</option>
+                  <option value="Pickup">Pickup</option>
+                  <option value="Motorcycle">Motorcycle</option>
                 </select>
-                {errors.vehicleId && <p style={{ color: '#ef4444', fontSize: 12, margin: '4px 0 0' }}>{errors.vehicleId}</p>}
+                {errors.vehicleType && <p style={{ color: '#ef4444', fontSize: 12, margin: '4px 0 0' }}>{errors.vehicleType}</p>}
               </div>
 
               <div>
@@ -184,7 +187,7 @@ export default function DriverFuelRequest() {
                 <tr><td colSpan={8} style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>No fuel requests yet</td></tr>
               ) : myRequests.map(r => (
                 <tr key={r._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '12px 16px', fontSize: 14 }}>{r.vehiclePlate} {r.vehicleModel && `— ${r.vehicleModel}`}</td>
+                  <td style={{ padding: '12px 16px', fontSize: 14 }}>{r.vehicleType || r.vehiclePlate || '—'}</td>
                   <td style={{ padding: '12px 16px', fontSize: 14 }}>{r.fuelType}</td>
                   <td style={{ padding: '12px 16px', fontSize: 14 }}>{r.requestedLiters}L</td>
                   <td style={{ padding: '12px 16px', fontSize: 14, fontWeight: 600, color: '#22c55e' }}>

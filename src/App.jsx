@@ -81,26 +81,29 @@ import FuelNotifications from './pages/fuelStationOfficer/FuelNotifications';
 import FuelStationProfile from './pages/fuelStationOfficer/FuelStationProfile';
 import FuelStationSettings from './pages/fuelStationOfficer/FuelStationSettings';
 
-// Gate Security
-import GateSecurityLayout from './pages/gateSecurity/GateSecurityLayout';
-import GateDashboard from './pages/gateSecurity/GateDashboard';
-import ALPRCamera from './pages/gateSecurity/ALPRCamera';
-import VehicleVerification from './pages/gateSecurity/VehicleVerification';
-import GateLogs from './pages/gateSecurity/GateLogs';
-import TripAuthorization from './pages/gateSecurity/TripAuthorization';
-import VehicleInspection from './pages/gateSecurity/VehicleInspection';
-import VehicleMovement from './pages/gateSecurity/VehicleMovement';
-import GateNotifications from './pages/gateSecurity/GateNotifications';
+// Gate Security (legacy components kept for reference)
 import GateSecurityProfile from './pages/gateSecurity/GateSecurityProfile';
-import GateSecurityReports from './pages/gateSecurity/GateSecurityReports';
-import GateSecuritySettings from './pages/GateSecurity/GateSecuritySettings';
+// New Gate Security Module
+import GateLayout from './pages/gateSecurity/GateLayout';
+import GateSecurityDashboard from './pages/gateSecurity/GateSecurityDashboard';
+import VehicleCheck from './pages/gateSecurity/VehicleCheck';
+import GateLogsPage from './pages/gateSecurity/GateLogsPage';
+import IncidentReportPage from './pages/gateSecurity/IncidentReportPage';
+import GateAlertsPage from './pages/gateSecurity/GateAlertsPage';
 
 function App() {
   const { user, setUser } = useContext(AuthContext);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleLogin = (userData) => {
-    setUser(userData);
+    // Use the full user object from localStorage (set by api.js login)
+    try {
+      const stored = localStorage.getItem('user');
+      const fullUser = stored ? JSON.parse(stored) : userData;
+      setUser(fullUser);
+    } catch {
+      setUser(userData);
+    }
   };
 
   const handleLogout = () => {
@@ -360,21 +363,16 @@ function App() {
       {/* Gate Security Routes */}
       {user?.role === 'GATE_OFFICER' && (
         <>
-          <Route path="/gate" element={<Navigate to="/gate/dashboard" replace />} />
-          <Route path="/gate" element={<GateSecurityLayout onLogout={handleLogout} />}>
-            <Route path="dashboard" element={<GateDashboard />} />
-            <Route path="camera" element={<ALPRCamera />} />
-            <Route path="verification" element={<VehicleVerification />} />
-            <Route path="trip-authorization" element={<TripAuthorization />} />
-            <Route path="inspection" element={<VehicleInspection />} />
-            <Route path="movement" element={<VehicleMovement />} />
-            <Route path="logs" element={<GateLogs />} />
-            <Route path="reports" element={<GateSecurityReports />} />
-            <Route path="notifications" element={<GateNotifications />} />
-            <Route path="profile" element={<GateSecurityProfile />} />
-            <Route path="settings" element={<GateSecuritySettings />} />
-            <Route path="performance" element={<GateDashboard />} />
+          <Route path="/gate" element={<GateLayout onLogout={handleLogout} />}>
+            <Route index element={<GateSecurityDashboard />} />
+            <Route path="dashboard"  element={<GateSecurityDashboard />} />
+            <Route path="verify"     element={<VehicleCheck />} />
+            <Route path="logs"       element={<GateLogsPage />} />
+            <Route path="incidents"  element={<IncidentReportPage />} />
+            <Route path="alerts"     element={<GateAlertsPage />} />
+            <Route path="profile"    element={<GateSecurityProfile />} />
           </Route>
+          <Route path="/gate/*" element={<Navigate to="/gate/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/gate/dashboard" replace />} />
         </>
       )}

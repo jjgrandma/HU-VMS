@@ -31,6 +31,7 @@ app.use('/api/fuel-requests', require('./routes/fuelRequests'));
 app.use('/api/fuel-inventory', require('./routes/fuelInventory'));
 app.use('/api/contact',   require('./routes/contact'));
 app.use('/api/driver',    require('./routes/driverPortal'));
+app.use('/api/security',  require('./routes/security'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));

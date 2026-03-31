@@ -5,6 +5,7 @@ const fuelRequestSchema = new mongoose.Schema(
     driver:           { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     driverName:       { type: String, required: true },
     vehicle:          { type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle' },
+    vehicleType:      { type: String, default: '' },
     vehiclePlate:     String,
     vehicleModel:     String,
     fuelType:         { type: String, enum: ['Diesel', 'Petrol'], required: true },

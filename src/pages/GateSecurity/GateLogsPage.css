@@ -1,0 +1,19 @@
+.gate-logs-page { max-width: 1200px; }
+.gate-empty { padding: 40px; text-align: center; color: #9ca3af; font-size: 14px; }
+
+.gl-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+.gl-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.gl-filter-btn { padding: 7px 16px; border-radius: 20px; border: 1px solid #e5e7eb; background: #fff; color: #6b7280; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.gl-filter-btn:hover { border-color: #16a34a; color: #16a34a; }
+.gl-filter-btn.active { background: #16a34a; border-color: #16a34a; color: #fff; }
+.gl-date-input { padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; cursor: pointer; }
+.gl-date-input:focus { outline: none; border-color: #16a34a; }
+
+.gl-table-wrap { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: auto; }
+.gl-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.gl-table th { padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
+.gl-table td { padding: 12px 16px; color: #111827; border-bottom: 1px solid #f3f4f6; }
+.gl-table tbody tr:hover { background: #f9fafb; }
+.gl-direction { font-size: 12px; font-weight: 700; }
+.gl-direction.entry { color: #16a34a; }
+.gl-direction.exit  { color: #3b82f6; }

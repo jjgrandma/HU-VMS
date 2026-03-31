@@ -1,0 +1,15 @@
+.gate-alerts-page { max-width: 900px; }
+.ga-refresh-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; color: #374151; }
+.ga-refresh-btn:hover { background: #f3f4f6; }
+.ga-no-alerts { text-align: center; padding: 60px 20px; color: #9ca3af; }
+.ga-no-alerts p { font-size: 16px; font-weight: 600; margin: 16px 0 4px; color: #6b7280; }
+.ga-no-alerts small { font-size: 13px; }
+.ga-alerts-list { display: flex; flex-direction: column; gap: 12px; }
+.ga-alert-card { background: #fff; border: 2px solid #fca5a5; border-radius: 12px; padding: 16px 20px; display: flex; align-items: flex-start; gap: 16px; }
+.ga-alert-icon { width: 44px; height: 44px; background: #fee2e2; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ga-alert-body { flex: 1; }
+.ga-alert-title { font-size: 14px; font-weight: 700; color: #dc2626; margin-bottom: 4px; }
+.ga-alert-plate { font-size: 18px; font-weight: 800; color: #111827; margin-bottom: 6px; }
+.ga-alert-meta { display: flex; gap: 16px; font-size: 12px; color: #6b7280; flex-wrap: wrap; }
+.ga-alert-remarks { font-size: 13px; color: #374151; margin-top: 6px; font-style: italic; }
+.ga-alert-badge { background: #fee2e2; color: #dc2626; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 8px; white-space: nowrap; flex-shrink: 0; }

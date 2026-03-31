@@ -3,7 +3,12 @@ import React, { createContext, useState } from 'react';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem('user');
+      return stored ? JSON.parse(stored) : null;
+    } catch { return null; }
+  });
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -11,8 +16,15 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const setUserAndPersist = (userData) => {
+    if (userData) {
+      localStorage.setItem('user', JSON.stringify(userData));
+    }
+    setUser(userData);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, setUser, logout }}>
+    <AuthContext.Provider value={{ user, setUser: setUserAndPersist, logout }}>
       {children}
     </AuthContext.Provider>
   );
