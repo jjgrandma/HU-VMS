@@ -1,543 +1,251 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
-import { getFuelRequests, getFuelInventory, getMe, getCurrentUser } from '../../api/api';
-import './fuelstation.css';
+import {
+  LayoutDashboard, ClipboardList, Droplets, Package,
+  FileText, Bell, Settings, User, X, CheckCheck,
+  ChevronLeft, ChevronRight, Fuel
+} from 'lucide-react';
+import { getCurrentUser, getFuelRequests, getFuelInventory } from '../../api/api';
+import './FuelStationLayout.css';
 
-const FuelStationLayout = ({ onLogout }) => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
+const BASE  = 'http://localhost:5000/api';
+const token = () => localStorage.getItem('token');
+
+export default function FuelStationLayout({ onLogout }) {
+  const [collapsed, setCollapsed]   = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [showNotif, setShowNotif]   = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [fuelOfficerInfo, setFuelOfficerInfo] = useState({
-    name: '', email: '', employeeId: '', role: 'Fuel Station Officer', avatar: null
+  const [readIds, setReadIds]       = useState(() => {
+    try { return JSON.parse(localStorage.getItem('fuel_notif_read') || '[]'); } catch { return []; }
   });
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [pendingCount, setPendingCount] = useState(0);
+  const notifRef    = useRef(null);
+  const settingsRef = useRef(null);
+  const navigate    = useNavigate();
+  const location    = useLocation();
+  const currentUser = getCurrentUser();
 
-  // Load real user info from DB
+  const initials = currentUser?.name
+    ? currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'FO';
+
+  // Fetch profile photo + notifications
   useEffect(() => {
-    getMe()
-      .then(user => {
-        setFuelOfficerInfo({
-          name: user.name || '',
-          email: user.email || '',
-          employeeId: user.employeeId || '',
-          role: user.role || 'Fuel Station Officer',
-          avatar: user.profilePhoto || localStorage.getItem('fuelStationProfilePhoto') || null,
-        });
-      })
-      .catch(() => {
-        // Fallback to localStorage token data
-        const u = getCurrentUser();
-        if (u) setFuelOfficerInfo(prev => ({ ...prev, name: u.name || '', email: u.email || '' }));
-      });
-  }, [location.pathname]); // refresh on navigation so photo updates reflect
+    const t = token(); if (!t) return;
+    fetch(`${BASE}/users/me`, { headers: { Authorization: `Bearer ${t}` } })
+      .then(r => r.json()).then(u => { if (u.profilePhoto) setProfilePhoto(u.profilePhoto); })
+      .catch(console.error);
+    fetchNotifications();
+  }, [location.pathname]);
 
-  // Listen for photo updates from profile page
-  useEffect(() => {
-    const handler = (e) => setFuelOfficerInfo(prev => ({ ...prev, avatar: e.detail.profilePhoto }));
-    window.addEventListener('fuelProfilePhotoUpdated', handler);
-    return () => window.removeEventListener('fuelProfilePhotoUpdated', handler);
-  }, []);
-
-  // Apply theme on component mount and when settings change
-  useEffect(() => {
-    const applyTheme = () => {
-      const savedSettings = localStorage.getItem('fuelStationSettings');
-      if (savedSettings) {
-        const parsed = JSON.parse(savedSettings);
-        const theme = parsed.system?.theme || 'light';
-        
-        if (theme === 'dark') {
-          document.documentElement.setAttribute('data-theme', 'dark');
-          document.body.style.backgroundColor = '#1a1a1a';
-          document.body.style.color = '#ffffff';
-        } else if (theme === 'light') {
-          document.documentElement.setAttribute('data-theme', 'light');
-          document.body.style.backgroundColor = '#ffffff';
-          document.body.style.color = '#000000';
-        } else if (theme === 'auto') {
-          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-          document.body.style.backgroundColor = prefersDark ? '#1a1a1a' : '#ffffff';
-          document.body.style.color = prefersDark ? '#ffffff' : '#000000';
-        }
-      }
-    };
-
-    applyTheme();
-
-    // Listen for theme changes
-    const handleStorageChange = (e) => {
-      if (e.key === 'fuelStationSettings' || e.key === 'appTheme') {
-        applyTheme();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Check for theme changes every second (for same-tab updates)
-    const themeCheckInterval = setInterval(applyTheme, 1000);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(themeCheckInterval);
-    };
-  }, []);
-
-  // Load profile photo from localStorage on component mount
-  useEffect(() => {
-    const loadProfileData = () => {
-      const savedProfilePhoto = localStorage.getItem('fuelStationProfilePhoto');
-      const savedSettings = localStorage.getItem('fuelStationSettings');
-      
-      if (savedProfilePhoto) {
-        setFuelOfficerInfo(prev => ({
-          ...prev,
-          avatar: savedProfilePhoto
-        }));
-      }
-
-      // Load name and other info from settings
-      if (savedSettings) {
-        const parsed = JSON.parse(savedSettings);
-        if (parsed.account) {
-          setFuelOfficerInfo(prev => ({
-            ...prev,
-            name: parsed.account.name || prev.name,
-            email: parsed.account.email || prev.email,
-            employeeId: parsed.account.employeeId || prev.employeeId,
-            fuelStationName: parsed.account.fuelStationName || prev.fuelStationName
-          }));
-        }
-      }
-    };
-
-    loadProfileData();
-
-    // Listen for profile photo updates
-    const handleProfilePhotoUpdate = (event) => {
-      if (event.key === 'fuelStationProfilePhoto') {
-        setFuelOfficerInfo(prev => ({
-          ...prev,
-          avatar: event.newValue
-        }));
-      }
-    };
-
-    // Listen for settings updates (name, email, etc.)
-    const handleSettingsUpdate = (event) => {
-      if (event.key === 'fuelStationSettings') {
-        loadProfileData();
-      }
-    };
-
-    window.addEventListener('storage', handleProfilePhotoUpdate);
-    window.addEventListener('storage', handleSettingsUpdate);
-
-    // Also listen for custom events from the same page
-    const handleCustomProfileUpdate = (event) => {
-      setFuelOfficerInfo(prev => ({
-        ...prev,
-        avatar: event.detail.profilePhoto
-      }));
-    };
-
-    const handleCustomAccountUpdate = (event) => {
-      console.log('Account update event received:', event.detail);
-      if (event.detail.account) {
-        setFuelOfficerInfo(prev => {
-          const newInfo = {
-            ...prev,
-            name: event.detail.account.name,
-            email: event.detail.account.email,
-            employeeId: event.detail.account.employeeId,
-            fuelStationName: event.detail.account.fuelStationName
-          };
-          console.log('Updating from', prev.name, 'to:', newInfo.name);
-          return newInfo;
-        });
-      }
-    };
-
-    window.addEventListener('fuelProfilePhotoUpdated', handleCustomProfileUpdate);
-    window.addEventListener('accountSettingsUpdated', handleCustomAccountUpdate);
-
-    // Check for settings changes every second (for same-tab updates)
-    const settingsCheckInterval = setInterval(loadProfileData, 1000);
-
-    return () => {
-      window.removeEventListener('storage', handleProfilePhotoUpdate);
-      window.removeEventListener('storage', handleSettingsUpdate);
-      window.removeEventListener('fuelProfilePhotoUpdated', handleCustomProfileUpdate);
-      window.removeEventListener('accountSettingsUpdated', handleCustomAccountUpdate);
-      clearInterval(settingsCheckInterval);
-    };
-  }, []);
-
-  useEffect(() => {
-    loadNotifications();
-    // Refresh notifications every 30 seconds
-    const interval = setInterval(loadNotifications, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadNotifications = async () => {
+  const fetchNotifications = async () => {
     try {
-      const [requests, inventory] = await Promise.all([getFuelRequests(), getFuelInventory()]);
+      const [requests, inventory] = await Promise.all([
+        getFuelRequests(),
+        getFuelInventory(),
+      ]);
       const notifs = [];
 
-      requests.filter(r => r.status === 'approved').forEach(r => {
-        notifs.push({ id: `approved-${r._id}`, title: 'Ready to Dispense', message: `${r.driverName} — ${r.permittedLiters}L ${r.fuelType}`, read: false, type: 'request' });
-      });
-      requests.filter(r => r.status === 'pending').forEach(r => {
-        notifs.push({ id: `pending-${r._id}`, title: 'New Fuel Request', message: `${r.driverName} requested ${r.requestedLiters}L ${r.fuelType}`, read: false, type: 'request' });
-      });
-      inventory.forEach(inv => {
-        if (inv.capacity && (inv.available / inv.capacity) * 100 <= 20) {
-          notifs.push({ id: `inv-${inv.fuelType}`, title: `${inv.fuelType} Low`, message: `Only ${inv.available}L remaining`, read: false, type: 'alert' });
-        }
-      });
+      // Pending fuel requests
+      if (Array.isArray(requests)) {
+        const pending = requests.filter(r => r.status === 'pending');
+        setPendingCount(pending.length);
+        pending.forEach(r => notifs.push({
+          id: `req-${r._id}`,
+          icon: '⛽', color: '#f59e0b',
+          title: 'New Fuel Request',
+          message: `${r.driverName} — ${r.vehicleType || r.vehiclePlate || '—'} needs ${r.requestedLiters}L`,
+          time: r.createdAt,
+          link: '/fuel/requests',
+        }));
 
+        // Approved but not dispensed
+        requests.filter(r => r.status === 'approved').forEach(r => notifs.push({
+          id: `appr-${r._id}`,
+          icon: '✅', color: '#16a34a',
+          title: 'Ready to Dispense',
+          message: `${r.driverName} — ${r.permittedLiters}L approved`,
+          time: r.approvedAt || r.updatedAt,
+          link: '/fuel/dispense',
+        }));
+      }
+
+      // Low inventory alerts
+      if (Array.isArray(inventory)) {
+        inventory.filter(i => i.available < 100).forEach(i => notifs.push({
+          id: `inv-${i._id || i.fuelType}`,
+          icon: '📦', color: '#dc2626',
+          title: 'Low Fuel Stock',
+          message: `${i.fuelType} — only ${i.available}L remaining`,
+          time: i.updatedAt || new Date().toISOString(),
+          link: '/fuel/inventory',
+        }));
+      }
+
+      notifs.sort((a, b) => new Date(b.time) - new Date(a.time));
       setNotifications(notifs);
-      setUnreadCount(notifs.filter(n => !n.read).length);
-    } catch (_) {}
+    } catch (err) { console.error(err); }
   };
 
-  const markAsRead = (notificationId) => {
-    setNotifications(prev =>
-      prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
-    );
-    setUnreadCount(prev => Math.max(0, prev - 1));
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotif(false);
+      if (settingsRef.current && !settingsRef.current.contains(e.target)) setShowSettings(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const enriched    = notifications.map(n => ({ ...n, read: readIds.includes(n.id) }));
+  const unreadCount = enriched.filter(n => !n.read).length;
+
+  const markRead = (id) => {
+    const updated = [...readIds, id];
+    setReadIds(updated);
+    localStorage.setItem('fuel_notif_read', JSON.stringify(updated));
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    setUnreadCount(0);
+  const markAllRead = () => {
+    const ids = notifications.map(n => n.id);
+    setReadIds(ids);
+    localStorage.setItem('fuel_notif_read', JSON.stringify(ids));
   };
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
+  const handleLogout = () => { if (onLogout) onLogout(); navigate('/login'); };
 
-  const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false);
-  };
+  const navItems = [
+    { to: '/fuel/dashboard',     icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
+    { to: '/fuel/requests',      icon: <ClipboardList size={20} />,   label: 'Fuel Requests', badge: pendingCount },
+    { to: '/fuel/dispense',      icon: <Droplets size={20} />,        label: 'Dispense Fuel' },
+    { to: '/fuel/inventory',     icon: <Package size={20} />,         label: 'Inventory' },
+    { to: '/fuel/transactions',  icon: <FileText size={20} />,        label: 'Transactions' },
+    { to: '/fuel/reports',       icon: <FileText size={20} />,        label: 'Reports' },
+    { to: '/fuel/notifications', icon: <Bell size={20} />,            label: 'Notifications' },
+  ];
 
-  const handleLogout = () => {
-    if (onLogout) {
-      onLogout();
-    } else {
-      navigate('/login');
-    }
-  };
-
-  const formatNotificationTime = (timestamp) => {
-    const now = new Date();
-    const notificationDate = new Date(timestamp);
-    const diffInMinutes = Math.floor((now - notificationDate) / 60000);
-
-    if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
-
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
-
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
-
-    return notificationDate.toLocaleDateString();
-  };
+  const isActive = (to) => location.pathname === to;
 
   return (
-    <div className="fuel-dashboard-wrapper">
-      {/* Mobile Menu Toggle */}
-      <button className="fuel-mobile-menu-toggle" onClick={toggleMobileMenu}>
-        <span className={`fuel-hamburger ${isMobileMenuOpen ? 'open' : ''}`}>
-          <span></span>
-          <span></span>
-          <span></span>
-        </span>
+    <div className="fuel-layout-wrapper">
+      {/* Mobile toggle */}
+      <button className="fuel-mobile-toggle" onClick={() => setMobileOpen(!mobileOpen)}>
+        <span className={`fuel-hamburger ${mobileOpen ? 'open' : ''}`}><span /><span /><span /></span>
       </button>
-
-      {/* Mobile Overlay */}
-      {isMobileMenuOpen && (
-        <div className="fuel-mobile-overlay" onClick={closeMobileMenu}></div>
-      )}
+      {mobileOpen && <div className="fuel-overlay" onClick={() => setMobileOpen(false)} />}
 
       {/* Sidebar */}
-      <div className={`fuel-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
-        <div className="fuel-sidebar-header">
-          <div className="fuel-logo">
-            <span className="fuel-logo-icon">⛽</span>
-            <span className="fuel-logo-text">FUEL STATION</span>
+      <aside className={`fuel-sidebar-new ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
+        <div className="fuel-sidebar-header-new">
+          <div className="fuel-logo-new">
+            <div className="fuel-logo-icon-new"><Fuel size={20} color="#16a34a" /></div>
+            {!collapsed && <span className="fuel-logo-text-new">HU-VMS</span>}
           </div>
-        </div>
-
-        <nav className="fuel-sidebar-nav">
-          <Link
-            to="/fuel/dashboard"
-            className={`fuel-nav-item ${location.pathname === '/fuel/dashboard' || location.pathname === '/fuel' ? 'active' : ''}`}
-            onClick={closeMobileMenu}
-          >
-            <span className="fuel-nav-icon">📊</span>
-            <span>Dashboard</span>
-          </Link>
-
-          <Link
-            to="/fuel/requests"
-            className={`fuel-nav-item ${location.pathname === '/fuel/requests' ? 'active' : ''}`}
-            onClick={closeMobileMenu}
-          >
-            <span className="fuel-nav-icon">📋</span>
-            <span>Fuel Requests</span>
-          </Link>
-
-          <Link
-            to="/fuel/dispense"
-            className={`fuel-nav-item ${location.pathname === '/fuel/dispense' ? 'active' : ''}`}
-            onClick={closeMobileMenu}
-          >
-            <span className="fuel-nav-icon">⛽</span>
-            <span>Dispense Fuel</span>
-          </Link>
-
-          <Link
-            to="/fuel/inventory"
-            className={`fuel-nav-item ${location.pathname === '/fuel/inventory' ? 'active' : ''}`}
-            onClick={closeMobileMenu}
-          >
-            <span className="fuel-nav-icon">📦</span>
-            <span>Fuel Inventory</span>
-          </Link>
-
-          <Link
-            to="/fuel/reports"
-            className={`fuel-nav-item ${location.pathname === '/fuel/reports' ? 'active' : ''}`}
-            onClick={closeMobileMenu}
-          >
-            <span className="fuel-nav-icon">📄</span>
-            <span>Reports</span>
-          </Link>
-
-        </nav>
-
-        <div className="fuel-sidebar-footer">
-          <button onClick={() => { handleLogout(); closeMobileMenu(); }} className="fuel-logout-btn">
-            <span className="fuel-logout-icon">🚪</span>
-            <span>Logout</span>
+          <button className="fuel-collapse-btn" onClick={() => setCollapsed(p => !p)}>
+            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
           </button>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="fuel-main-content">
+        <nav className="fuel-nav-new">
+          {navItems.map(item => (
+            <Link key={item.to} to={item.to}
+              className={`fuel-nav-item-new ${isActive(item.to) ? 'active' : ''}`}
+              onClick={() => setMobileOpen(false)}
+              title={collapsed ? item.label : ''}>
+              <span className="fuel-nav-icon-new">{item.icon}</span>
+              {!collapsed && <span className="fuel-nav-label-new">{item.label}</span>}
+              {!collapsed && item.badge > 0 && <span className="fuel-nav-badge-new">{item.badge}</span>}
+            </Link>
+          ))}
+        </nav>
+      </aside>
+
+      {/* Main */}
+      <div className="fuel-main-new">
         {/* Header */}
-        <div className="fuel-header">
-          <div className="fuel-header-left">
-            <h1>Fuel Station Management</h1>
+        <header className="fuel-header-new">
+          <div className="fuel-header-left-new">
+            <h1>Fuel Station</h1>
+            <span className="fuel-header-sub">Operations</span>
           </div>
-          <div className="fuel-header-right">
+
+          <div className="fuel-header-right-new">
             {/* Notification Bell */}
-            <button
-              className="fuel-notification-bell"
-              onClick={() => {
-                setShowNotifications(!showNotifications);
-                setShowProfileMenu(false);
-              }}
-              title="Notifications"
-            >
-              🔔
-              {unreadCount > 0 && <span className="fuel-notification-badge">{unreadCount}</span>}
-            </button>
-
-            {/* Beautiful Profile Section */}
-            <div
-              className="fuel-header-profile-section"
-              onClick={() => {
-                setShowProfileMenu(!showProfileMenu);
-                setShowNotifications(false);
-              }}
-            >
-              <div className="fuel-header-profile-avatar">
-                {fuelOfficerInfo.avatar ? (
-                  <img src={fuelOfficerInfo.avatar} alt={fuelOfficerInfo.name} />
-                ) : (
-                  <div className="fuel-header-avatar-placeholder">
-                    <div className="fuel-avatar-icon">👤</div>
-                  </div>
-                )}
-              </div>
-              <div className="fuel-header-profile-info">
-                <span className="fuel-header-profile-name">{fuelOfficerInfo.name.split(' ')[0]}</span>
-              </div>
-              <div className="fuel-header-dropdown-arrow">
-                <span className={`fuel-dropdown-icon ${showProfileMenu ? 'rotated' : ''}`}>▼</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Notification Dropdown */}
-        {showNotifications && (
-          <>
-            <div className="fuel-notification-overlay" onClick={() => setShowNotifications(false)}></div>
-            <div className="fuel-notification-dropdown">
-              <div className="fuel-notification-dropdown-header">
-                <h3>Notifications</h3>
-                <div className="fuel-notification-actions">
-                  {unreadCount > 0 && (
-                    <button
-                      className="fuel-mark-all-read"
-                      onClick={markAllAsRead}
-                      title="Mark all as read"
-                    >
-                      ✓ Mark all read
-                    </button>
-                  )}
-                  <button
-                    className="fuel-notification-close"
-                    onClick={() => setShowNotifications(false)}
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-              <div className="fuel-notification-list">
-                {notifications.length === 0 ? (
-                  <div className="fuel-no-notifications">
-                    <span className="fuel-no-notifications-icon">🔔</span>
-                    <p>No notifications</p>
-                  </div>
-                ) : (
-                  notifications.map(notification => (
-                    <div
-                      key={notification.id}
-                      className={`fuel-notification-item ${notification.read ? 'read' : 'unread'} ${notification.type}`}
-                      onClick={() => {
-                        if (!notification.read) {
-                          markAsRead(notification.id);
-                        }
-                      }}
-                    >
-                      <div className="fuel-notification-icon">
-                        {notification.type === 'request' && '📋'}
-                        {notification.type === 'alert' && '⚠️'}
-                        {notification.type === 'info' && 'ℹ️'}
-                        {notification.type === 'success' && '✓'}
-                      </div>
-                      <div className="fuel-notification-content">
-                        <strong className="fuel-notification-title">{notification.title}</strong>
-                        <p className="fuel-notification-message">{notification.message}</p>
-                        <span className="fuel-notification-time">
-                          {formatNotificationTime(notification.createdAt)}
-                        </span>
-                      </div>
-                      {!notification.read && <div className="fuel-notification-unread-dot"></div>}
+            <div className="fuel-header-dropdown-new" ref={notifRef}>
+              <button className="fuel-header-btn-new" onClick={() => setShowNotif(p => !p)}>
+                <Bell size={20} />
+                {unreadCount > 0 && <span className="fuel-notif-badge-new">{unreadCount}</span>}
+              </button>
+              {showNotif && (
+                <div className="fuel-notif-panel-new">
+                  <div className="fuel-notif-header-new">
+                    <span>Notifications</span>
+                    <div style={{ display:'flex', gap:6 }}>
+                      {unreadCount > 0 && (
+                        <button className="fuel-notif-action-new" onClick={markAllRead}><CheckCheck size={15} /></button>
+                      )}
+                      <button className="fuel-notif-action-new" onClick={() => setShowNotif(false)}><X size={15} /></button>
                     </div>
-                  ))
-                )}
-              </div>
-              {notifications.length > 0 && (
-                <div className="fuel-notification-footer">
-                  <button
-                    className="fuel-view-all-notifications"
-                    onClick={() => {
-                      setShowNotifications(false);
-                      navigate('/fuel/notifications');
-                    }}
-                  >
-                    View All Notifications
-                  </button>
+                  </div>
+                  <div className="fuel-notif-list-new">
+                    {enriched.length === 0 ? (
+                      <div className="fuel-notif-empty-new"><Bell size={32} color="#d1d5db" /><p>No notifications</p></div>
+                    ) : enriched.map(n => (
+                      <div key={n.id} className={`fuel-notif-item-new ${n.read ? 'read' : 'unread'}`}
+                        onClick={() => { markRead(n.id); setShowNotif(false); navigate(n.link); }}>
+                        <span style={{ fontSize:18 }}>{n.icon}</span>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:13, fontWeight:700, color:n.color }}>{n.title}</div>
+                          <div style={{ fontSize:12, color:'#374151', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{n.message}</div>
+                          <div style={{ fontSize:11, color:'#9ca3af' }}>{new Date(n.time).toLocaleString()}</div>
+                        </div>
+                        {!n.read && <span style={{ width:8, height:8, borderRadius:'50%', background:n.color, flexShrink:0, marginTop:6 }} />}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
-          </>
-        )}
 
-        {/* Profile Dropdown Menu */}
-        {showProfileMenu && (
-          <>
-            <div className="fuel-profile-overlay" onClick={() => setShowProfileMenu(false)}></div>
-            <div className="fuel-profile-dropdown">
-              {/* Profile Header */}
-              <div className="fuel-profile-dropdown-header">
-                <div className="fuel-profile-header-avatar">
-                  {fuelOfficerInfo.avatar ? (
-                    <img src={fuelOfficerInfo.avatar} alt={fuelOfficerInfo.name} />
-                  ) : (
-                    <div className="fuel-profile-avatar-placeholder">
-                      <span>👤</span>
-                    </div>
-                  )}
+            {/* Settings */}
+            <div className="fuel-header-dropdown-new" ref={settingsRef}>
+              <button className="fuel-header-btn-new" onClick={() => setShowSettings(p => !p)}>
+                <Settings size={20} />
+              </button>
+              {showSettings && (
+                <div className="fuel-settings-panel-new">
+                  <Link to="/fuel/profile" className="fuel-settings-item-new" onClick={() => setShowSettings(false)}>
+                    <User size={15} /> My Profile
+                  </Link>
+                  <Link to="/fuel/settings" className="fuel-settings-item-new" onClick={() => setShowSettings(false)}>
+                    <Settings size={15} /> Settings
+                  </Link>
                 </div>
-                <div className="fuel-profile-header-info">
-                  <h4 className="fuel-profile-header-name">{fuelOfficerInfo.name}</h4>
-                  <p className="fuel-profile-header-email">{fuelOfficerInfo.email}</p>
-                  <span className="fuel-profile-header-id">ID: {fuelOfficerInfo.employeeId}</span>
-                </div>
+              )}
+            </div>
+
+            {/* Profile */}
+            <div className="fuel-header-profile-new">
+              <div className="fuel-avatar-new">
+                {profilePhoto
+                  ? <img src={profilePhoto} alt="avatar" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                  : initials}
               </div>
-
-              {/* Profile Menu Items */}
-              <div className="fuel-profile-menu-items">
-                <button
-                  className="fuel-profile-menu-item"
-                  onClick={() => {
-                    setShowProfileMenu(false);
-                    navigate('/fuel/profile');
-                  }}
-                >
-                  <span className="fuel-profile-menu-icon">👤</span>
-                  <span>My Profile</span>
-                </button>
-
-                <button
-                  className="fuel-profile-menu-item"
-                  onClick={() => {
-                    setShowProfileMenu(false);
-                    navigate('/fuel/settings');
-                  }}
-                >
-                  <span className="fuel-profile-menu-icon">⚙️</span>
-                  <span>Settings</span>
-                </button>
-
-                <button
-                  className="fuel-profile-menu-item"
-                  onClick={() => {
-                    setShowProfileMenu(false);
-                    navigate('/fuel/performance');
-                  }}
-                >
-                  <span className="fuel-profile-menu-icon">📊</span>
-                  <span>My Performance</span>
-                </button>
-
-                <div className="fuel-profile-menu-divider"></div>
-
-                <button
-                  className="fuel-profile-menu-item logout"
-                  onClick={() => {
-                    setShowProfileMenu(false);
-                    handleLogout();
-                  }}
-                >
-                  <span className="fuel-profile-menu-icon">🚪</span>
-                  <span>Logout</span>
-                </button>
+              <div className="fuel-header-info-new">
+                <span className="fuel-header-name-new">{currentUser?.name || 'Fuel Officer'}</span>
+                <span className="fuel-header-role-new">FUEL OFFICER</span>
               </div>
             </div>
-          </>
-        )}
 
-        {/* Page Content */}
-        <div className="fuel-page-content">
-          <Outlet />
-        </div>
+            <button className="fuel-logout-btn-new" onClick={handleLogout}>Logout</button>
+          </div>
+        </header>
+
+        <main className="fuel-content-new"><Outlet /></main>
       </div>
     </div>
   );
-};
-
-export default FuelStationLayout;
+}
