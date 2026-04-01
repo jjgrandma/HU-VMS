@@ -27,15 +27,9 @@ const FuelRequests = () => {
   useEffect(() => { fetchRequests(); }, []);
 
   const handleDispense = async () => {
-    const liters = parseFloat(dispensedAmount);
-    if (!liters || liters <= 0) { alert('Enter valid liters'); return; }
-    if (liters > selectedRequest.permittedLiters) {
-      alert(`Cannot exceed permitted amount: ${selectedRequest.permittedLiters}L`);
-      return;
-    }
     setActionLoading(true);
     try {
-      const updated = await dispenseFuel(selectedRequest._id, liters, currentUser?.name || currentUser?.username);
+      const updated = await dispenseFuel(selectedRequest._id, selectedRequest.permittedLiters, currentUser?.name || currentUser?.username);
       setFuelRequests(prev => prev.map(r => r._id === updated._id ? updated : r));
       setShowDispenseModal(false);
       setSelectedRequest(null);
@@ -142,12 +136,13 @@ const FuelRequests = () => {
               <p><strong>Approved by:</strong> {selectedRequest.approvedBy}</p>
               <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '12px 16px', margin: '12px 0' }}>
                 <strong style={{ color: '#16a34a' }}>Permitted amount: {selectedRequest.permittedLiters}L</strong>
-                <p style={{ margin: '4px 0 0', fontSize: 13, color: '#6b7280' }}>You may only dispense up to this amount</p>
+                <p style={{ margin: '4px 0 0', fontSize: 13, color: '#6b7280' }}>This is the exact amount to dispense — set by the transport officer</p>
               </div>
               <div className="fuel-form-group">
-                <label className="fuel-form-label">Liters to Dispense *</label>
-                <input type="number" min="1" max={selectedRequest.permittedLiters} value={dispensedAmount}
-                  onChange={e => setDispensedAmount(e.target.value)} className="fuel-form-input" />
+                <label className="fuel-form-label">Liters to Dispense</label>
+                <input type="number" value={selectedRequest.permittedLiters} readOnly
+                  style={{ background: '#f1f5f9', cursor: 'not-allowed', fontWeight: 700, fontSize: 16 }}
+                  className="fuel-form-input" />
               </div>
             </div>
             <div className="fuel-modal-actions">

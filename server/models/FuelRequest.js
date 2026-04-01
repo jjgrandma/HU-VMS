@@ -13,6 +13,8 @@ const fuelRequestSchema = new mongoose.Schema(
     destination:      { type: String, required: true },
     purpose:          String,
     odometer:         { type: Number, default: 0 },
+    estimatedDistanceKm: Number,
+    estimatedLiters:  Number,
     status: {
       type: String,
       enum: ['pending', 'approved', 'rejected', 'dispensed', 'confirmed'],

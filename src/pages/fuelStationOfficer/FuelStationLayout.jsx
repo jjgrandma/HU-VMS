@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, ClipboardList, Droplets, Package,
+  LayoutDashboard, ClipboardList, Package,
   FileText, Bell, Settings, User, X, CheckCheck,
   ChevronLeft, ChevronRight, Fuel
 } from 'lucide-react';
@@ -120,7 +120,6 @@ export default function FuelStationLayout({ onLogout }) {
   const navItems = [
     { to: '/fuel/dashboard',     icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
     { to: '/fuel/requests',      icon: <ClipboardList size={20} />,   label: 'Fuel Requests', badge: pendingCount },
-    { to: '/fuel/dispense',      icon: <Droplets size={20} />,        label: 'Dispense Fuel' },
     { to: '/fuel/inventory',     icon: <Package size={20} />,         label: 'Inventory' },
     { to: '/fuel/transactions',  icon: <FileText size={20} />,        label: 'Transactions' },
     { to: '/fuel/reports',       icon: <FileText size={20} />,        label: 'Reports' },

@@ -17,7 +17,8 @@ const users = [
   { name: 'Chaltu Gemechu',     username: 'driver2',      email: 'driver2@haramaya.edu.et',      role: 'DRIVER',       department: 'Transport',            employeeId: 'HU-DRV-002' },
   { name: 'Fuel Officer',       username: 'fuel',         email: 'fuel@haramaya.edu.et',         role: 'FUEL_OFFICER', department: 'Fuel Station',         employeeId: 'HU-FO-001'  },
   { name: 'Gate Officer',       username: 'gate',         email: 'gate@haramaya.edu.et',         role: 'GATE_OFFICER', department: 'Security',             employeeId: 'HU-GO-001'  },
-  { name: 'Regular User',       username: 'user1',        email: 'user1@haramaya.edu.et',        role: 'USER',         department: 'Research',             employeeId: 'HU-USR-001' },
+  { name: 'Regular User',       username: 'user1',        email: 'user1@haramaya.edu.et',        role: 'USER',                 department: 'Research',             employeeId: 'HU-USR-001' },
+  { name: 'Maintenance Officer',username: 'maintenance',  email: 'maintenance@haramaya.edu.et',  role: 'MAINTENANCE_OFFICER',  department: 'Maintenance',          employeeId: 'HU-MO-001'  },
 ];
 
 const vehicles = [

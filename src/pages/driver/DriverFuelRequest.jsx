@@ -2,6 +2,42 @@ import { useState, useEffect } from 'react';
 import { createFuelRequest, getFuelRequests, getVehicles, getCurrentUser, confirmFuelReceipt } from '../../api/api';
 import './DriverFuelLog.css';
 
+// Distance from Haramaya University to common destinations (km, round trip)
+const DESTINATION_DISTANCES = {
+  'harar':        90,  'harar city':   90,
+  'dire dawa':   110,  'diredawa':    110,
+  'addis ababa': 530,  'addis':       530,
+  'jijiga':      170,  'jigjiga':     170,
+  'chiro':       120,
+  'bedessa':      80,
+  'asebe teferi': 60,  'asebe':        60,
+  'alemaya':      10,
+  'kersa':        30,
+  'babile':       60,
+  'gursum':       80,
+  'kombolcha':   350,
+  'dessie':      380,
+  'mekelle':     700,
+  'bahir dar':   750,
+  'gondar':      850,
+  'jimma':       600,
+  'hawassa':     550,
+};
+
+// Fuel consumption rate L/100km by vehicle type
+const CONSUMPTION_RATE = {
+  bus: 28, minibus: 16, van: 13, truck: 22, car: 10, pickup: 14, motorcycle: 4,
+};
+
+function estimateFuel(destination, vehicleType) {
+  const key = destination.toLowerCase().trim();
+  const distKm = Object.entries(DESTINATION_DISTANCES).find(([k]) => key.includes(k))?.[1];
+  if (!distKm) return null;
+  const rate = CONSUMPTION_RATE[vehicleType?.toLowerCase()] || 14;
+  const liters = Math.ceil((distKm / 100) * rate);
+  return { distKm, liters };
+}
+
 export default function DriverFuelRequest() {
   const currentUser = getCurrentUser();
   const [vehicles, setVehicles] = useState([]);
@@ -13,6 +49,20 @@ export default function DriverFuelRequest() {
     vehicleType: '', fuelType: 'Diesel', requestedLiters: '', destination: '', purpose: '', odometer: '',
   });
   const [errors, setErrors] = useState({});
+  const [estimate, setEstimate] = useState(null); // { distKm, liters }
+
+  // Auto-calculate when destination or vehicle type changes
+  useEffect(() => {
+    if (formData.destination && formData.vehicleType) {
+      const result = estimateFuel(formData.destination, formData.vehicleType);
+      setEstimate(result);
+      if (result) {
+        setFormData(p => ({ ...p, requestedLiters: String(result.liters) }));
+      }
+    } else {
+      setEstimate(null);
+    }
+  }, [formData.destination, formData.vehicleType]);
 
   const fetchData = async () => {
     try {
@@ -56,10 +106,13 @@ export default function DriverFuelRequest() {
         destination: formData.destination,
         purpose: formData.purpose,
         odometer: Number(formData.odometer) || 0,
+        estimatedDistanceKm: estimate?.distKm || null,
+        estimatedLiters: estimate?.liters || null,
       });
       setShowForm(false);
       setFormData({ vehicleType: '', fuelType: 'Diesel', requestedLiters: '', destination: '', purpose: '', odometer: '' });
       setErrors({});
+      setEstimate(null);
       fetchData();
     } catch (err) {
       alert('Failed to submit: ' + err.message);
@@ -125,6 +178,16 @@ export default function DriverFuelRequest() {
 
               <div>
                 <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Requested Liters *</label>
+                {estimate && (
+                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '8px 12px', marginBottom: 6, fontSize: 13 }}>
+                    📍 <strong>{estimate.distKm} km</strong> round trip → estimated <strong style={{ color: '#16a34a' }}>{estimate.liters}L</strong> auto-filled
+                  </div>
+                )}
+                {!estimate && formData.destination && formData.vehicleType && (
+                  <div style={{ background: '#fefce8', border: '1px solid #fde68a', borderRadius: 6, padding: '8px 12px', marginBottom: 6, fontSize: 13, color: '#92400e' }}>
+                    ⚠ Destination not in database — enter liters manually
+                  </div>
+                )}
                 <input type="number" min="1" value={formData.requestedLiters}
                   onChange={e => setFormData(p => ({ ...p, requestedLiters: e.target.value }))}
                   placeholder="e.g. 50"
