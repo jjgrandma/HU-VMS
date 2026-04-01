@@ -19,6 +19,9 @@ export const AuthProvider = ({ children }) => {
   const setUserAndPersist = (userData) => {
     if (userData) {
       localStorage.setItem('user', JSON.stringify(userData));
+    } else {
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
     }
     setUser(userData);
   };

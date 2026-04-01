@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import TripQRCode from './TripQRCode';
 import './DriverTrips.css';
 
 const BASE = 'http://localhost:5000/api';
@@ -93,6 +94,14 @@ export default function DriverTrips() {
                     {updating === trip._id ? 'Updating...' : STATUS_LABEL[trip.status]}
                   </button>
                 )}
+
+                {/* QR Code for approved trips */}
+                <TripQRCode
+                  tripId={trip._id}
+                  tripStatus={trip.status}
+                  destination={trip.destination}
+                  date={trip.date}
+                />
               </div>
             );
           })}

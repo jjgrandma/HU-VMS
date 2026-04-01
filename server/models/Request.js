@@ -29,6 +29,11 @@ const requestSchema = new mongoose.Schema(
     rejectionReason: String,
     startedAt: Date,
     completedAt: Date,
+    // QR Code fields
+    qrToken:     { type: String, unique: true, sparse: true },
+    qrGenerated: { type: Boolean, default: false },
+    qrUsed:      { type: Boolean, default: false },
+    qrUsedAt:    Date,
   },
   { timestamps: true }
 );

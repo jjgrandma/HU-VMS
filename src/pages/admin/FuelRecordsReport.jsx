@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getFuelRecords, getVehicles, createFuelRecord, deleteFuelRecord } from '../../api/api';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from 'recharts';
+import { getFuelRecords, getVehicles, deleteFuelRecord } from '../../api/api';
 import ExportButton from '../../components/ExportButton';
 import Pagination from '../../components/Pagination';
 import ReportFilters, { filterByDate } from '../../components/ReportFilters';
@@ -97,6 +98,39 @@ const FuelRecordsReport = () => {
   const totalQty  = records.reduce((s, r) => s + (r.quantity || 0), 0);
   const totalCost = records.reduce((s, r) => s + (r.cost || 0), 0);
 
+  // Bar chart: fuel by type
+  const fuelByType = ['Diesel','Gasoline','Electric','Hybrid'].map(type => ({
+    name: type,
+    Quantity: records.filter(r => r.fuelType === type).reduce((s,r) => s + (r.quantity||0), 0),
+    Cost:     records.filter(r => r.fuelType === type).reduce((s,r) => s + (r.cost||0), 0),
+  })).filter(d => d.Quantity > 0);
+
+  // Bar chart: top 6 vehicles by fuel consumed
+  const vehicleMap = {};
+  records.forEach(r => {
+    const plate = r.plateNumber || r.vehicle?.plateNumber || 'Unknown';
+    if (!vehicleMap[plate]) vehicleMap[plate] = { name: plate, Quantity: 0, Cost: 0 };
+    vehicleMap[plate].Quantity += r.quantity || 0;
+    vehicleMap[plate].Cost     += r.cost || 0;
+  });
+  const topVehicles = Object.values(vehicleMap).sort((a,b) => b.Quantity - a.Quantity).slice(0, 6);
+
+  // Monthly trend — last 6 months
+  const now = new Date();
+  const monthlyData = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+    const label = d.toLocaleString('default', { month: 'short' });
+    const monthRecs = records.filter(r => {
+      const rd = new Date(r.date || r.createdAt);
+      return rd.getMonth() === d.getMonth() && rd.getFullYear() === d.getFullYear();
+    });
+    return {
+      month: label,
+      Quantity: parseFloat(monthRecs.reduce((s,r) => s + (r.quantity||0), 0).toFixed(1)),
+      Cost:     monthRecs.reduce((s,r) => s + (r.cost||0), 0),
+    };
+  });
+
   const exportData = filtered.map(r => ({
     Plate:    r.plateNumber || r.vehicle?.plateNumber || '—',
     Model:    r.model || r.vehicle?.model || '—',
@@ -115,80 +149,78 @@ const FuelRecordsReport = () => {
       <div className="report-header">
         <h1>Fuel Records Report</h1>
         <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={() => setShowForm(s => !s)}
-            style={{ padding: '8px 18px', background: '#16a34a', color: '#fff',
-              border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>
-            {showForm ? '✕ Cancel' : '+ Add Record'}
-          </button>
           <ExportButton data={exportData} filename="fuel_records_report" reportTitle="Fuel Records Report" />
         </div>
       </div>
 
-      {/* Summary */}
-      <div className="fuel-summary">
-        <div className="summary-card">
-          <div className="summary-icon">⛽</div>
-          <div className="summary-content"><h3>{totalQty.toFixed(1)} L</h3><p>Total Fuel</p></div>
-        </div>
-        <div className="summary-card">
-          <div className="summary-icon">💰</div>
-          <div className="summary-content"><h3>{totalCost.toLocaleString()} ETB</h3><p>Total Cost</p></div>
-        </div>
-        <div className="summary-card">
-          <div className="summary-icon">📊</div>
-          <div className="summary-content"><h3>{records.length}</h3><p>Total Records</p></div>
-        </div>
-      </div>
-
-      {/* Add Form */}
-      {showForm && (
-        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12,
-          padding: 24, marginBottom: 24 }}>
-          <h3 style={{ margin: '0 0 16px', color: '#1e293b' }}>Add Fuel Record</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+      {/* KPI Cards */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16, marginBottom:24 }}>
+        {[
+          { label:'Total Fuel',    value:`${totalQty.toFixed(1)} L`,          color:'#3b82f6', bg:'#dbeafe', icon:'⛽' },
+          { label:'Total Cost',    value:`${totalCost.toLocaleString()} ETB`,  color:'#16a34a', bg:'#dcfce7', icon:'💰' },
+          { label:'Total Records', value: records.length,                      color:'#8b5cf6', bg:'#ede9fe', icon:'📊' },
+        ].map((k,i) => (
+          <div key={i} style={{ background:'#fff', border:`1px solid #e5e7eb`, borderTop:`3px solid ${k.color}`, borderRadius:12, padding:'18px 20px', display:'flex', alignItems:'center', gap:14, boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+            <div style={{ width:44, height:44, background:k.bg, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>{k.icon}</div>
             <div>
-              <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Vehicle *</label>
-              <select value={form.vehicle} onChange={e => setForm(f => ({ ...f, vehicle: e.target.value }))}
-                style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }}>
-                <option value="">Select vehicle</option>
-                {vehicles.map(v => <option key={v._id} value={v._id}>{v.plateNumber} — {v.model}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Fuel Type</label>
-              <select value={form.fuelType} onChange={e => setForm(f => ({ ...f, fuelType: e.target.value }))}
-                style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }}>
-                <option>Diesel</option><option>Gasoline</option><option>Electric</option><option>Hybrid</option>
-              </select>
-            </div>
-            <div>
-              <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Quantity (L) *</label>
-              <input type="number" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))}
-                placeholder="e.g. 45" style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }} />
-            </div>
-            <div>
-              <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Cost (ETB) *</label>
-              <input type="number" value={form.cost} onChange={e => setForm(f => ({ ...f, cost: e.target.value }))}
-                placeholder="e.g. 3150" style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }} />
-            </div>
-            <div>
-              <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Odometer (km)</label>
-              <input type="number" value={form.odometer} onChange={e => setForm(f => ({ ...f, odometer: e.target.value }))}
-                placeholder="e.g. 45230" style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }} />
-            </div>
-            <div>
-              <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Date</label>
-              <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
-                style={{ width: '100%', padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }} />
+              <div style={{ fontSize:22, fontWeight:800, color:k.color }}>{k.value}</div>
+              <div style={{ fontSize:12, color:'#6b7280', marginTop:2 }}>{k.label}</div>
             </div>
           </div>
-          <button onClick={handleAdd} disabled={saving}
-            style={{ marginTop: 16, padding: '10px 24px', background: '#16a34a', color: '#fff',
-              border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>
-            {saving ? 'Saving...' : '✓ Save Record'}
-          </button>
+        ))}
+      </div>
+
+      {/* Charts Row */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1.2fr', gap:20, marginBottom:24 }}>
+
+        {/* Fuel by Type */}
+        <div style={{ background:'#fff', border:'1px solid #e5e7eb', borderRadius:16, padding:20 }}>
+          <div style={{ fontWeight:700, fontSize:14, color:'#111827', marginBottom:4 }}>Fuel by Type</div>
+          <div style={{ fontSize:12, color:'#6b7280', marginBottom:12 }}>Total liters per fuel type</div>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={fuelByType} barSize={36} margin={{ top:4, right:8, left:-20, bottom:0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize:12, fill:'#6b7280' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize:12, fill:'#6b7280' }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <Tooltip cursor={{ fill:'rgba(0,0,0,0.04)' }} formatter={(v) => [`${v} L`, 'Quantity']} />
+              <Bar dataKey="Quantity" radius={[6,6,0,0]}>
+                {fuelByType.map((_, i) => <Cell key={i} fill={['#3b82f6','#16a34a','#f59e0b','#8b5cf6'][i % 4]} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
-      )}
+
+        {/* Top Vehicles */}
+        <div style={{ background:'#fff', border:'1px solid #e5e7eb', borderRadius:16, padding:20 }}>
+          <div style={{ fontWeight:700, fontSize:14, color:'#111827', marginBottom:4 }}>Top Vehicles</div>
+          <div style={{ fontSize:12, color:'#6b7280', marginBottom:12 }}>By fuel consumption (L)</div>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={topVehicles} barSize={20} layout="vertical" margin={{ top:4, right:20, left:10, bottom:0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" horizontal={false} />
+              <XAxis type="number" tick={{ fontSize:11, fill:'#6b7280' }} axisLine={false} tickLine={false} />
+              <YAxis type="category" dataKey="name" tick={{ fontSize:11, fill:'#374151' }} axisLine={false} tickLine={false} width={70} />
+              <Tooltip cursor={{ fill:'rgba(0,0,0,0.04)' }} formatter={(v) => [`${v} L`, 'Fuel']} />
+              <Bar dataKey="Quantity" fill="#3b82f6" radius={[0,6,6,0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Monthly Trend */}
+        <div style={{ background:'#fff', border:'1px solid #e5e7eb', borderRadius:16, padding:20 }}>
+          <div style={{ fontWeight:700, fontSize:14, color:'#111827', marginBottom:4 }}>Monthly Trend</div>
+          <div style={{ fontSize:12, color:'#6b7280', marginBottom:12 }}>Last 6 months fuel usage</div>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={monthlyData} barSize={14} margin={{ top:4, right:8, left:-20, bottom:0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+              <XAxis dataKey="month" tick={{ fontSize:12, fill:'#6b7280' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize:12, fill:'#6b7280' }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <Tooltip cursor={{ fill:'rgba(0,0,0,0.04)' }} />
+              <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize:12 }} />
+              <Bar dataKey="Quantity" name="Fuel (L)"    fill="#3b82f6" radius={[4,4,0,0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
 
       <ReportFilters period={period} onPeriod={p => { setPeriod(p); setCurrentPage(1); }} />
 

@@ -35,6 +35,7 @@ import DriverTripReport from './pages/admin/DriverTripReport';
 import DriverPerformanceReport from './pages/admin/DriverPerformanceReport';
 import FuelRecordsReport from './pages/admin/FuelRecordsReport';
 import Settings from './pages/admin/Settings';
+import MaintenanceReportsAdmin from './pages/admin/MaintenanceReportsAdmin';
 
 // Transport Officer
 import TransportOfficerLayout from './pages/transportOfficer/TransportOfficerLayout';
@@ -90,6 +91,17 @@ import VehicleCheck from './pages/gateSecurity/VehicleCheck';
 import GateLogsPage from './pages/gateSecurity/GateLogsPage';
 import IncidentReportPage from './pages/gateSecurity/IncidentReportPage';
 import GateAlertsPage from './pages/gateSecurity/GateAlertsPage';
+import QRScanner from './pages/gateSecurity/QRScanner';
+
+// Maintenance Officer
+import MaintenanceLayout from './pages/maintenance/MaintenanceLayout';
+import MaintenanceDashboard from './pages/maintenance/MaintenanceDashboard';
+import IssueList from './pages/maintenance/IssueList';
+import RepairTracking from './pages/maintenance/RepairTracking';
+import ScheduleMaintenance from './pages/maintenance/ScheduleMaintenance';
+import InventoryManagement from './pages/maintenance/InventoryManagement';
+import MaintenanceReports from './pages/maintenance/MaintenanceReports';
+import MaintenanceProfile from './pages/maintenance/MaintenanceProfile';
 
 function App() {
   const { user, setUser } = useContext(AuthContext);
@@ -109,7 +121,6 @@ function App() {
   const handleLogout = () => {
     apiLogout();
     setUser(null);
-    window.location.href = '/login';
   };
 
   return (
@@ -123,7 +134,7 @@ function App() {
 
       {!user && (
         <>
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </>
       )}
 
@@ -274,6 +285,15 @@ function App() {
               </div>
             </div>
           } />
+          <Route path="/admin/maintenance-reports" element={
+            <div className="app">
+              <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
+              <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
+                <AdminHeader />
+                <MaintenanceReportsAdmin />
+              </div>
+            </div>
+          } />
           <Route path="/admin/password-reset-management" element={
             <div className="app">
               <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
@@ -368,10 +388,29 @@ function App() {
             <Route path="logs"       element={<GateLogsPage />} />
             <Route path="incidents"  element={<IncidentReportPage />} />
             <Route path="alerts"     element={<GateAlertsPage />} />
+            <Route path="qr-scan"    element={<QRScanner />} />
+            <Route path="scan/:token" element={<QRScanner />} />
             <Route path="profile"    element={<GateSecurityProfile />} />
           </Route>
           <Route path="/gate/*" element={<Navigate to="/gate/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/gate/dashboard" replace />} />
+        </>
+      )}
+
+      {/* Maintenance Officer Routes */}
+      {user?.role === 'MAINTENANCE_OFFICER' && (
+        <>
+          <Route path="/maintenance" element={<MaintenanceLayout onLogout={handleLogout} />}>
+            <Route index element={<MaintenanceDashboard />} />
+            <Route path="dashboard"  element={<MaintenanceDashboard />} />
+            <Route path="issues"     element={<IssueList />} />
+            <Route path="repair"     element={<RepairTracking />} />
+            <Route path="schedule"   element={<ScheduleMaintenance />} />
+            <Route path="inventory"  element={<InventoryManagement />} />
+            <Route path="reports"    element={<MaintenanceReports />} />
+            <Route path="profile"    element={<MaintenanceProfile />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/maintenance/dashboard" replace />} />
         </>
       )}
 

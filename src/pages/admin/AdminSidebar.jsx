@@ -206,6 +206,13 @@ const AdminSidebar = ({ onLogout, collapsed, onToggleCollapse }) => {
               >
                 Fuel Records
               </Link>
+              <Link 
+                to="/admin/maintenance-reports" 
+                className={`dropdown-item ${location.pathname === '/admin/maintenance-reports' ? 'active' : ''}`}
+                onClick={handleMenuItemClick}
+              >
+                Maintenance Reports
+              </Link>
             </div>
           )}
         </div>

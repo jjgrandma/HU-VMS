@@ -1,4 +1,6 @@
 const router = require('express').Router();
+const crypto = require('crypto');
+const QRCode = require('qrcode');
 const Request = require('../models/Request');
 const Vehicle = require('../models/Vehicle');
 const { authMiddleware } = require('../middleware/auth');
@@ -89,6 +91,15 @@ router.put('/:id/approve', authMiddleware, async (req, res) => {
       { new: true }
     );
     if (!updated) return res.status(404).json({ message: 'Request not found' });
+
+    // Generate QR token on approval
+    if (!updated.qrGenerated) {
+      const qrToken = crypto.randomBytes(20).toString('hex');
+      updated.qrToken = qrToken;
+      updated.qrGenerated = true;
+      await updated.save();
+    }
+
     res.json(updated);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -127,6 +138,46 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   try {
     await Request.findByIdAndDelete(req.params.id);
     res.json({ message: 'Deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// GET /api/requests/:id/qr — get QR code image for approved trip
+router.get('/:id/qr', authMiddleware, async (req, res) => {
+  try {
+    const trip = await Request.findById(req.params.id);
+    if (!trip) return res.status(404).json({ message: 'Trip not found' });
+    if (trip.status !== 'approved' && trip.status !== 'in-progress') {
+      return res.status(400).json({ message: 'Trip is not approved yet' });
+    }
+
+    // Generate token if not already done
+    if (!trip.qrToken) {
+      trip.qrToken = crypto.randomBytes(20).toString('hex');
+      trip.qrGenerated = true;
+      await trip.save();
+    }
+
+    const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/gate/scan/${trip.qrToken}`;
+    const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
+      width: 300,
+      margin: 2,
+      color: { dark: '#111827', light: '#ffffff' },
+    });
+
+    res.json({
+      qrCode: qrDataUrl,
+      token: trip.qrToken,
+      verifyUrl,
+      trip: {
+        destination: trip.destination,
+        date: trip.date,
+        assignedVehicle: trip.assignedVehicle,
+        assignedDriver: trip.assignedDriver,
+        status: trip.status,
+      },
+    });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

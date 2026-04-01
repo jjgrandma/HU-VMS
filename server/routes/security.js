@@ -6,7 +6,7 @@ const GateLog = require('../models/GateLog');
 const IncidentReport = require('../models/IncidentReport');
 const User = require('../models/User');
 
-# GET /api/security/verify/:plateNumber
+// GET /api/security/verify/:plateNumber
 router.get('/verify/:plateNumber', authMiddleware, async (req, res) => {
   try {
     const plate = req.params.plateNumber.toUpperCase().trim();
@@ -253,6 +253,80 @@ router.get('/reports', authMiddleware, async (req, res) => {
   try {
     const reports = await IncidentReport.find().sort({ createdAt: -1 }).limit(50);
     res.json(reports);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// GET /api/security/verify-trip/:token — verify by QR token
+router.get('/verify-trip/:token', authMiddleware, async (req, res) => {
+  try {
+    const trip = await Request.findOne({ qrToken: req.params.token });
+
+    if (!trip) {
+      return res.json({ status: 'denied', message: 'Invalid QR code — trip not found' });
+    }
+
+    if (trip.status === 'rejected') {
+      return res.json({ status: 'denied', message: 'Trip was rejected by Transport Officer' });
+    }
+
+    if (trip.status === 'pending') {
+      return res.json({ status: 'denied', message: 'Trip not yet approved by Transport Officer' });
+    }
+
+    if (trip.status === 'completed') {
+      return res.json({ status: 'denied', message: 'QR already used — trip completed' });
+    }
+
+    if (trip.qrUsed) {
+      return res.json({ status: 'denied', message: `QR already scanned at ${new Date(trip.qrUsedAt).toLocaleString()}` });
+    }
+
+    // Check if trip date is today or future
+    const today = new Date().toISOString().slice(0, 10);
+    if (trip.date < today) {
+      return res.json({ status: 'denied', message: `Trip expired — was scheduled for ${trip.date}` });
+    }
+
+    // Check if late (trip date is today but past reasonable time)
+    const isLate = trip.date === today && new Date().getHours() > 20;
+
+    // Mark QR as used
+    trip.qrUsed = true;
+    trip.qrUsedAt = new Date();
+    await trip.save();
+
+    // Auto create gate log
+    const GateLog = require('../models/GateLog');
+    await new GateLog({
+      plateNumber: trip.assignedVehicle?.match(/\(([^)]+)\)/)?.[1] || trip.assignedVehicle || 'QR-SCAN',
+      driverName: trip.assignedDriver,
+      direction: 'entry',
+      status: 'approved',
+      tripId: trip._id,
+      officer: req.user.name || 'Gate Officer',
+      remarks: `QR scan verified${isLate ? ' — LATE' : ''}`,
+      entryTime: new Date(),
+    }).save();
+
+    return res.json({
+      status: 'approved',
+      message: isLate ? 'Access Granted — but vehicle is LATE' : 'Access Granted',
+      isLate,
+      trip: {
+        _id:            trip._id,
+        destination:    trip.destination,
+        date:           trip.date,
+        assignedVehicle: trip.assignedVehicle,
+        assignedDriver: trip.assignedDriver,
+        requester:      trip.requester,
+        department:     trip.department,
+        passengers:     trip.passengers,
+        purpose:        trip.purpose,
+        approvedBy:     trip.approvedBy,
+      },
+    });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

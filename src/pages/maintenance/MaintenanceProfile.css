@@ -1,0 +1,38 @@
+.mp-container { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; overflow: hidden; }
+
+.mp-header { display: flex; gap: 32px; padding: 32px; border-bottom: 1px solid #e5e7eb; align-items: flex-start; }
+
+.mp-avatar-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; flex-shrink: 0; }
+
+.mp-avatar { width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, #16a34a, #15803d); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 700; cursor: pointer; position: relative; overflow: hidden; border: 3px solid #e5e7eb; transition: transform 0.2s; }
+.mp-avatar:hover { transform: scale(1.04); }
+.mp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.mp-avatar-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; font-size: 22px; opacity: 0; transition: opacity 0.2s; }
+.mp-avatar:hover .mp-avatar-overlay { opacity: 1; }
+
+.mp-photo-btn { padding: 6px 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; color: #16a34a; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.mp-photo-btn:hover:not(:disabled) { background: #dcfce7; }
+.mp-photo-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.mp-header-info { flex: 1; }
+.mp-name-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.mp-name-row h2 { font-size: 22px; font-weight: 700; color: #111827; margin: 0; }
+.mp-role-badge { padding: 3px 12px; background: #dcfce7; color: #16a34a; border-radius: 20px; font-size: 12px; font-weight: 700; }
+
+.mp-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px 24px; }
+.mp-info-item { display: flex; flex-direction: column; gap: 2px; }
+.mp-info-label { font-size: 11px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; }
+.mp-info-value { font-size: 14px; font-weight: 500; color: #111827; }
+
+.mp-tabs { display: flex; border-bottom: 1px solid #e5e7eb; padding: 0 32px; }
+.mp-tab { padding: 14px 20px; background: none; border: none; border-bottom: 2px solid transparent; font-size: 14px; font-weight: 600; color: #6b7280; cursor: pointer; transition: all 0.2s; margin-bottom: -1px; }
+.mp-tab:hover { color: #16a34a; }
+.mp-tab.active { color: #16a34a; border-bottom-color: #16a34a; }
+
+.mp-form { padding: 28px 32px; }
+
+@media (max-width: 700px) {
+  .mp-header { flex-direction: column; align-items: center; text-align: center; }
+  .mp-info-grid { grid-template-columns: 1fr; }
+}
