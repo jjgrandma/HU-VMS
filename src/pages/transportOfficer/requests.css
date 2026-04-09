@@ -1022,3 +1022,59 @@
   transition: background 0.2s;
 }
 .refresh-btn:hover { background: rgba(99,102,241,0.3); }
+
+/* Fuel Estimate Banner */
+.fuel-estimate-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.fuel-estimate-icon {
+  width: 36px;
+  height: 36px;
+  background: #dcfce7;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.fuel-estimate-content { flex: 1; }
+
+.fuel-estimate-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #166534;
+  margin-bottom: 6px;
+}
+
+.fuel-estimate-stats {
+  display: flex;
+  gap: 20px;
+  font-size: 13px;
+  color: #374151;
+}
+
+/* Fuel per vehicle */
+.vehicle-fuel-estimate {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 8px 0;
+  font-size: 13px;
+  color: #374151;
+}

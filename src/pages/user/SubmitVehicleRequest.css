@@ -356,3 +356,53 @@
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }
+
+/* Smart Vehicle Suggestion Card */
+.vehicle-suggestion-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 2px solid #16a34a;
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin: 20px 0;
+  animation: suggestionFadeIn 0.3s ease;
+}
+
+@keyframes suggestionFadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.suggestion-icon {
+  font-size: 36px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.suggestion-body { flex: 1; }
+
+.suggestion-title {
+  font-size: 15px;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.suggestion-title strong {
+  color: #16a34a;
+  font-size: 16px;
+}
+
+.suggestion-reason {
+  font-size: 13px;
+  color: #166534;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.suggestion-note {
+  font-size: 12px;
+  color: #6b7280;
+  font-style: italic;
+}
