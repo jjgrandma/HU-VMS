@@ -5,7 +5,7 @@ import {
   FileText, Bell, Settings, User, X, CheckCheck,
   ChevronLeft, ChevronRight, Fuel
 } from 'lucide-react';
-import { getCurrentUser, getFuelRequests, getFuelInventory } from '../../api/api';
+import { getCurrentUser, getFuelRequests, getFuelInventory, getNotifications, markAllNotificationsRead, markNotificationRead } from '../../api/api';
 import './FuelStationLayout.css';
 
 const BASE  = 'http://localhost:5000/api';
@@ -17,9 +17,6 @@ export default function FuelStationLayout({ onLogout }) {
   const [showNotif, setShowNotif]   = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [readIds, setReadIds]       = useState(() => {
-    try { return JSON.parse(localStorage.getItem('fuel_notif_read') || '[]'); } catch { return []; }
-  });
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [pendingCount, setPendingCount] = useState(0);
   const notifRef    = useRef(null);
@@ -43,51 +40,22 @@ export default function FuelStationLayout({ onLogout }) {
 
   const fetchNotifications = async () => {
     try {
-      const [requests, inventory] = await Promise.all([
-        getFuelRequests(),
-        getFuelInventory(),
-      ]);
-      const notifs = [];
-
-      // Pending fuel requests
-      if (Array.isArray(requests)) {
-        const pending = requests.filter(r => r.status === 'pending');
-        setPendingCount(pending.length);
-        pending.forEach(r => notifs.push({
-          id: `req-${r._id}`,
-          icon: '⛽', color: '#f59e0b',
-          title: 'New Fuel Request',
-          message: `${r.driverName} — ${r.vehicleType || r.vehiclePlate || '—'} needs ${r.requestedLiters}L`,
-          time: r.createdAt,
-          link: '/fuel/requests',
-        }));
-
-        // Approved but not dispensed
-        requests.filter(r => r.status === 'approved').forEach(r => notifs.push({
-          id: `appr-${r._id}`,
-          icon: '✅', color: '#16a34a',
-          title: 'Ready to Dispense',
-          message: `${r.driverName} — ${r.permittedLiters}L approved`,
-          time: r.approvedAt || r.updatedAt,
-          link: '/fuel/dispense',
-        }));
-      }
-
-      // Low inventory alerts
-      if (Array.isArray(inventory)) {
-        inventory.filter(i => i.available < 100).forEach(i => notifs.push({
-          id: `inv-${i._id || i.fuelType}`,
-          icon: '📦', color: '#dc2626',
-          title: 'Low Fuel Stock',
-          message: `${i.fuelType} — only ${i.available}L remaining`,
-          time: i.updatedAt || new Date().toISOString(),
-          link: '/fuel/inventory',
-        }));
-      }
-
-      notifs.sort((a, b) => new Date(b.time) - new Date(a.time));
-      setNotifications(notifs);
+      const notifs = await getNotifications();
+      setNotifications(Array.isArray(notifs) ? notifs : []);
+      // Also get pending count
+      const reqs = await getFuelRequests();
+      if (Array.isArray(reqs)) setPendingCount(reqs.filter(r => r.status === 'pending').length);
     } catch (err) { console.error(err); }
+  };
+
+  const handleMarkRead = async (id) => {
+    await markNotificationRead(id).catch(console.error);
+    setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
+  };
+
+  const handleMarkAllRead = async () => {
+    await markAllNotificationsRead().catch(console.error);
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
   // Close dropdowns on outside click
@@ -100,20 +68,8 @@ export default function FuelStationLayout({ onLogout }) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const enriched    = notifications.map(n => ({ ...n, read: readIds.includes(n.id) }));
-  const unreadCount = enriched.filter(n => !n.read).length;
-
-  const markRead = (id) => {
-    const updated = [...readIds, id];
-    setReadIds(updated);
-    localStorage.setItem('fuel_notif_read', JSON.stringify(updated));
-  };
-
-  const markAllRead = () => {
-    const ids = notifications.map(n => n.id);
-    setReadIds(ids);
-    localStorage.setItem('fuel_notif_read', JSON.stringify(ids));
-  };
+  const enriched    = notifications;
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   const handleLogout = () => { if (onLogout) onLogout(); navigate('/login'); };
 
@@ -185,7 +141,7 @@ export default function FuelStationLayout({ onLogout }) {
                     <span>Notifications</span>
                     <div style={{ display:'flex', gap:6 }}>
                       {unreadCount > 0 && (
-                        <button className="fuel-notif-action-new" onClick={markAllRead}><CheckCheck size={15} /></button>
+                        <button className="fuel-notif-action-new" onClick={handleMarkAllRead}><CheckCheck size={15} /></button>
                       )}
                       <button className="fuel-notif-action-new" onClick={() => setShowNotif(false)}><X size={15} /></button>
                     </div>
@@ -194,15 +150,15 @@ export default function FuelStationLayout({ onLogout }) {
                     {enriched.length === 0 ? (
                       <div className="fuel-notif-empty-new"><Bell size={32} color="#d1d5db" /><p>No notifications</p></div>
                     ) : enriched.map(n => (
-                      <div key={n.id} className={`fuel-notif-item-new ${n.read ? 'read' : 'unread'}`}
-                        onClick={() => { markRead(n.id); setShowNotif(false); navigate(n.link); }}>
-                        <span style={{ fontSize:18 }}>{n.icon}</span>
+                      <div key={n._id || n.id} className={`fuel-notif-item-new ${n.read ? 'read' : 'unread'}`}
+                        onClick={() => { handleMarkRead(n._id); setShowNotif(false); navigate('/fuel/dispense'); }}>
+                        <span style={{ fontSize:18 }}>{n.type === 'fuel_request' ? '⛽' : n.type === 'trip_approved' ? '✅' : '🔔'}</span>
                         <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ fontSize:13, fontWeight:700, color:n.color }}>{n.title}</div>
+                          <div style={{ fontSize:13, fontWeight:700, color: n.type === 'fuel_request' ? '#f59e0b' : '#16a34a' }}>{n.title}</div>
                           <div style={{ fontSize:12, color:'#374151', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{n.message}</div>
-                          <div style={{ fontSize:11, color:'#9ca3af' }}>{new Date(n.time).toLocaleString()}</div>
+                          <div style={{ fontSize:11, color:'#9ca3af' }}>{new Date(n.createdAt).toLocaleString()}</div>
                         </div>
-                        {!n.read && <span style={{ width:8, height:8, borderRadius:'50%', background:n.color, flexShrink:0, marginTop:6 }} />}
+                        {!n.read && <span style={{ width:8, height:8, borderRadius:'50%', background:'#f59e0b', flexShrink:0, marginTop:6 }} />}
                       </div>
                     ))}
                   </div>

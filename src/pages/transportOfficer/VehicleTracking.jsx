@@ -32,6 +32,8 @@ export default function VehicleTracking() {
   const [mapError, setMapError]           = useState(false);
   const [activeView, setActiveView]       = useState('fleet');
   const [statusFilter, setStatusFilter]   = useState('All');
+  const [mapStyle, setMapStyle]           = useState('street'); // 'street' | 'satellite' | 'hybrid'
+  const tileLayerRef = useRef(null);
 
   // ── Fetch vehicles from DB ──────────────────────────────
   const fetchVehicles = async () => {
@@ -100,10 +102,13 @@ export default function VehicleTracking() {
   useEffect(() => {
     if (activeView !== 'map' || !mapLoaded || !window.L || !mapRef.current || mapInstanceRef.current) return;
     try {
-      mapInstanceRef.current = window.L.map(mapRef.current).setView([9.4140, 42.0360], 13);
-      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors', maxZoom: 19,
-      }).addTo(mapInstanceRef.current);
+      mapInstanceRef.current = window.L.map(mapRef.current).setView([9.4140, 42.0360], 14);
+
+      // Default tile layer
+      tileLayerRef.current = window.L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        { attribution: 'Tiles © Esri', maxZoom: 19 }
+      ).addTo(mapInstanceRef.current);
 
       // University boundary
       window.L.polygon([
@@ -121,6 +126,39 @@ export default function VehicleTracking() {
         .bindPopup('<b>Haramaya University</b><br>Main Campus');
     } catch (e) { setMapError(true); }
   }, [activeView, mapLoaded]);
+
+  // ── Switch tile layer when mapStyle changes ─────────────
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.L || !tileLayerRef.current) return;
+    mapInstanceRef.current.removeLayer(tileLayerRef.current);
+
+    const TILES = {
+      street: {
+        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        attr: '© OpenStreetMap contributors',
+      },
+      satellite: {
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        attr: 'Tiles © Esri',
+      },
+      hybrid: {
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        attr: 'Tiles © Esri',
+      },
+    };
+
+    const t = TILES[mapStyle] || TILES.satellite;
+    tileLayerRef.current = window.L.tileLayer(t.url, { attribution: t.attr, maxZoom: 19 })
+      .addTo(mapInstanceRef.current);
+
+    // For hybrid, add labels on top
+    if (mapStyle === 'hybrid') {
+      window.L.tileLayer(
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        { attribution: '© OpenStreetMap', maxZoom: 19, opacity: 0.4 }
+      ).addTo(mapInstanceRef.current);
+    }
+  }, [mapStyle]);
 
   useEffect(() => {
     if (activeView === 'map' && mapInstanceRef.current) {
@@ -349,6 +387,22 @@ export default function VehicleTracking() {
             </div>
 
             <div className="map-canvas-container">
+              {/* Map Style Toggle */}
+              <div className="map-style-toggle">
+                {[
+                  { key: 'street',    label: '🗺 Street' },
+                  { key: 'satellite', label: '🛰 Satellite' },
+                  { key: 'hybrid',    label: '🌍 Hybrid' },
+                ].map(s => (
+                  <button
+                    key={s.key}
+                    className={`map-style-btn ${mapStyle === s.key ? 'active' : ''}`}
+                    onClick={() => setMapStyle(s.key)}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
               {mapError ? (
                 <div className="map-error-overlay">
                   <div className="error-content">

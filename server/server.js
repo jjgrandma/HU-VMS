@@ -33,6 +33,7 @@ app.use('/api/contact',   require('./routes/contact'));
 app.use('/api/driver',    require('./routes/driverPortal'));
 app.use('/api/security',  require('./routes/security'));
 app.use('/api/maintenance', require('./routes/maintenance'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 // ─── Scheduled Jobs ───────────────────────────────────────
 require('./jobs/dailyMaintenanceReport')();
