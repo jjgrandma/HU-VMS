@@ -92,6 +92,7 @@ import GateLogsPage from './pages/gateSecurity/GateLogsPage';
 import IncidentReportPage from './pages/gateSecurity/IncidentReportPage';
 import GateAlertsPage from './pages/gateSecurity/GateAlertsPage';
 import QRScanner from './pages/gateSecurity/QRScanner';
+import ALPRModule from './pages/gateSecurity/ALPRModule';
 
 // Maintenance Officer
 import MaintenanceLayout from './pages/maintenance/MaintenanceLayout';
@@ -390,6 +391,7 @@ function App() {
             <Route path="alerts"     element={<GateAlertsPage />} />
             <Route path="qr-scan"    element={<QRScanner />} />
             <Route path="scan/:token" element={<QRScanner />} />
+            <Route path="alpr"        element={<ALPRModule />} />
             <Route path="profile"    element={<GateSecurityProfile />} />
           </Route>
           <Route path="/gate/*" element={<Navigate to="/gate/dashboard" replace />} />

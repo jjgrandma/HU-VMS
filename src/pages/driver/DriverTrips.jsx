@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import TripQRCode from './TripQRCode';
+import DriverGPSTracker from './DriverGPSTracker';
 import './DriverTrips.css';
+import './DriverGPSTracker.css';
 
 const BASE = 'http://localhost:5000/api';
 const token = () => localStorage.getItem('token');
@@ -102,6 +104,9 @@ export default function DriverTrips() {
                   destination={trip.destination}
                   date={trip.date}
                 />
+
+                {/* GPS Tracker for active trips */}
+                <DriverGPSTracker trip={trip} />
               </div>
             );
           })}

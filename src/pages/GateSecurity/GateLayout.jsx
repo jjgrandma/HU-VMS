@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShieldCheck, List, AlertTriangle, FileWarning, Bell, Settings, User, X, QrCode } from 'lucide-react';
+import { LayoutDashboard, ShieldCheck, List, AlertTriangle, FileWarning, Bell, Settings, User, X, QrCode, ScanLine } from 'lucide-react';
 import { getCurrentUser } from '../../api/api';
 import './GateLayout.css';
 
@@ -54,6 +54,7 @@ export default function GateLayout({ onLogout }) {
     { to: '/gate/dashboard',   icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
     { to: '/gate/verify',      icon: <ShieldCheck size={18} />,     label: 'Vehicle Check' },
     { to: '/gate/qr-scan',    icon: <QrCode size={18} />,          label: 'QR Scanner' },
+    { to: '/gate/alpr',       icon: <ScanLine size={18} />,        label: 'AI Plate Scan' },
     { to: '/gate/logs',        icon: <List size={18} />,            label: 'Gate Logs' },
     { to: '/gate/incidents',   icon: <FileWarning size={18} />,     label: 'Incidents' },
     { to: '/gate/alerts',      icon: <AlertTriangle size={18} />,   label: 'Alerts' },

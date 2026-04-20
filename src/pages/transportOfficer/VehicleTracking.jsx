@@ -40,13 +40,13 @@ export default function VehicleTracking() {
     try {
       const data = await getVehicles();
       setVehicles(data);
-      // Seed liveCoords from DB location
       const coords = {};
       data.forEach(v => {
         coords[v._id] = {
-          lat:   v.location?.lat  ?? 9.4140,
-          lng:   v.location?.lng  ?? 42.0360,
-          speed: v.speed ?? 0,
+          lat:    v.location?.lat  ?? 9.4140,
+          lng:    v.location?.lng  ?? 42.0360,
+          speed:  v.speed ?? 0,
+          source: 'hardware',
         };
       });
       setLiveCoords(coords);
@@ -57,20 +57,57 @@ export default function VehicleTracking() {
     }
   };
 
-  useEffect(() => { fetchVehicles(); }, []);
+  // ── Fetch live mobile GPS locations ────────────────────
+  const fetchLiveLocations = async () => {
+    try {
+      const t = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/tracking/live', {
+        headers: { Authorization: `Bearer ${t}` }
+      });
+      const liveData = await res.json();
+      if (!Array.isArray(liveData)) return;
 
-  // ── Simulate movement for in-use vehicles ──────────────
+      setLiveCoords(prev => {
+        const next = { ...prev };
+        liveData.forEach(loc => {
+          const key = loc.vehicleId || loc.vehiclePlate;
+          if (!key) return;
+          // Priority: hardware > mobile
+          if (next[key]?.source === 'hardware' && loc.source === 'mobile') return;
+          next[key] = {
+            lat:    loc.lat,
+            lng:    loc.lng,
+            speed:  loc.speed || 0,
+            source: loc.source || 'mobile',
+            driverName: loc.driverName,
+          };
+        });
+        return next;
+      });
+    } catch {}
+  };
+
+  useEffect(() => {
+    fetchVehicles();
+    // Poll live GPS every 4 seconds
+    const interval = setInterval(fetchLiveLocations, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // ── Simulate movement only for in-use vehicles with NO live GPS ──
   useEffect(() => {
     const interval = setInterval(() => {
       setLiveCoords(prev => {
         const next = { ...prev };
         vehicles.forEach(v => {
-          if (v.status === 'in-use') {
+          if (v.status === 'in-use' && prev[v._id]?.source !== 'mobile') {
             const c = prev[v._id] || { lat: 9.414, lng: 42.036, speed: 50 };
             next[v._id] = {
-              lat:   c.lat + (Math.random() - 0.5) * 0.002,
-              lng:   c.lng + (Math.random() - 0.5) * 0.002,
+              ...c,
+              lat:   c.lat + (Math.random() - 0.5) * 0.001,
+              lng:   c.lng + (Math.random() - 0.5) * 0.001,
               speed: Math.round(Math.max(20, Math.min(90, c.speed + (Math.random() - 0.5) * 10))),
+              source: 'hardware',
             };
           }
         });
@@ -176,7 +213,9 @@ export default function VehicleTracking() {
     vehicles.forEach(v => {
       const c = liveCoords[v._id];
       if (!c) return;
-      const color = STATUS_COLOR[v.status] || '#6b7280';
+      // Green = hardware GPS, Blue = mobile GPS
+      const color = c.source === 'mobile' ? '#3b82f6' : (STATUS_COLOR[v.status] || '#6b7280');
+      const sourceLabel = c.source === 'mobile' ? '📱 Mobile GPS' : '📡 Hardware GPS';
       const icon = window.L.divIcon({
         html: `<div style="background:${color};width:28px;height:28px;border-radius:50%;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;font-size:13px;">🚌</div>`,
         iconSize: [28, 28], className: '',
@@ -188,9 +227,10 @@ export default function VehicleTracking() {
             <b style="font-size:14px">${v.plateNumber} – ${v.model}</b><br>
             <span style="color:#6b7280;font-size:12px">${STATUS_LABEL[v.status]}</span>
             <hr style="margin:8px 0;border-color:#e5e7eb">
-            <div style="font-size:13px">👤 ${v.assignedDriverName || '—'}</div>
+            <div style="font-size:13px">👤 ${c.driverName || v.assignedDriverName || '—'}</div>
             <div style="font-size:13px">⚡ ${c.speed} km/h</div>
             <div style="font-size:13px">📍 ${v.location?.name || '—'}</div>
+            <div style="font-size:12px;color:${c.source === 'mobile' ? '#3b82f6' : '#16a34a'};font-weight:600;margin-top:4px">${sourceLabel}</div>
             ${v.destination ? `<div style="font-size:13px">🏁 ${v.destination}</div>` : ''}
           </div>
         `);
@@ -347,6 +387,10 @@ export default function VehicleTracking() {
                     <span className="dot" style={{ background: STATUS_COLOR[k] }}></span> {label}
                   </div>
                 ))}
+                <div style={{ marginTop:8, paddingTop:8, borderTop:'1px solid rgba(255,255,255,0.1)' }}>
+                  <div className="legend-item"><span className="dot" style={{ background:'#16a34a' }}></span> 📡 Hardware GPS</div>
+                  <div className="legend-item"><span className="dot" style={{ background:'#3b82f6' }}></span> 📱 Mobile GPS</div>
+                </div>
               </div>
               {/* Vehicle list in sidebar */}
               <div style={{ marginTop: 12, overflowY: 'auto', maxHeight: 340 }}>
