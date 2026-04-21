@@ -2,7 +2,6 @@ import { useState, useContext } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthContext } from './context/AuthContext';
 import { logout as apiLogout } from './api/api';
-import 'leaflet/dist/leaflet.css';
 import './App.css';
 
 // Landing
