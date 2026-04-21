@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { createFuelRequest, getFuelRequests, getVehicles, getCurrentUser, confirmFuelReceipt } from '../../api/api';
 import './DriverFuelLog.css';
 
-// Distance from Haramaya University to common destinations (km, round trip)
+// Distance from Haramaya University to common destinations (km, ONE WAY)
 const DESTINATION_DISTANCES = {
-  'harar':        90,  'harar city':   90,
+  'harar':        45,  'harar city':   45,
   'dire dawa':   110,  'diredawa':    110,
-  'addis ababa': 530,  'addis':       530,
+  'addis ababa': 515,  'addis':       515,
   'jijiga':      170,  'jigjiga':     170,
   'chiro':       120,
   'bedessa':      80,
@@ -24,18 +24,22 @@ const DESTINATION_DISTANCES = {
   'hawassa':     550,
 };
 
-// Fuel consumption rate L/100km by vehicle type
+// Fuel consumption rate L/100km by vehicle type AND fuel type
+// Diesel is ~15-20% more efficient than petrol for the same vehicle
 const CONSUMPTION_RATE = {
-  bus: 28, minibus: 16, van: 13, truck: 22, car: 10, pickup: 14, motorcycle: 4,
+  diesel: { bus: 25, minibus: 14, van: 11, truck: 20, car: 9,  pickup: 12, motorcycle: 3 },
+  petrol: { bus: 30, minibus: 18, van: 14, truck: 25, car: 11, pickup: 15, motorcycle: 4 },
 };
 
-function estimateFuel(destination, vehicleType) {
+function estimateFuel(destination, vehicleType, fuelType = 'Diesel') {
   const key = destination.toLowerCase().trim();
-  const distKm = Object.entries(DESTINATION_DISTANCES).find(([k]) => key.includes(k))?.[1];
-  if (!distKm) return null;
-  const rate = CONSUMPTION_RATE[vehicleType?.toLowerCase()] || 14;
-  const liters = Math.ceil((distKm / 100) * rate);
-  return { distKm, liters };
+  const oneWayKm = Object.entries(DESTINATION_DISTANCES).find(([k]) => key.includes(k))?.[1];
+  if (!oneWayKm) return null;
+  const roundTripKm = oneWayKm * 2;
+  const rates = CONSUMPTION_RATE[fuelType.toLowerCase()] || CONSUMPTION_RATE.diesel;
+  const rate = rates[vehicleType?.toLowerCase()] || 14;
+  const liters = Math.ceil((roundTripKm / 100) * rate);
+  return { oneWayKm, roundTripKm, liters, rate };
 }
 
 export default function DriverFuelRequest() {
@@ -54,7 +58,7 @@ export default function DriverFuelRequest() {
   // Auto-calculate when destination or vehicle type changes
   useEffect(() => {
     if (formData.destination && formData.vehicleType) {
-      const result = estimateFuel(formData.destination, formData.vehicleType);
+      const result = estimateFuel(formData.destination, formData.vehicleType, formData.fuelType);
       setEstimate(result);
       if (result) {
         setFormData(p => ({ ...p, requestedLiters: String(result.liters) }));
@@ -62,7 +66,7 @@ export default function DriverFuelRequest() {
     } else {
       setEstimate(null);
     }
-  }, [formData.destination, formData.vehicleType]);
+  }, [formData.destination, formData.vehicleType, formData.fuelType]);
 
   const fetchData = async () => {
     try {
@@ -71,9 +75,18 @@ export default function DriverFuelRequest() {
         getFuelRequests(),
       ]);
       setVehicles(vehs);
-      // Filter to show only this driver's requests by name
       const driverName = currentUser?.name || currentUser?.username;
       setMyRequests(reqs.filter(r => r.driverName === driverName));
+
+      // Auto-fill odometer from the driver's assigned vehicle
+      const t = localStorage.getItem('token');
+      const statsRes = await fetch('http://localhost:5000/api/driver/stats', {
+        headers: { Authorization: `Bearer ${t}` }
+      });
+      const stats = await statsRes.json();
+      if (stats.vehicleMileage) {
+        setFormData(p => ({ ...p, odometer: String(stats.vehicleMileage) }));
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -106,7 +119,7 @@ export default function DriverFuelRequest() {
         destination: formData.destination,
         purpose: formData.purpose,
         odometer: Number(formData.odometer) || 0,
-        estimatedDistanceKm: estimate?.distKm || null,
+        estimatedDistanceKm: estimate?.roundTripKm || null,
         estimatedLiters: estimate?.liters || null,
       });
       setShowForm(false);
@@ -180,7 +193,8 @@ export default function DriverFuelRequest() {
                 <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Requested Liters *</label>
                 {estimate && (
                   <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '8px 12px', marginBottom: 6, fontSize: 13 }}>
-                    📍 <strong>{estimate.distKm} km</strong> round trip → estimated <strong style={{ color: '#16a34a' }}>{estimate.liters}L</strong> auto-filled
+                    📍 <strong>{estimate.oneWayKm} km</strong> one way ({estimate.roundTripKm} km round trip) → estimated <strong style={{ color: '#16a34a' }}>{estimate.liters}L</strong> auto-filled
+                    <span style={{ color: '#6b7280', marginLeft: 6 }}>· {estimate.rate}L/100km ({formData.fuelType}) · covers full return journey</span>
                   </div>
                 )}
                 {!estimate && formData.destination && formData.vehicleType && (
@@ -196,7 +210,10 @@ export default function DriverFuelRequest() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Odometer (km)</label>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>
+                  Odometer (km)
+                  {formData.odometer && <span style={{ fontWeight: 400, color: '#2563eb', marginLeft: 6, fontSize: 12 }}>📍 auto-filled from vehicle</span>}
+                </label>
                 <input type="number" min="0" value={formData.odometer}
                   onChange={e => setFormData(p => ({ ...p, odometer: e.target.value }))}
                   placeholder="Current odometer reading"

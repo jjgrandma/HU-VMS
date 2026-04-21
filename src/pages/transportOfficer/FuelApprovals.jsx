@@ -158,12 +158,32 @@ export default function FuelApprovals() {
             <p style={{ color: '#6b7280', fontSize: 14 }}>Driver: <strong>{selected.driverName}</strong> | Vehicle: <strong>{selected.vehiclePlate || selected.vehicleType}</strong></p>
             <p style={{ color: '#6b7280', fontSize: 14 }}>Destination: <strong>{selected.destination}</strong> | Requested: <strong>{selected.requestedLiters}L {selected.fuelType}</strong></p>
 
-            {/* Show system estimate if available */}
+            {/* Odometer analysis from previous trip */}
+            {selected.odometerAnalysis && (
+              <div style={{ background: selected.odometerAnalysis.flag ? '#fef2f2' : '#f8fafc', border: `1px solid ${selected.odometerAnalysis.flag ? '#fecaca' : '#e2e8f0'}`, borderRadius: 8, padding: '10px 14px', margin: '10px 0', fontSize: 13 }}>
+                <strong>📊 Odometer Analysis (from last trip):</strong>
+                <div style={{ marginTop: 6, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+                  <span>Previous: <strong>{selected.odometerAnalysis.previousOdometer?.toLocaleString()} km</strong></span>
+                  <span>Current: <strong>{selected.odometerAnalysis.currentOdometer?.toLocaleString()} km</strong></span>
+                  <span>Traveled: <strong>{selected.odometerAnalysis.kmTraveled?.toLocaleString()} km</strong></span>
+                  <span>Efficiency: <strong>{selected.odometerAnalysis.efficiencyKmPerLiter} km/L</strong></span>
+                  {selected.odometerAnalysis.expectedKm && (
+                    <span>Expected: <strong>{selected.odometerAnalysis.expectedKm} km</strong></span>
+                  )}
+                </div>
+                {selected.odometerAnalysis.flag === 'HIGH_MILEAGE' && (
+                  <div style={{ marginTop: 8, color: '#dc2626', fontWeight: 600 }}>⚠ HIGH MILEAGE — vehicle traveled 30%+ more than expected. Possible unauthorized use.</div>
+                )}
+                {selected.odometerAnalysis.flag === 'LOW_MILEAGE' && (
+                  <div style={{ marginTop: 8, color: '#f59e0b', fontWeight: 600 }}>⚠ LOW MILEAGE — vehicle traveled much less than expected. Verify with driver.</div>
+                )}
+              </div>
+            )}
             {selected.estimatedDistanceKm && (
               <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '10px 14px', margin: '10px 0', fontSize: 13 }}>
-                🧮 <strong>System Estimate:</strong> {selected.estimatedDistanceKm} km round trip →{' '}
+                🧮 <strong>System Estimate:</strong> {selected.estimatedDistanceKm / 2} km one way · {selected.estimatedDistanceKm} km round trip →{' '}
                 <span style={{ color: '#2563eb', fontWeight: 700 }}>{selected.estimatedLiters}L</span> estimated
-                <span style={{ color: '#6b7280', marginLeft: 8 }}>({selected.vehicleType} consumption rate)</span>
+                <span style={{ color: '#6b7280', marginLeft: 8 }}>· covers full return journey</span>
               </div>
             )}
             {/* Show current stock for the requested fuel type */}

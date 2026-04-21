@@ -11,7 +11,7 @@ const token = () => localStorage.getItem('token');
 export default function NewDriverDashboard() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
-  const [stats, setStats] = useState({ totalTrips: 0, completedTrips: 0, todayTrips: 0, activeTrip: null, vehicle: null, status: 'available' });
+  const [stats, setStats] = useState({ totalTrips: 0, completedTrips: 0, todayTrips: 0, activeTrip: null, vehicle: null, vehicleMileage: null, status: 'available' });
   const [recentTrips, setRecentTrips] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -96,6 +96,28 @@ export default function NewDriverDashboard() {
                 <div className="driver-info-value">{stats.vehicle || '—'}</div>
               </div>
             </div>
+            {stats.vehicleMileage != null && (
+              <div className="driver-info-item">
+                <Car size={22} color="#2563eb" />
+                <div>
+                  <div className="driver-info-label">Current Odometer</div>
+                  <div className="driver-info-value" style={{ color: '#2563eb', fontWeight: 700 }}>
+                    {stats.vehicleMileage.toLocaleString()} km
+                  </div>
+                </div>
+              </div>
+            )}
+            {stats.vehicleMileage != null && (
+              <div className="driver-info-item">
+                <CheckCircle size={22} color="#3b82f6" />
+                <div>
+                  <div className="driver-info-label">Current Odometer</div>
+                  <div className="driver-info-value" style={{ color: '#2563eb', fontWeight: 700 }}>
+                    {stats.vehicleMileage.toLocaleString()} km
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="driver-info-item">
               <CheckCircle size={22} color="#16a34a" />
               <div>

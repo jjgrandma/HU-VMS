@@ -143,12 +143,20 @@ router.get('/stats', authMiddleware, driverOnly, async (req, res) => {
     const todayTrips = trips.filter(t => t.date === today);
     const activeTrip = trips.find(t => t.status === 'started' || t.status === 'in-progress');
 
+    const Vehicle = require('../models/Vehicle');
+    const vehicle = driver?.assignedVehiclePlate
+      ? await Vehicle.findOne({ plateNumber: driver.assignedVehiclePlate }).select('mileage model plateNumber fuelLevel')
+      : null;
+
     res.json({
       totalTrips: trips.length,
       completedTrips: trips.filter(t => t.status === 'completed').length,
       todayTrips: todayTrips.length,
       activeTrip: activeTrip || null,
       vehicle: driver?.assignedVehiclePlate || null,
+      vehicleMileage: vehicle?.mileage || null,
+      vehicleModel: vehicle?.model || null,
+      vehicleFuelLevel: vehicle?.fuelLevel || null,
       status: driver?.status || 'available',
     });
   } catch (err) {
