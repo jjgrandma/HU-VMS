@@ -27,6 +27,7 @@ const LandingPage = () => {
           </div>
           <div className="nav-links">
             <button onClick={() => scrollToSection('home')} className="nav-link">Home</button>
+            <button onClick={() => scrollToSection('services')} className="nav-link">Services</button>
             <button onClick={() => scrollToSection('about')} className="nav-link">About</button>
             <button onClick={() => scrollToSection('contact')} className="nav-link">Contact</button>
           </div>
@@ -86,6 +87,76 @@ const LandingPage = () => {
                 Learn More
               </button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Services Section */}
+      <section id="services" className="services-section">
+        <div className="section-container">
+          <h2 className="section-title">Our Services</h2>
+          <p className="section-subtitle">Everything you need to manage university vehicle operations efficiently</p>
+
+          <div className="services-grid">
+            <div className="service-card" onClick={() => navigate('/login')}>
+              <div className="service-icon-wrap" style={{ background: 'linear-gradient(135deg, #16a34a, #15803d)' }}>
+                <span className="service-icon">🚗</span>
+              </div>
+              <h3>Vehicle Booking</h3>
+              <p>Submit and manage vehicle requests online. Staff can book vehicles for official trips with smart auto-assignment based on purpose and passenger count.</p>
+              <span className="service-tag">For Staff & Faculty</span>
+            </div>
+
+            <div className="service-card" onClick={() => navigate('/login')}>
+              <div className="service-icon-wrap" style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }}>
+                <span className="service-icon">📅</span>
+              </div>
+              <h3>Trip Scheduling</h3>
+              <p>Plan and schedule trips with date, time, destination, and purpose. The system automatically detects the best vehicle type for each trip category.</p>
+              <span className="service-tag">Smart Scheduling</span>
+            </div>
+
+            <div className="service-card" onClick={() => navigate('/login')}>
+              <div className="service-icon-wrap" style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' }}>
+                <span className="service-icon">👤</span>
+              </div>
+              <h3>Driver & Vehicle Assignment</h3>
+              <p>Transport officers assign the best-matched vehicle and driver to each trip. Includes fuel estimation using real road distance and vehicle consumption rates.</p>
+              <span className="service-tag">AI-Assisted Matching</span>
+            </div>
+
+            <div className="service-card" onClick={() => navigate('/login')}>
+              <div className="service-icon-wrap" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+                <span className="service-icon">📍</span>
+              </div>
+              <h3>Real-Time Tracking</h3>
+              <p>Monitor all university vehicles on an interactive satellite map. Track live positions, speed, and status of every vehicle in the fleet.</p>
+              <span className="service-tag">Live Map View</span>
+            </div>
+
+            <div className="service-card" onClick={() => navigate('/login')}>
+              <div className="service-icon-wrap" style={{ background: 'linear-gradient(135deg, #dc2626, #b91c1c)' }}>
+                <span className="service-icon">🔐</span>
+              </div>
+              <h3>Gate Verification</h3>
+              <p>Security officers verify vehicle entry and exit using QR code scanning or plate number detection. Unauthorized vehicles are flagged instantly.</p>
+              <span className="service-tag">QR + ALPR</span>
+            </div>
+
+            <div className="service-card" onClick={() => navigate('/login')}>
+              <div className="service-icon-wrap" style={{ background: 'linear-gradient(135deg, #0891b2, #0e7490)' }}>
+                <span className="service-icon">📊</span>
+              </div>
+              <h3>Reports & Analytics</h3>
+              <p>Generate comprehensive reports on fuel consumption, trip history, driver performance, maintenance costs, and fleet utilization with interactive charts.</p>
+              <span className="service-tag">Data-Driven Insights</span>
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'center', marginTop: 48 }}>
+            <button onClick={() => navigate('/login')} className="btn-primary-hero">
+              Access All Services →
+            </button>
           </div>
         </div>
       </section>
@@ -227,10 +298,10 @@ const LandingPage = () => {
             <div className="footer-section">
               <h4>Services</h4>
               <ul className="footer-links">
-                <li><a href="#!">Vehicle Tracking</a></li>
-                <li><a href="#!">Fleet Management</a></li>
-                <li><a href="#!">Driver Management</a></li>
-                <li><a href="#!">Reports & Analytics</a></li>
+                <li><button onClick={() => scrollToSection('services')}>Vehicle Booking</button></li>
+                <li><button onClick={() => scrollToSection('services')}>Trip Scheduling</button></li>
+                <li><button onClick={() => scrollToSection('services')}>Gate Verification</button></li>
+                <li><button onClick={() => scrollToSection('services')}>Reports & Analytics</button></li>
               </ul>
             </div>
             

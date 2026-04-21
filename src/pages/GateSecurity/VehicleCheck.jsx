@@ -39,12 +39,28 @@ export default function VehicleCheck() {
   // Start local camera
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: 1280, height: 720 } });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
       streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
       setCameraOn(true);
+      // Use setTimeout to ensure the video element is rendered before setting srcObject
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.setAttribute('playsinline', true);
+          videoRef.current.setAttribute('muted', true);
+          videoRef.current.play().catch(console.error);
+        }
+      }, 100);
     } catch (err) {
-      showToast('Camera access denied. Check browser permissions.', 'error');
+      if (err.name === 'NotAllowedError') {
+        showToast('Camera permission denied. Allow camera in browser settings.', 'error');
+      } else if (err.name === 'NotFoundError') {
+        showToast('No camera found on this device.', 'error');
+      } else {
+        showToast(`Camera error: ${err.message}`, 'error');
+      }
     }
   };
 
@@ -209,7 +225,17 @@ export default function VehicleCheck() {
 
             <div className="vc-video-wrap">
               {cameraOn
-                ? <video ref={videoRef} autoPlay playsInline muted className="vc-video" />
+                ? <video
+                    ref={(el) => {
+                      videoRef.current = el;
+                      // Set srcObject as soon as element mounts
+                      if (el && streamRef.current && !el.srcObject) {
+                        el.srcObject = streamRef.current;
+                        el.play().catch(console.error);
+                      }
+                    }}
+                    autoPlay playsInline muted className="vc-video"
+                  />
                 : <div className="vc-video-placeholder"><Camera size={40} /><p>Camera off</p></div>
               }
               <canvas ref={canvasRef} style={{ display: 'none' }} />

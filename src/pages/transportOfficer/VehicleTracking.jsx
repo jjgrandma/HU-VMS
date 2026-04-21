@@ -33,19 +33,21 @@ export default function VehicleTracking() {
   const [mapError, setMapError]           = useState(false);
   const [activeView, setActiveView]       = useState('fleet');
   const [statusFilter, setStatusFilter]   = useState('All');
+  const [mapStyle, setMapStyle]           = useState('street'); // 'street' | 'satellite' | 'hybrid'
+  const tileLayerRef = useRef(null);
 
   // ── Fetch vehicles from DB ──────────────────────────────
   const fetchVehicles = async () => {
     try {
       const data = await getVehicles();
       setVehicles(data);
-      // Seed liveCoords from DB location
       const coords = {};
       data.forEach(v => {
         coords[v._id] = {
-          lat:   v.location?.lat  ?? 9.4140,
-          lng:   v.location?.lng  ?? 42.0360,
-          speed: v.speed ?? 0,
+          lat:    v.location?.lat  ?? 9.4140,
+          lng:    v.location?.lng  ?? 42.0360,
+          speed:  v.speed ?? 0,
+          source: 'hardware',
         };
       });
       setLiveCoords(coords);
@@ -56,21 +58,56 @@ export default function VehicleTracking() {
     }
   };
 
-  useEffect(() => { fetchVehicles(); }, []);
+  // ── Fetch live mobile GPS locations ────────────────────
+  const fetchLiveLocations = async () => {
+    try {
+      const t = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/tracking/live', {
+        headers: { Authorization: `Bearer ${t}` }
+      });
+      const liveData = await res.json();
+      if (!Array.isArray(liveData)) return;
 
-  // ── Simulate movement for in-use vehicles ──────────────
+      setLiveCoords(prev => {
+        const next = { ...prev };
+        liveData.forEach(loc => {
+          const key = loc.vehicleId || loc.vehiclePlate;
+          if (!key) return;
+          // Priority: hardware > mobile
+          if (next[key]?.source === 'hardware' && loc.source === 'mobile') return;
+          next[key] = {
+            lat:    loc.lat,
+            lng:    loc.lng,
+            speed:  loc.speed || 0,
+            source: loc.source || 'mobile',
+            driverName: loc.driverName,
+          };
+        });
+        return next;
+      });
+    } catch {}
+  };
+
+  useEffect(() => {
+    fetchVehicles();
+    // Poll live GPS every 4 seconds
+    const interval = setInterval(fetchLiveLocations, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // ── Simulate movement only for in-use vehicles with NO live GPS ──
   useEffect(() => {
     const interval = setInterval(() => {
       setLiveCoords(prev => {
         const next = { ...prev };
         vehicles.forEach(v => {
-          if (v.status === 'in-use') {
+          if (v.status === 'in-use' && prev[v._id]?.source !== 'mobile') {
             const c = prev[v._id] || { lat: 9.414, lng: 42.036, speed: 50, distanceKm: 0, fuelUsed: 0 };
-            const newLat = c.lat + (Math.random() - 0.5) * 0.002;
-            const newLng = c.lng + (Math.random() - 0.5) * 0.002;
+            const newLat = c.lat + (Math.random() - 0.5) * 0.001;
+            const newLng = c.lng + (Math.random() - 0.5) * 0.001;
             const newSpeed = Math.round(Math.max(20, Math.min(90, c.speed + (Math.random() - 0.5) * 10)));
 
-            // Haversine distance (km) between old and new position
+            // Haversine distance (km)
             const R = 6371;
             const dLat = (newLat - c.lat) * Math.PI / 180;
             const dLng = (newLng - c.lng) * Math.PI / 180;
@@ -86,6 +123,7 @@ export default function VehicleTracking() {
               lat: newLat,
               lng: newLng,
               speed: newSpeed,
+              source: 'hardware',
               distanceKm: parseFloat(((c.distanceKm || 0) + segmentKm).toFixed(2)),
               fuelUsed: parseFloat(((c.fuelUsed || 0) + fuelUsedSegment).toFixed(2)),
             };
@@ -119,10 +157,13 @@ export default function VehicleTracking() {
   useEffect(() => {
     if (activeView !== 'map' || !mapLoaded || !window.L || !mapRef.current || mapInstanceRef.current) return;
     try {
-      mapInstanceRef.current = window.L.map(mapRef.current).setView([9.4140, 42.0360], 13);
-      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors', maxZoom: 19,
-      }).addTo(mapInstanceRef.current);
+      mapInstanceRef.current = window.L.map(mapRef.current).setView([9.4140, 42.0360], 14);
+
+      // Default tile layer
+      tileLayerRef.current = window.L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        { attribution: 'Tiles © Esri', maxZoom: 19 }
+      ).addTo(mapInstanceRef.current);
 
       // University boundary
       window.L.polygon([
@@ -141,6 +182,39 @@ export default function VehicleTracking() {
     } catch (e) { setMapError(true); }
   }, [activeView, mapLoaded]);
 
+  // ── Switch tile layer when mapStyle changes ─────────────
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.L || !tileLayerRef.current) return;
+    mapInstanceRef.current.removeLayer(tileLayerRef.current);
+
+    const TILES = {
+      street: {
+        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        attr: '© OpenStreetMap contributors',
+      },
+      satellite: {
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        attr: 'Tiles © Esri',
+      },
+      hybrid: {
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        attr: 'Tiles © Esri',
+      },
+    };
+
+    const t = TILES[mapStyle] || TILES.satellite;
+    tileLayerRef.current = window.L.tileLayer(t.url, { attribution: t.attr, maxZoom: 19 })
+      .addTo(mapInstanceRef.current);
+
+    // For hybrid, add labels on top
+    if (mapStyle === 'hybrid') {
+      window.L.tileLayer(
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        { attribution: '© OpenStreetMap', maxZoom: 19, opacity: 0.4 }
+      ).addTo(mapInstanceRef.current);
+    }
+  }, [mapStyle]);
+
   useEffect(() => {
     if (activeView === 'map' && mapInstanceRef.current) {
       setTimeout(() => mapInstanceRef.current.invalidateSize(), 100);
@@ -157,7 +231,9 @@ export default function VehicleTracking() {
     vehicles.forEach(v => {
       const c = liveCoords[v._id];
       if (!c) return;
-      const color = STATUS_COLOR[v.status] || '#6b7280';
+      // Green = hardware GPS, Blue = mobile GPS
+      const color = c.source === 'mobile' ? '#3b82f6' : (STATUS_COLOR[v.status] || '#6b7280');
+      const sourceLabel = c.source === 'mobile' ? '📱 Mobile GPS' : '📡 Hardware GPS';
       const icon = window.L.divIcon({
         html: `<div style="background:${color};width:28px;height:28px;border-radius:50%;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;font-size:13px;">🚌</div>`,
         iconSize: [28, 28], className: '',
@@ -169,9 +245,10 @@ export default function VehicleTracking() {
             <b style="font-size:14px">${v.plateNumber} – ${v.model}</b><br>
             <span style="color:#6b7280;font-size:12px">${STATUS_LABEL[v.status]}</span>
             <hr style="margin:8px 0;border-color:#e5e7eb">
-            <div style="font-size:13px">👤 ${v.assignedDriverName || '—'}</div>
+            <div style="font-size:13px">👤 ${c.driverName || v.assignedDriverName || '—'}</div>
             <div style="font-size:13px">⚡ ${c.speed} km/h</div>
             <div style="font-size:13px">📍 ${v.location?.name || '—'}</div>
+            <div style="font-size:12px;color:${c.source === 'mobile' ? '#3b82f6' : '#16a34a'};font-weight:600;margin-top:4px">${sourceLabel}</div>
             ${v.destination ? `<div style="font-size:13px">🏁 ${v.destination}</div>` : ''}
             ${c.distanceKm > 0 ? `<div style="font-size:13px;color:#f59e0b">🛣 ${c.distanceKm} km · ~${c.fuelUsed}L used</div>` : ''}
           </div>
@@ -337,6 +414,10 @@ export default function VehicleTracking() {
                     <span className="dot" style={{ background: STATUS_COLOR[k] }}></span> {label}
                   </div>
                 ))}
+                <div style={{ marginTop:8, paddingTop:8, borderTop:'1px solid rgba(255,255,255,0.1)' }}>
+                  <div className="legend-item"><span className="dot" style={{ background:'#16a34a' }}></span> 📡 Hardware GPS</div>
+                  <div className="legend-item"><span className="dot" style={{ background:'#3b82f6' }}></span> 📱 Mobile GPS</div>
+                </div>
               </div>
               {/* Vehicle list in sidebar */}
               <div style={{ marginTop: 12, overflowY: 'auto', maxHeight: 340 }}>
@@ -383,6 +464,22 @@ export default function VehicleTracking() {
             </div>
 
             <div className="map-canvas-container">
+              {/* Map Style Toggle */}
+              <div className="map-style-toggle">
+                {[
+                  { key: 'street',    label: '🗺 Street' },
+                  { key: 'satellite', label: '🛰 Satellite' },
+                  { key: 'hybrid',    label: '🌍 Hybrid' },
+                ].map(s => (
+                  <button
+                    key={s.key}
+                    className={`map-style-btn ${mapStyle === s.key ? 'active' : ''}`}
+                    onClick={() => setMapStyle(s.key)}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
               {mapError ? (
                 <div className="map-error-overlay">
                   <div className="error-content">

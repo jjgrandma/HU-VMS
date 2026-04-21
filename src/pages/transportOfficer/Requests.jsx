@@ -1,7 +1,76 @@
 import { useState, useEffect } from "react";
-import { Search, MapPin, Users, AlertCircle, CheckCircle, XCircle, Building2, GraduationCap, Stethoscope, Truck, FlaskConical, Car, User, Calendar, RefreshCw } from "lucide-react";
+import { Search, MapPin, Users, AlertCircle, CheckCircle, XCircle, Building2, GraduationCap, Stethoscope, Truck, FlaskConical, Car, User, Calendar, RefreshCw, Fuel, Navigation } from "lucide-react";
 import { getRequests, getVehicles, approveRequest, rejectRequest, getCurrentUser } from "../../api/api";
 import "./requests.css";
+
+// Haversine distance — straight line fallback
+const haversineKm = (lat1, lon1, lat2, lon2) => {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+};
+
+// Geocode via Nominatim
+const geocode = async (place) => {
+  const query = encodeURIComponent(`${place}, Ethiopia`);
+  const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`, {
+    headers: { 'Accept-Language': 'en', 'User-Agent': 'HU-VMS/1.0' }
+  });
+  const data = await res.json();
+  if (!data.length) throw new Error(`Location not found: ${place}`);
+  return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), display: data[0].display_name };
+};
+
+// Get actual road distance via OSRM (free routing engine)
+const getRoadDistance = async (fromLat, fromLon, toLat, toLon) => {
+  try {
+    const url = `https://router.project-osrm.org/route/v1/driving/${fromLon},${fromLat};${toLon},${toLat}?overview=false`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.code === 'Ok' && data.routes?.length) {
+      return {
+        distKm:      Math.round(data.routes[0].distance / 100) / 10,
+        durationMin: Math.round(data.routes[0].duration / 60),
+        source:      'road',
+      };
+    }
+  } catch {}
+  // Fallback: straight-line × 1.3 road factor
+  const d = haversineKm(fromLat, fromLon, toLat, toLon);
+  return { distKm: Math.round(d * 1.3 * 10) / 10, durationMin: Math.round(d * 1.3 / 60 * 60), source: 'estimated' };
+};
+
+// Per-vehicle fuel consumption (L/100km) — model-specific then type fallback
+const getFuelRate = (vehicle) => {
+  const type  = (vehicle?.type  || '').toLowerCase();
+  const model = (vehicle?.model || '').toLowerCase();
+
+  if (/land cruiser|prado|gx/.test(model))    return { rate: 14, label: 'Land Cruiser 4WD' };
+  if (/hilux/.test(model))                    return { rate: 12, label: 'Toyota Hilux' };
+  if (/hiace/.test(model))                    return { rate: 14, label: 'Toyota HiAce' };
+  if (/coaster/.test(model))                  return { rate: 20, label: 'Toyota Coaster' };
+  if (/isuzu/.test(model))                    return { rate: 16, label: 'Isuzu' };
+  if (/bus|coach/.test(model))                return { rate: 30, label: 'Bus' };
+  if (/truck|lorry/.test(model))              return { rate: 28, label: 'Truck' };
+  if (/minibus|mini bus/.test(model))         return { rate: 18, label: 'Minibus' };
+  if (/corolla|camry|sedan/.test(model))      return { rate: 9,  label: 'Sedan' };
+  if (/rav4|crv|fortuner|suv/.test(model))    return { rate: 11, label: 'SUV' };
+  if (/pickup|ranger|navara|d-max/.test(model)) return { rate: 13, label: 'Pickup' };
+
+  const typeRates = {
+    bus:     { rate: 30, label: 'Bus' },
+    minibus: { rate: 18, label: 'Minibus' },
+    van:     { rate: 14, label: 'Van' },
+    truck:   { rate: 28, label: 'Truck' },
+    pickup:  { rate: 13, label: 'Pickup' },
+    suv:     { rate: 11, label: 'SUV' },
+    car:     { rate: 9,  label: 'Car' },
+    sedan:   { rate: 9,  label: 'Sedan' },
+  };
+  return typeRates[type] || { rate: 12, label: 'Vehicle' };
+};
 
 export default function Requests() {
   const [requests, setRequests] = useState([]);
@@ -19,6 +88,8 @@ export default function Requests() {
   const [requestToApprove, setRequestToApprove] = useState(null);
   const [recommendedVehicles, setRecommendedVehicles] = useState([]);
   const [actionLoading, setActionLoading] = useState(false);
+  const [fuelEstimate, setFuelEstimate]   = useState(null);
+  const [fuelLoading, setFuelLoading]     = useState(false);
 
   const currentUser = getCurrentUser();
 
@@ -76,8 +147,12 @@ export default function Requests() {
     setRequestToApprove(request);
     setShowAssignmentModal(true);
     setRecommendedVehicles([]);
+    setFuelEstimate(null);
+
+    // Estimate fuel in background
+    estimateFuel(request);
+
     try {
-      // Always fetch fresh available vehicles from DB when opening modal
       const fresh = await getVehicles({ status: "available" });
       setVehicles(fresh);
       setRecommendedVehicles(getSmartVehicleRecommendations(request, fresh));
@@ -86,18 +161,50 @@ export default function Requests() {
     }
   };
 
-  const confirmAssignment = async (vehicleId) => {
+  const estimateFuel = async (request) => {
+    if (!request.destination) return;
+    setFuelLoading(true);
+    try {
+      const origin = { lat: 9.1850, lon: 42.0350 }; // Haramaya University
+      const dest   = await geocode(request.destination);
+      const route  = await getRoadDistance(origin.lat, origin.lon, dest.lat, dest.lon);
+      const totalKm = route.distKm * 2; // round trip
+      setFuelEstimate({
+        distKm:      route.distKm,
+        totalKm:     Math.round(totalKm * 10) / 10,
+        durationMin: route.durationMin,
+        source:      route.source,
+        destName:    dest.display.split(',')[0],
+      });
+    } catch (err) {
+      setFuelEstimate({ error: err.message });
+    } finally {
+      setFuelLoading(false);
+    }
+  };
+
+  const getFuelForVehicle = (vehicle) => {
+    if (!fuelEstimate || fuelEstimate.error) return null;
+    const { rate, label } = getFuelRate(vehicle);
+    const liters = Math.ceil((fuelEstimate.totalKm * rate) / 100);
+    return { liters, rate, label, km: fuelEstimate.totalKm };
+  };
+
+  const confirmAssignment = async (vehicleId, vehicle) => {
     try {
       setActionLoading(true);
+      const fuel = getFuelForVehicle(vehicle);
       const updated = await approveRequest(requestToApprove._id, {
         vehicleId,
         approvedBy: currentUser?.name || currentUser?.username || "Transport Officer",
+        estimatedFuelLiters: fuel?.liters || null,
+        fuelType: vehicle?.fuelType || 'Diesel',
       });
       setRequests(prev => prev.map(r => r._id === updated._id ? updated : r));
       setShowAssignmentModal(false);
       setRequestToApprove(null);
       setRecommendedVehicles([]);
-      // Refresh available vehicles
+      setFuelEstimate(null);
       const vehs = await getVehicles({ status: "available" });
       setVehicles(vehs);
     } catch (err) {
@@ -318,13 +425,43 @@ export default function Requests() {
                 </div>
               </div>
 
+              {/* Fuel Estimate Banner */}
+              <div className="fuel-estimate-banner">
+                <div className="fuel-estimate-icon"><Fuel size={20} color="#16a34a" /></div>
+                <div className="fuel-estimate-content">
+                  {fuelLoading ? (
+                    <span style={{ color:'#6b7280', fontSize:13 }}>📍 Calculating route to {requestToApprove?.destination}...</span>
+                  ) : fuelEstimate?.error ? (
+                    <span style={{ color:'#f59e0b', fontSize:13 }}>⚠ Could not estimate distance: {fuelEstimate.error}</span>
+                  ) : fuelEstimate ? (
+                    <>
+                      <div className="fuel-estimate-title">
+                        <Navigation size={14} /> Route: Haramaya University → {fuelEstimate.destName}
+                        {fuelEstimate.source === 'road' && <span style={{ fontSize:11, color:'#16a34a', marginLeft:6 }}>📡 Road route</span>}
+                        {fuelEstimate.source === 'estimated' && <span style={{ fontSize:11, color:'#f59e0b', marginLeft:6 }}>📐 Estimated</span>}
+                      </div>
+                      <div className="fuel-estimate-stats">
+                        <span>📏 One-way: <strong>{fuelEstimate.distKm} km</strong></span>
+                        <span>🔄 Round trip: <strong>{fuelEstimate.totalKm} km</strong></span>
+                        {fuelEstimate.durationMin && <span>⏱ ~{fuelEstimate.durationMin} min one-way</span>}
+                      </div>
+                      <div style={{ fontSize:12, color:'#6b7280', marginTop:4 }}>
+                        Fuel needed per vehicle shown below ↓ (based on actual road distance)
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+
               <div className="recommendations-section">
                 <h3>Available Vehicles ({recommendedVehicles.length})</h3>
                 {recommendedVehicles.length === 0 && actionLoading === false && (
                   <p style={{color:"#94a3b8",padding:"1rem"}}>Loading vehicles...</p>
                 )}
                 <div className="vehicle-recommendations">
-                  {recommendedVehicles.map((vehicle, index) => (
+                  {recommendedVehicles.map((vehicle, index) => {
+                    const fuel = getFuelForVehicle(vehicle);
+                    return (
                     <div key={vehicle._id} className={`recommendation-card ${index === 0 ? "best-match" : ""}`}>
                       <div className="recommendation-header">
                         <div className="vehicle-info">
@@ -341,19 +478,28 @@ export default function Requests() {
                           <span><strong>Driver:</strong> {vehicle.assignedDriverName}</span>
                         </div>
                       )}
+                      {/* Fuel Estimate for this vehicle */}
+                      {fuel && (
+                        <div className="vehicle-fuel-estimate">
+                          <Fuel size={14} color="#16a34a" />
+                          <span>Estimated fuel: <strong style={{ color:'#16a34a' }}>{fuel.liters}L</strong></span>
+                          <span style={{ color:'#9ca3af', fontSize:11 }}>({fuel.label} — {fuel.rate}L/100km × {fuel.km}km)</span>
+                        </div>
+                      )}
                       <div className="match-reasons">
                         <strong>Why this vehicle:</strong>
                         <ul>{vehicle.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
                       </div>
                       <button
                         className={`assign-btn ${index === 0 ? "primary" : "secondary"}`}
-                        onClick={() => confirmAssignment(vehicle._id)}
+                        onClick={() => confirmAssignment(vehicle._id, vehicle)}
                         disabled={actionLoading}
                       >
                         {index === 0 ? "⭐ Assign Best Match" : "Assign Vehicle"}
                       </button>
                     </div>
-                  ))}
+                  );
+                  })}
 
                   {/* Show all available vehicles if no smart recommendations */}
                   {recommendedVehicles.length === 0 && vehicles.map((vehicle) => (

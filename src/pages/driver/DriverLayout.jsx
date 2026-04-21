@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Car, Calendar, ClipboardCheck, Fuel, Wrench, Bell, Settings, User, X, CheckCheck, MessageSquareWarning } from 'lucide-react';
-import { getCurrentUser } from '../../api/api';
+import { getCurrentUser, getNotifications, markNotificationRead, markAllNotificationsRead } from '../../api/api';
 import './DriverLayout.css';
 import './driverShared.css';
 
@@ -35,25 +35,16 @@ const DriverLayout = ({ onLogout }) => {
       .catch(console.error);
   }, [location.pathname]);
 
-  // Fetch notifications from trips
+  // Fetch notifications from backend (real-time)
   useEffect(() => {
-    const t = token();
-    if (!t) return;
-    fetch(`${BASE}/driver/trips`, { headers: { Authorization: `Bearer ${t}` } })
-      .then(r => r.json())
-      .then(trips => {
-        if (!Array.isArray(trips)) return;
-        const notifs = trips
-          .filter(tr => tr.status === 'approved')
-          .map(tr => ({
-            id: tr._id,
-            title: 'New Trip Assigned',
-            message: `Trip to ${tr.destination} on ${tr.date}`,
-            time: tr.createdAt,
-          }));
-        setNotifications(notifs);
-      })
-      .catch(console.error);
+    const fetchNotifs = () => {
+      getNotifications()
+        .then(data => { if (Array.isArray(data)) setNotifications(data); })
+        .catch(console.error);
+    };
+    fetchNotifs();
+    const interval = setInterval(fetchNotifs, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Close dropdowns on outside click
@@ -134,22 +125,52 @@ const DriverLayout = ({ onLogout }) => {
             <div className="driver-header-dropdown" ref={notifRef}>
               <button className="driver-header-btn" onClick={() => setShowNotif(p => !p)}>
                 <Bell size={20} />
-                {notifications.length > 0 && <span className="driver-badge">{notifications.length}</span>}
+                {notifications.filter(n => !n.read).length > 0 && (
+                  <span className="driver-badge">{notifications.filter(n => !n.read).length}</span>
+                )}
               </button>
               {showNotif && (
                 <div className="driver-dropdown-panel">
                   <div className="driver-dropdown-header">
                     <span>Notifications</span>
-                    <button onClick={() => setShowNotif(false)}><X size={14} /></button>
+                    <div style={{ display:'flex', gap:6 }}>
+                      {notifications.filter(n => !n.read).length > 0 && (
+                        <button style={{ background:'none', border:'none', cursor:'pointer', color:'#6b7280', display:'flex', alignItems:'center' }}
+                          onClick={() => {
+                            markAllNotificationsRead().catch(console.error);
+                            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                          }}>
+                          <CheckCheck size={15} />
+                        </button>
+                      )}
+                      <button style={{ background:'none', border:'none', cursor:'pointer', color:'#6b7280', display:'flex', alignItems:'center' }}
+                        onClick={() => setShowNotif(false)}><X size={14} /></button>
+                    </div>
                   </div>
                   <div className="driver-dropdown-list">
                     {notifications.length === 0
-                      ? <div className="driver-dropdown-empty"><Bell size={28} /><p>No new notifications</p></div>
+                      ? <div className="driver-dropdown-empty"><Bell size={28} /><p>No notifications</p></div>
                       : notifications.map(n => (
-                        <div key={n.id} className="driver-notif-item">
-                          <div className="driver-notif-title">{n.title}</div>
+                        <div key={n._id} className={`driver-notif-item ${n.read ? '' : 'unread'}`}
+                          style={{ background: n.read ? 'transparent' : '#f0fdf4', cursor:'pointer' }}
+                          onClick={() => {
+                            markNotificationRead(n._id).catch(console.error);
+                            setNotifications(prev => prev.map(x => x._id === n._id ? { ...x, read: true } : x));
+                          }}>
+                          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8 }}>
+                            <div className="driver-notif-title" style={{ color: n.type === 'trip_approved' ? '#16a34a' : n.type === 'trip_rejected' ? '#dc2626' : '#f59e0b' }}>
+                              {n.title}
+                            </div>
+                            {!n.read && <span style={{ width:8, height:8, borderRadius:'50%', background:'#16a34a', flexShrink:0, marginTop:4 }} />}
+                          </div>
                           <div className="driver-notif-msg">{n.message}</div>
-                          <div className="driver-notif-time">{new Date(n.time).toLocaleDateString()}</div>
+                          {/* Show fuel info prominently if present */}
+                          {n.data?.fuelLiters > 0 && (
+                            <div style={{ background:'#dcfce7', border:'1px solid #bbf7d0', borderRadius:6, padding:'6px 10px', marginTop:6, fontSize:12, color:'#166534', fontWeight:600 }}>
+                              ⛽ Fuel allocated: {n.data.fuelLiters}L {n.data.fuelType} — collect from fuel station before departure
+                            </div>
+                          )}
+                          <div className="driver-notif-time">{new Date(n.createdAt).toLocaleString()}</div>
                         </div>
                       ))
                     }

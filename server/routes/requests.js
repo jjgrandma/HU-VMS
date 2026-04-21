@@ -69,9 +69,8 @@ router.put('/:id/complete', authMiddleware, async (req, res) => {
 // PUT /api/requests/:id/approve
 router.put('/:id/approve', authMiddleware, async (req, res) => {
   try {
-    const { vehicleId, approvedBy } = req.body;
+    const { vehicleId, approvedBy, estimatedFuelLiters, fuelType } = req.body;
 
-    // Find the vehicle and mark it in-use
     const vehicle = await Vehicle.findById(vehicleId);
     if (!vehicle) return res.status(404).json({ message: 'Vehicle not found' });
     if (vehicle.status !== 'available') return res.status(400).json({ message: 'Vehicle is not available' });
@@ -87,6 +86,7 @@ router.put('/:id/approve', authMiddleware, async (req, res) => {
         assignedVehicleId: vehicleId,
         assignedDriver: vehicle.assignedDriverName || '',
         approvedBy: approvedBy || 'Transport Officer',
+        estimatedFuelLiters: estimatedFuelLiters || null,
       },
       { new: true }
     );
@@ -99,6 +99,56 @@ router.put('/:id/approve', authMiddleware, async (req, res) => {
       updated.qrGenerated = true;
       await updated.save();
     }
+
+    const Notification = require('../models/Notification');
+    const FuelRequest   = require('../models/FuelRequest');
+
+    // ── Auto-create fuel request for fuel officer ──────────
+    if (estimatedFuelLiters && estimatedFuelLiters > 0) {
+      await new FuelRequest({
+        driver:          updated._id,
+        driverName:      vehicle.assignedDriverName || updated.requester,
+        vehicleType:     vehicle.type,
+        vehiclePlate:    vehicle.plateNumber,
+        vehicleModel:    vehicle.model,
+        fuelType:        fuelType || vehicle.fuelType || 'Diesel',
+        requestedLiters: estimatedFuelLiters,
+        destination:     updated.destination,
+        purpose:         updated.purpose,
+        status:          'approved',
+        permittedLiters: estimatedFuelLiters,
+        approvedBy:      approvedBy || 'Transport Officer',
+        approvedAt:      new Date(),
+      }).save();
+
+      // Notify Fuel Officer
+      await new Notification({
+        recipientRole: 'FUEL_OFFICER',
+        type:    'fuel_request',
+        title:   '⛽ Fuel Required for Approved Trip',
+        message: `Dispense ${estimatedFuelLiters}L (${fuelType || 'Diesel'}) to ${vehicle.assignedDriverName || updated.requester} — ${vehicle.plateNumber} → ${updated.destination}`,
+        data: {
+          tripId: updated._id, vehicle: vehicle.plateNumber, model: vehicle.model,
+          driver: vehicle.assignedDriverName || updated.requester,
+          fuelLiters: estimatedFuelLiters, fuelType: fuelType || 'Diesel',
+          destination: updated.destination, date: updated.date,
+        },
+      }).save();
+    }
+
+    // ── Notify Driver ──────────────────────────────────────
+    await new Notification({
+      recipientRole:     'DRIVER',
+      recipientUsername: vehicle.assignedDriverUsername || null,
+      type:    'trip_approved',
+      title:   '✅ Trip Approved',
+      message: `Your trip to ${updated.destination} on ${updated.date} is approved. Vehicle: ${vehicle.model} (${vehicle.plateNumber}).${estimatedFuelLiters ? ` Fuel allocated: ${estimatedFuelLiters}L ${fuelType || 'Diesel'}.` : ''} Collect fuel from the fuel station before departure.`,
+      data: {
+        tripId: updated._id, vehicle: vehicle.plateNumber, model: vehicle.model,
+        destination: updated.destination, date: updated.date,
+        fuelLiters: estimatedFuelLiters || 0, fuelType: fuelType || 'Diesel',
+      },
+    }).save();
 
     res.json(updated);
   } catch (err) {

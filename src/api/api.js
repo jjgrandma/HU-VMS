@@ -501,3 +501,32 @@ export const confirmFuelReceipt = async (id) => {
   if (!res.ok) throw new Error(data.message);
   return data;
 };
+
+// ─── Notifications ────────────────────────────────────────
+export const getNotifications = async () => {
+  const res = await fetch(`${BASE_URL}/notifications`, { headers: headers() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const getUnreadCount = async () => {
+  const res = await fetch(`${BASE_URL}/notifications/unread-count`, { headers: headers() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data.count;
+};
+
+export const markNotificationRead = async (id) => {
+  const res = await fetch(`${BASE_URL}/notifications/${id}/read`, { method: 'PATCH', headers: headers() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const markAllNotificationsRead = async () => {
+  const res = await fetch(`${BASE_URL}/notifications/read-all`, { method: 'PATCH', headers: headers() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
