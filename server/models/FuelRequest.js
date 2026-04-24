@@ -13,6 +13,8 @@ const fuelRequestSchema = new mongoose.Schema(
     destination:      { type: String, required: true },
     purpose:          String,
     odometer:         { type: Number, default: 0 },
+    estimatedDistanceKm: Number,
+    estimatedLiters:  Number,
     status: {
       type: String,
       enum: ['pending', 'approved', 'rejected', 'dispensed', 'confirmed'],
@@ -29,6 +31,16 @@ const fuelRequestSchema = new mongoose.Schema(
     dispensedAt:      Date,
     // Driver confirms receipt
     confirmedAt:      Date,
+    // Odometer analysis (calculated on submission)
+    odometerAnalysis: {
+      previousOdometer:      Number,
+      currentOdometer:       Number,
+      kmTraveled:            Number,
+      fuelUsedLastTrip:      Number,
+      efficiencyKmPerLiter:  Number,
+      expectedKm:            Number,
+      flag: { type: String, enum: ['HIGH_MILEAGE', 'LOW_MILEAGE', null], default: null },
+    },
   },
   { timestamps: true }
 );

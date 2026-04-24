@@ -22,15 +22,45 @@ FuelRequest.collection.dropIndex('requestId_1').catch(() => {});
 // POST /api/fuel-requests  (driver submits)
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const request = new FuelRequest({ ...req.body, driver: req.user.id });
+    const { odometer } = req.body;
+    let odometerAnalysis = null;
+
+    if (odometer && Number(odometer) > 0) {
+      const lastReq = await FuelRequest.findOne({
+        driver: req.user.id,
+        status: { $in: ['dispensed', 'confirmed'] },
+        odometer: { $gt: 0 },
+      }).sort({ createdAt: -1 });
+
+      if (lastReq?.odometer) {
+        const kmTraveled = Number(odometer) - lastReq.odometer;
+        const fuelUsed = lastReq.dispensedLiters || lastReq.permittedLiters;
+        if (kmTraveled > 0 && fuelUsed > 0) {
+          const efficiency = (kmTraveled / fuelUsed).toFixed(1);
+          const expectedKm = lastReq.estimatedDistanceKm || null;
+          let flag = null;
+          if (expectedKm && kmTraveled > expectedKm * 1.3) flag = 'HIGH_MILEAGE';
+          else if (expectedKm && kmTraveled < expectedKm * 0.3) flag = 'LOW_MILEAGE';
+          odometerAnalysis = {
+            previousOdometer: lastReq.odometer,
+            currentOdometer: Number(odometer),
+            kmTraveled,
+            fuelUsedLastTrip: fuelUsed,
+            efficiencyKmPerLiter: Number(efficiency),
+            expectedKm,
+            flag,
+          };
+        }
+      }
+    }
+
+    const request = new FuelRequest({ ...req.body, driver: req.user.id, odometerAnalysis });
     await request.save();
     res.status(201).json(request);
   } catch (err) {
     console.error('FuelRequest POST error:', err.message);
-    // Return the actual validation error to the client
     if (err.name === 'ValidationError') {
-      const messages = Object.values(err.errors).map(e => e.message).join(', ');
-      return res.status(400).json({ message: messages });
+      return res.status(400).json({ message: Object.values(err.errors).map(e => e.message).join(', ') });
     }
     res.status(500).json({ message: err.message });
   }

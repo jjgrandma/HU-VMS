@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import 'leaflet/dist/leaflet.css';
 import {
   Map as MapIcon, List, Car, User, Navigation, Activity,
   AlertTriangle, MapPin, Clock, CheckCircle2, RefreshCw
@@ -101,13 +102,30 @@ export default function VehicleTracking() {
         const next = { ...prev };
         vehicles.forEach(v => {
           if (v.status === 'in-use' && prev[v._id]?.source !== 'mobile') {
-            const c = prev[v._id] || { lat: 9.414, lng: 42.036, speed: 50 };
+            const c = prev[v._id] || { lat: 9.414, lng: 42.036, speed: 50, distanceKm: 0, fuelUsed: 0 };
+            const newLat = c.lat + (Math.random() - 0.5) * 0.001;
+            const newLng = c.lng + (Math.random() - 0.5) * 0.001;
+            const newSpeed = Math.round(Math.max(20, Math.min(90, c.speed + (Math.random() - 0.5) * 10)));
+
+            // Haversine distance (km)
+            const R = 6371;
+            const dLat = (newLat - c.lat) * Math.PI / 180;
+            const dLng = (newLng - c.lng) * Math.PI / 180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(c.lat * Math.PI/180) * Math.cos(newLat * Math.PI/180) * Math.sin(dLng/2)**2;
+            const segmentKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+            // Fuel consumption rate by vehicle type (L/100km)
+            const rateMap = { bus: 25, minibus: 15, van: 12, truck: 20, car: 10 };
+            const rate = rateMap[v.type] || 12;
+            const fuelUsedSegment = (segmentKm / 100) * rate;
+
             next[v._id] = {
-              ...c,
-              lat:   c.lat + (Math.random() - 0.5) * 0.001,
-              lng:   c.lng + (Math.random() - 0.5) * 0.001,
-              speed: Math.round(Math.max(20, Math.min(90, c.speed + (Math.random() - 0.5) * 10))),
+              lat: newLat,
+              lng: newLng,
+              speed: newSpeed,
               source: 'hardware',
+              distanceKm: parseFloat(((c.distanceKm || 0) + segmentKm).toFixed(2)),
+              fuelUsed: parseFloat(((c.fuelUsed || 0) + fuelUsedSegment).toFixed(2)),
             };
           }
         });
@@ -232,6 +250,7 @@ export default function VehicleTracking() {
             <div style="font-size:13px">📍 ${v.location?.name || '—'}</div>
             <div style="font-size:12px;color:${c.source === 'mobile' ? '#3b82f6' : '#16a34a'};font-weight:600;margin-top:4px">${sourceLabel}</div>
             ${v.destination ? `<div style="font-size:13px">🏁 ${v.destination}</div>` : ''}
+            ${c.distanceKm > 0 ? `<div style="font-size:13px;color:#f59e0b">🛣 ${c.distanceKm} km · ~${c.fuelUsed}L used</div>` : ''}
           </div>
         `);
       markersRef.current[v._id] = marker;
@@ -353,6 +372,14 @@ export default function VehicleTracking() {
                         <Activity size={14} className="fc-icon" />
                         <span>Fuel: {v.fuelLevel}% · {v.mileage?.toLocaleString()} km</span>
                       </div>
+                      {v.status === 'in-use' && liveCoords[v._id]?.distanceKm > 0 && (
+                        <div className="fc-row">
+                          <Activity size={14} className="fc-icon" style={{ color: '#f59e0b' }} />
+                          <span style={{ color: '#f59e0b', fontWeight: 600 }}>
+                            Trip: {liveCoords[v._id].distanceKm} km · ~{liveCoords[v._id].fuelUsed}L used
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="fc-footer">
                       <span className="timestamp"><Clock size={12} /> {new Date().toLocaleTimeString()}</span>
@@ -425,6 +452,12 @@ export default function VehicleTracking() {
                   <div className="sip-detail"><strong>Driver:</strong> {selectedVehicle.assignedDriverName || '—'}</div>
                   <div className="sip-detail"><strong>Speed:</strong> {liveCoords[selectedVehicle._id]?.speed ?? 0} km/h</div>
                   <div className="sip-detail"><strong>Fuel:</strong> {selectedVehicle.fuelLevel}%</div>
+                  {liveCoords[selectedVehicle._id]?.distanceKm > 0 && (
+                    <>
+                      <div className="sip-detail" style={{ color: '#f59e0b' }}><strong>Trip Distance:</strong> {liveCoords[selectedVehicle._id].distanceKm} km</div>
+                      <div className="sip-detail" style={{ color: '#f59e0b' }}><strong>Est. Fuel Used:</strong> {liveCoords[selectedVehicle._id].fuelUsed}L</div>
+                    </>
+                  )}
                   {selectedVehicle.destination && <div className="sip-detail"><strong>To:</strong> {selectedVehicle.destination}</div>}
                 </div>
               )}
