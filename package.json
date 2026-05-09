@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "africastalking": "^0.7.9",
     "d3-sankey": "^0.12.3",
     "html5-qrcode": "^2.3.8",
     "jspdf": "^2.5.2",

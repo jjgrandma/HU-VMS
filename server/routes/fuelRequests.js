@@ -1,7 +1,10 @@
 const router = require('express').Router();
 const FuelRequest = require('../models/FuelRequest');
 const FuelInventory = require('../models/FuelInventory');
+const User   = require('../models/User');
+const Driver = require('../models/Driver');
 const { authMiddleware } = require('../middleware/auth');
+const { sendSMS } = require('../utils/sms');
 
 // GET /api/fuel-requests
 router.get('/', authMiddleware, async (req, res) => {
@@ -79,6 +82,16 @@ router.put('/:id/approve', authMiddleware, async (req, res) => {
       { new: true }
     );
     if (!updated) return res.status(404).json({ message: 'Fuel request not found' });
+
+    // ── SMS: notify driver ─────────────────────────────────
+    const driverUser = await User.findById(updated.driver);
+    if (driverUser?.phone) {
+      await sendSMS(
+        driverUser.phone,
+        `HU-VMS: Your fuel request has been approved. ${permittedLiters}L of ${updated.fuelType} permitted for ${updated.destination}. Please collect from the fuel station.`
+      );
+    }
+
     res.json(updated);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -95,6 +108,16 @@ router.put('/:id/reject', authMiddleware, async (req, res) => {
       { new: true }
     );
     if (!updated) return res.status(404).json({ message: 'Fuel request not found' });
+
+    // ── SMS: notify driver ─────────────────────────────────
+    const driverUser = await User.findById(updated.driver);
+    if (driverUser?.phone) {
+      await sendSMS(
+        driverUser.phone,
+        `HU-VMS: Your fuel request for ${updated.destination} has been rejected.${rejectionReason ? ` Reason: ${rejectionReason}` : ''}`
+      );
+    }
+
     res.json(updated);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });

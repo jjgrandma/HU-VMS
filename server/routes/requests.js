@@ -3,7 +3,10 @@ const crypto = require('crypto');
 const QRCode = require('qrcode');
 const Request = require('../models/Request');
 const Vehicle = require('../models/Vehicle');
+const User   = require('../models/User');
+const Driver = require('../models/Driver');
 const { authMiddleware } = require('../middleware/auth');
+const { sendSMS } = require('../utils/sms');
 
 // GET /api/requests
 router.get('/', authMiddleware, async (req, res) => {
@@ -150,6 +153,29 @@ router.put('/:id/approve', authMiddleware, async (req, res) => {
       },
     }).save();
 
+    // ── SMS: notify driver ─────────────────────────────────
+    if (vehicle.assignedDriverUsername) {
+      const driverUser = await Driver.findOne({ employeeId: vehicle.assignedDriverUsername })
+        || await User.findOne({ username: vehicle.assignedDriverUsername });
+      if (driverUser?.phone) {
+        await sendSMS(
+          driverUser.phone,
+          `HU-VMS: Your trip to ${updated.destination} on ${updated.date} is approved. Vehicle: ${vehicle.model} (${vehicle.plateNumber}).${estimatedFuelLiters ? ` Fuel: ${estimatedFuelLiters}L ${fuelType || 'Diesel'}.` : ''} Collect fuel before departure.`
+        );
+      }
+    }
+
+    // ── SMS: notify requester (user) ───────────────────────
+    if (updated.requesterUsername) {
+      const requesterUser = await User.findOne({ username: updated.requesterUsername });
+      if (requesterUser?.phone) {
+        await sendSMS(
+          requesterUser.phone,
+          `HU-VMS: Your vehicle request to ${updated.destination} on ${updated.date} has been approved. Driver: ${vehicle.assignedDriverName || 'TBD'}, Vehicle: ${vehicle.model} (${vehicle.plateNumber}).`
+        );
+      }
+    }
+
     res.json(updated);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -166,6 +192,18 @@ router.put('/:id/reject', authMiddleware, async (req, res) => {
       { new: true }
     );
     if (!updated) return res.status(404).json({ message: 'Request not found' });
+
+    // ── SMS: notify requester (user) ───────────────────────
+    if (updated.requesterUsername) {
+      const requesterUser = await User.findOne({ username: updated.requesterUsername });
+      if (requesterUser?.phone) {
+        await sendSMS(
+          requesterUser.phone,
+          `HU-VMS: Your vehicle request to ${updated.destination} on ${updated.date} has been rejected.${rejectionReason ? ` Reason: ${rejectionReason}` : ''}`
+        );
+      }
+    }
+
     res.json(updated);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
