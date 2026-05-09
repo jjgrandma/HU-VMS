@@ -37,6 +37,9 @@ router.post('/login', async (req, res) => {
         email: user.email,
         role: user.role,
         department: user.department,
+        unitType:    user.unitType    || null,
+        unitName:    user.unitName    || null,
+        collegeName: user.collegeName || null,
       },
     });
   } catch (err) {
@@ -47,7 +50,7 @@ router.post('/login', async (req, res) => {
 // POST /api/auth/register (admin only in production)
 router.post('/register', async (req, res) => {
   try {
-    const { name, username, email, password, role, phone, department, employeeId } = req.body;
+    const { name, username, email, password, role, phone, department, employeeId, unitType, unitName, collegeName } = req.body;
 
     if (!name || !username || !email || !password || !role) {
       return res.status(400).json({ message: 'name, username, email, password and role are required' });
@@ -60,7 +63,13 @@ router.post('/register', async (req, res) => {
     }
 
     const hashed = await bcrypt.hash(password, 10);
-    const user = new User({ name, username, email, password: hashed, role, phone, department, employeeId });
+    const user = new User({
+      name, username, email, password: hashed, role,
+      phone, department, employeeId,
+      unitType:    unitType    || null,
+      unitName:    unitName    || null,
+      collegeName: collegeName || null,
+    });
     await user.save();
 
     const { password: _pw, ...userOut } = user.toObject();

@@ -34,6 +34,25 @@ const requestSchema = new mongoose.Schema(
     qrGenerated: { type: Boolean, default: false },
     qrUsed:      { type: Boolean, default: false },
     qrUsedAt:    Date,
+    // ── Approval routing fields (backward-compatible) ──────
+    unitType: {
+      type: String,
+      enum: ['DEPARTMENT', 'CAFETERIA', 'CLINIC', 'AGRICULTURAL_ACTIVITY', 'COLLEGE', 'OTHER'],
+      default: null,
+    },
+    unitName:           { type: String, default: null },
+    approvalLevel:      { type: Number, default: 1 },
+    currentApproverRole: { type: String, default: null },  // 'COLLEGE_DEAN' | 'TRANSPORT_OFFICER'
+    currentApproverId:  { type: String, default: null },
+    routingHistory: [
+      {
+        role:       String,
+        action:     String,   // 'approved' | 'rejected'
+        by:         String,
+        at:         { type: Date, default: Date.now },
+        note:       String,
+      },
+    ],
   },
   { timestamps: true }
 );

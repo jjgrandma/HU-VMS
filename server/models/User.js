@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true },
     role: {
       type: String,
-      enum: ['ADMIN', 'TRANSPORT', 'DRIVER', 'USER', 'FUEL_OFFICER', 'GATE_OFFICER', 'MAINTENANCE_OFFICER'],
+      enum: ['ADMIN', 'TRANSPORT', 'DRIVER', 'USER', 'FUEL_OFFICER', 'GATE_OFFICER', 'MAINTENANCE_OFFICER', 'DEAN'],
       required: true,
     },
     phone: String,
@@ -18,6 +18,14 @@ const userSchema = new mongoose.Schema(
     profilePhoto: { type: String, default: null },
     resetPasswordToken: String,
     resetPasswordExpires: Date,
+    // Organizational unit — used for approval routing
+    unitType: {
+      type: String,
+      enum: ['DEPARTMENT', 'CAFETERIA', 'CLINIC', 'AGRICULTURAL_ACTIVITY', 'COLLEGE', 'OTHER'],
+      default: null,
+    },
+    unitName:    { type: String, default: null },
+    collegeName: { type: String, default: null }, // for DEAN role — the college they oversee
   },
   { timestamps: true }
 );

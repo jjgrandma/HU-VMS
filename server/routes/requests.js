@@ -23,7 +23,22 @@ router.get('/', authMiddleware, async (req, res) => {
 // POST /api/requests
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const request = new Request(req.body);
+    const body = { ...req.body };
+
+    // Auto-set routing based on unitType
+    if (body.unitType === 'DEPARTMENT') {
+      body.approvalLevel      = 1;
+      body.currentApproverRole = 'COLLEGE_DEAN';
+    } else if (body.unitType) {
+      body.approvalLevel      = 1;
+      body.currentApproverRole = 'TRANSPORT_OFFICER';
+    }
+    // Legacy requests (no unitType) go straight to transport officer
+    if (!body.unitType) {
+      body.currentApproverRole = 'TRANSPORT_OFFICER';
+    }
+
+    const request = new Request(body);
     await request.save();
     res.status(201).json(request);
   } catch (err) {
@@ -61,6 +76,49 @@ router.put('/:id/complete', authMiddleware, async (req, res) => {
     );
     if (!updated) return res.status(404).json({ message: 'Request not found' });
     res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// PUT /api/requests/:id/dean-approve  — College Dean forwards to Transport Officer
+router.put('/:id/dean-approve', authMiddleware, async (req, res) => {
+  try {
+    const { approvedBy } = req.body;
+    const request = await Request.findById(req.params.id);
+    if (!request) return res.status(404).json({ message: 'Request not found' });
+    if (request.status !== 'pending') {
+      return res.status(400).json({ message: 'Request is no longer pending' });
+    }
+
+    // Record dean approval in history
+    request.routingHistory.push({
+      role:   'COLLEGE_DEAN',
+      action: 'approved',
+      by:     approvedBy || 'College Dean',
+      at:     new Date(),
+    });
+
+    // Advance to Transport Officer
+    request.approvalLevel       = 2;
+    request.currentApproverRole = 'TRANSPORT_OFFICER';
+    request.status              = 'pending'; // still pending — now with transport officer
+
+    await request.save();
+
+    // Notify Transport Officer
+    try {
+      const Notification = require('../models/Notification');
+      await new Notification({
+        recipientRole: 'TRANSPORT',
+        type:    'request_forwarded',
+        title:   '🏛️ Dean-Approved Request Awaiting Assignment',
+        message: `${request.requester} (${request.unitName || request.department}) — ${request.purpose} to ${request.destination} on ${request.date}. Approved by College Dean, now needs vehicle assignment.`,
+        data: { requestId: request._id },
+      }).save();
+    } catch (_) { /* notifications are non-critical */ }
+
+    res.json(request);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
