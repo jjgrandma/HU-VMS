@@ -36,11 +36,11 @@ router.post('/me/change-password', authMiddleware, async (req, res) => {
     if (newPassword.length < 8)
       return res.status(400).json({ message: 'New password must be at least 8 characters' });
 
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id).select('+password');
     const valid = await bcrypt.compare(currentPassword, user.password);
     if (!valid) return res.status(400).json({ message: 'Current password is incorrect' });
 
-    user.password = await bcrypt.hash(newPassword, 10);
+    user.password = await bcrypt.hash(newPassword, 12);
     await user.save();
     res.json({ message: 'Password changed successfully' });
   } catch (err) {
@@ -58,20 +58,20 @@ router.get('/', authMiddleware, requireRole('ADMIN'), async (req, res) => {
   }
 });
 
-// PATCH /api/users/:id — admin update user (guard against 'me')
-router.patch('/:id', authMiddleware, async (req, res) => {
+// PATCH /api/users/:id — admin only
+router.patch('/:id', authMiddleware, requireRole('ADMIN'), async (req, res) => {
   try {
     const id = req.params.id;
-    // If somehow 'me' slips through, handle it
     const targetId = id === 'me' ? req.user.id : id;
-    if (req.body.password) {
-      req.body.password = await bcrypt.hash(req.body.password, 10);
-    }
+
+    // Never allow password to be set via this route — use reset-password instead
+    delete req.body.password;
+
     const updated = await User.findByIdAndUpdate(targetId, req.body, { new: true }).select('-password');
     if (!updated) return res.status(404).json({ message: 'User not found' });
     res.json(updated);
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -81,7 +81,7 @@ router.post('/:id/reset-password', authMiddleware, requireRole('ADMIN'), async (
     const { newPassword } = req.body;
     if (!newPassword || newPassword.length < 6)
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
-    const hashed = await bcrypt.hash(newPassword, 10);
+    const hashed = await bcrypt.hash(newPassword, 12);
     const updated = await User.findByIdAndUpdate(req.params.id, { password: hashed }, { new: true }).select('-password');
     if (!updated) return res.status(404).json({ message: 'User not found' });
     res.json({ message: 'Password reset successfully', user: updated });

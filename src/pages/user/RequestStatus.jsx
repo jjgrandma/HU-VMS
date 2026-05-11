@@ -14,12 +14,25 @@ const PRIORITY_COLORS = {
   emergency: '#dc2626', high: '#f59e0b', normal: '#3b82f6', low: '#22c55e',
 };
 
-const getProgressSteps = (status) => [
-  { name: 'Submitted',    done: true },
-  { name: 'Under Review', done: ['approved', 'rejected', 'completed'].includes(status) },
-  { name: 'Decision',     done: ['approved', 'rejected', 'completed'].includes(status) },
-  { name: 'Completed',    done: status === 'completed' },
-];
+const getProgressSteps = (status, req) => {
+  const isDeptRoute = req?.unitType === 'DEPARTMENT' ||
+    req?.routingHistory?.some(h => h.role === 'COLLEGE_DEAN');
+
+  if (isDeptRoute) {
+    return [
+      { name: 'Submitted',    done: true },
+      { name: 'Dean Review',  done: ['approved', 'rejected', 'completed'].includes(status) || (status === 'pending' && (req?.approvalLevel || 1) >= 2) },
+      { name: 'Transport',    done: ['approved', 'rejected', 'completed'].includes(status) },
+      { name: 'Completed',    done: status === 'completed' },
+    ];
+  }
+  return [
+    { name: 'Submitted',    done: true },
+    { name: 'Under Review', done: ['approved', 'rejected', 'completed'].includes(status) },
+    { name: 'Decision',     done: ['approved', 'rejected', 'completed'].includes(status) },
+    { name: 'Completed',    done: status === 'completed' },
+  ];
+};
 
 const RequestStatus = () => {
   const navigate = useNavigate();
@@ -62,7 +75,7 @@ const RequestStatus = () => {
         <div className="requests-container">
           {requests.map(req => {
             const st = STATUS_COLORS[req.status] || STATUS_COLORS.pending;
-            const steps = getProgressSteps(req.status);
+            const steps = getProgressSteps(req.status, req);
             const doneCount = steps.filter(s => s.done).length;
             const isExpanded = expanded === req._id;
 
@@ -138,6 +151,9 @@ const RequestStatus = () => {
                       <div className="detail-item"><span className="detail-icon">📅</span><span className="detail-text">{req.date}</span></div>
                       <div className="detail-item"><span className="detail-icon">📍</span><span className="detail-text">{req.destination}</span></div>
                       <div className="detail-item"><span className="detail-icon">👥</span><span className="detail-text">{req.passengers} Passenger(s)</span></div>
+                      {req.unitType && (
+                        <div className="detail-item"><span className="detail-icon">🏛️</span><span className="detail-text">{req.unitName || req.unitType}</span></div>
+                      )}
                     </div>
 
                     {/* Transport Officer Response */}
@@ -184,7 +200,11 @@ const RequestStatus = () => {
                         background: '#fffbeb', border: '1px solid #fde68a',
                         fontSize: 13, color: '#92400e',
                       }}>
-                        ⏳ Waiting for transport officer review. You'll see the decision here once processed.
+                        {req.unitType === 'DEPARTMENT' && (req.approvalLevel || 1) < 2
+                          ? '⏳ Waiting for College Dean review. Once approved, it will be forwarded to the Transport Officer.'
+                          : req.unitType === 'DEPARTMENT' && (req.approvalLevel || 1) >= 2
+                          ? '⏳ Dean approved — waiting for Transport Officer to assign a vehicle.'
+                          : '⏳ Waiting for transport officer review. You\'ll see the decision here once processed.'}
                       </div>
                     )}
 

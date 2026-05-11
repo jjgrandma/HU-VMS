@@ -40,21 +40,50 @@ const requestSchema = new mongoose.Schema(
       enum: ['DEPARTMENT', 'CAFETERIA', 'CLINIC', 'AGRICULTURAL_ACTIVITY', 'COLLEGE', 'OTHER'],
       default: null,
     },
-    unitName:           { type: String, default: null },
-    approvalLevel:      { type: Number, default: 1 },
-    currentApproverRole: { type: String, default: null },  // 'COLLEGE_DEAN' | 'TRANSPORT_OFFICER'
-    currentApproverId:  { type: String, default: null },
+    unitName:            { type: String, default: null },
+    collegeName:         { type: String, default: null },
+    approvalLevel:       { type: Number, default: 1 },
+    currentApproverRole: { type: String, default: null },
+    currentApproverId:   { type: String, default: null },
     routingHistory: [
       {
-        role:       String,
-        action:     String,   // 'approved' | 'rejected'
-        by:         String,
-        at:         { type: Date, default: Date.now },
-        note:       String,
+        role:   String,
+        action: String,
+        by:     String,
+        at:     { type: Date, default: Date.now },
+        note:   String,
       },
     ],
+    // ── Dean approval stamp — attached when dean approves ──
+    deanStamp: {
+      deanName:       { type: String, default: null },
+      deanUsername:   { type: String, default: null },
+      deanEmployeeId: { type: String, default: null },
+      collegeName:    { type: String, default: null },
+      collegeCode:    { type: String, default: null },
+      approvedAt:     { type: Date,   default: null },
+      remarks:        { type: String, default: null },
+    },
   },
   { timestamps: true }
 );
+
+// ── Performance indexes ────────────────────────────────────
+// These make the most common queries fast instead of doing full collection scans
+
+// Transport Officer loads pending requests assigned to them
+requestSchema.index({ currentApproverRole: 1, status: 1 });
+
+// Dean loads requests for their college
+requestSchema.index({ collegeName: 1, unitType: 1, status: 1 });
+
+// User loads their own requests
+requestSchema.index({ requesterUsername: 1, status: 1 });
+
+// General status + date sorting (used everywhere)
+requestSchema.index({ status: 1, createdAt: -1 });
+
+// Priority queue (emergency requests surface first)
+requestSchema.index({ priority: 1, status: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Request', requestSchema);

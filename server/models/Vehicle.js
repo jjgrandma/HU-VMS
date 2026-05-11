@@ -29,4 +29,13 @@ const vehicleSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// ── Performance indexes ────────────────────────────────────
+// plateNumber already indexed via unique:true
+
+// Most common query: find available vehicles for assignment
+vehicleSchema.index({ status: 1, type: 1 });
+
+// Transport Officer vehicle list sorted by status
+vehicleSchema.index({ status: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Vehicle', vehicleSchema);

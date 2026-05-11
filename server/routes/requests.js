@@ -3,20 +3,63 @@ const crypto = require('crypto');
 const QRCode = require('qrcode');
 const Request = require('../models/Request');
 const Vehicle = require('../models/Vehicle');
+const User = require('../models/User');
+const Notification = require('../models/Notification');
+const FuelRequest   = require('../models/FuelRequest');
 const { authMiddleware } = require('../middleware/auth');
 
 // GET /api/requests
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const filter = {};
-    if (req.query.status) filter.status = req.query.status;
-    if (req.query.priority) filter.priority = req.query.priority;
-    if (req.query.requesterUsername) filter.requesterUsername = req.query.requesterUsername;
+    if (req.query.status)              filter.status              = req.query.status;
+    if (req.query.priority)            filter.priority            = req.query.priority;
+    if (req.query.requesterUsername)   filter.requesterUsername   = req.query.requesterUsername;
+    if (req.query.currentApproverRole) filter.currentApproverRole = req.query.currentApproverRole;
+    if (req.query.collegeName)         filter.collegeName         = req.query.collegeName;
+    if (req.query.unitType)            filter.unitType            = req.query.unitType;
 
-    const requests = await Request.find(filter).sort({ createdAt: -1 });
+    // Pagination — default 100 per page, max 200
+    const page  = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit = Math.min(200, parseInt(req.query.limit) || 100);
+    const skip  = (page - 1) * limit;
+
+    const [requests, total] = await Promise.all([
+      Request.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      Request.countDocuments(filter),
+    ]);
+
+    res.json(requests); // keep same response shape for backward compat
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /api/requests/for-dean — returns only requests for the logged-in dean's college
+// The dean's collegeName comes from their JWT / user record
+router.get('/for-dean', authMiddleware, async (req, res) => {
+  try {
+    const dean = await User.findById(req.user.id).select('collegeName role');
+
+    if (!dean || dean.role !== 'DEAN') {
+      return res.status(403).json({ message: 'Access denied — Dean role required' });
+    }
+
+    // Build filter — use case-insensitive regex so "College of Computing and Informatics"
+    // matches "college of computing and informatics" regardless of how it was saved
+    const filter = { unitType: 'DEPARTMENT' };
+
+    if (dean.collegeName) {
+      filter.collegeName = { $regex: new RegExp(`^${dean.collegeName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') };
+    }
+
+    // Optionally filter by status
+    if (req.query.status) filter.status = req.query.status;
+
+    const requests = await Request.find(filter).sort({ createdAt: -1 }).lean();
     res.json(requests);
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -84,37 +127,74 @@ router.put('/:id/complete', authMiddleware, async (req, res) => {
 // PUT /api/requests/:id/dean-approve  — College Dean forwards to Transport Officer
 router.put('/:id/dean-approve', authMiddleware, async (req, res) => {
   try {
-    const { approvedBy } = req.body;
+    const { approvedBy, remarks } = req.body;
+
+    // Fetch the dean's full profile for the stamp
+    const User = require('../models/User');
+    const dean = await User.findById(req.user.id).select('name username employeeId collegeName unitName role');
     const request = await Request.findById(req.params.id);
     if (!request) return res.status(404).json({ message: 'Request not found' });
     if (request.status !== 'pending') {
       return res.status(400).json({ message: 'Request is no longer pending' });
     }
 
-    // Record dean approval in history
+    // ── Ownership check: dean can only approve requests from their own college ──
+    if (dean?.collegeName && request.collegeName) {
+      const deanCollege = dean.collegeName.toLowerCase().trim();
+      const reqCollege  = request.collegeName.toLowerCase().trim();
+      if (deanCollege !== reqCollege) {
+        return res.status(403).json({ message: 'You can only approve requests from your own college' });
+      }
+    }
+
+    const now = new Date();
+
+    // ── Attach the Dean's approval stamp ──────────────────
+    request.deanStamp = {
+      deanName:       dean?.name       || approvedBy || 'College Dean',
+      deanUsername:   dean?.username   || '',
+      deanEmployeeId: dean?.employeeId || '',
+      // Normalize college name to title case for consistency
+      collegeName:    dean?.collegeName
+                        ? dean.collegeName.replace(/\b\w/g, c => c.toUpperCase())
+                        : (request.collegeName || ''),
+      collegeCode:    dean?.unitName   || '',
+      approvedAt:     now,
+      remarks:        remarks || '',
+    };
+
+    // ── Record in routing history ─────────────────────────
     request.routingHistory.push({
       role:   'COLLEGE_DEAN',
       action: 'approved',
-      by:     approvedBy || 'College Dean',
-      at:     new Date(),
+      by:     dean?.name || approvedBy || 'College Dean',
+      at:     now,
+      note:   remarks || '',
     });
 
-    // Advance to Transport Officer
+    // ── Advance to Transport Officer ──────────────────────
     request.approvalLevel       = 2;
     request.currentApproverRole = 'TRANSPORT_OFFICER';
-    request.status              = 'pending'; // still pending — now with transport officer
+    request.currentApproverId   = null;
+    request.status              = 'pending';
 
     await request.save();
 
-    // Notify Transport Officer
+    // ── Notify Transport Officer ──────────────────────────
     try {
-      const Notification = require('../models/Notification');
       await new Notification({
         recipientRole: 'TRANSPORT',
         type:    'request_forwarded',
-        title:   '🏛️ Dean-Approved Request Awaiting Assignment',
-        message: `${request.requester} (${request.unitName || request.department}) — ${request.purpose} to ${request.destination} on ${request.date}. Approved by College Dean, now needs vehicle assignment.`,
-        data: { requestId: request._id },
+        title:   `🏛️ Dean-Approved: ${request.requester} — ${request.department}`,
+        message: `Approved by ${request.deanStamp.deanName} (${request.deanStamp.collegeName}). ` +
+                 `Trip: ${request.purpose} → ${request.destination} on ${request.date}. ` +
+                 `${request.passengers} passenger(s). Awaiting vehicle assignment.`,
+        data: {
+          requestId:    request._id,
+          deanName:     request.deanStamp.deanName,
+          collegeName:  request.deanStamp.collegeName,
+          department:   request.unitName || request.department,
+        },
       }).save();
     } catch (_) { /* notifications are non-critical */ }
 
@@ -136,6 +216,9 @@ router.put('/:id/approve', authMiddleware, async (req, res) => {
     vehicle.status = 'in-use';
     await vehicle.save();
 
+    // Generate QR token upfront so we only do one save
+    const qrToken = crypto.randomBytes(20).toString('hex');
+
     const updated = await Request.findByIdAndUpdate(
       req.params.id,
       {
@@ -145,24 +228,17 @@ router.put('/:id/approve', authMiddleware, async (req, res) => {
         assignedDriver: vehicle.assignedDriverName || '',
         approvedBy: approvedBy || 'Transport Officer',
         estimatedFuelLiters: estimatedFuelLiters || null,
+        qrToken,
+        qrGenerated: true,
       },
       { new: true }
     );
     if (!updated) return res.status(404).json({ message: 'Request not found' });
 
-    // Generate QR token on approval
-    if (!updated.qrGenerated) {
-      const qrToken = crypto.randomBytes(20).toString('hex');
-      updated.qrToken = qrToken;
-      updated.qrGenerated = true;
-      await updated.save();
-    }
-
     const Notification = require('../models/Notification');
     const FuelRequest   = require('../models/FuelRequest');
 
-    // ── Auto-create fuel request for fuel officer ──────────
-    if (estimatedFuelLiters && estimatedFuelLiters > 0) {
+    // ── Auto-create fuel request for fuel officer ──────────    if (estimatedFuelLiters && estimatedFuelLiters > 0) {
       await new FuelRequest({
         driver:          updated._id,
         driverName:      vehicle.assignedDriverName || updated.requester,
@@ -287,7 +363,7 @@ router.get('/:id/qr', authMiddleware, async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

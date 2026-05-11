@@ -230,6 +230,13 @@ export default function Requests() {
   };
 
   const filteredRequests = requests.filter(req => {
+    // Only show requests currently assigned to Transport Officer
+    // (either direct submissions or dean-forwarded ones at level 2)
+    const isAssignedToTransport =
+      !req.currentApproverRole ||                          // legacy requests (no routing)
+      req.currentApproverRole === 'TRANSPORT_OFFICER';     // explicitly routed here
+    if (!isAssignedToTransport) return false;
+
     const matchesSearch =
       (req.requester || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       (req.destination || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -311,6 +318,20 @@ export default function Requests() {
                   <div className="meta-item"><MapPin size={14} /><span>{request.destination}</span></div>
                   <div className="meta-item"><Calendar size={14} /><span>{request.date}</span></div>
                   <div className="meta-item"><Users size={14} /><span>{request.passengers} passengers</span></div>
+                  {request.deanStamp?.deanName && (
+                    <div className="meta-item" style={{ marginTop: 4 }}>
+                      <span style={{ fontSize: 11, background: '#dcfce7', color: '#15803d', padding: '2px 10px', borderRadius: 20, fontWeight: 700, border: '1px solid #86efac' }}>
+                        🏛️ Dean Approved · {request.deanStamp.deanName} · {request.deanStamp.collegeName}
+                      </span>
+                    </div>
+                  )}
+                  {request.unitType === 'DEPARTMENT' && !request.deanStamp?.deanName && (
+                    <div className="meta-item" style={{ marginTop: 4 }}>
+                      <span style={{ fontSize: 11, background: '#e0e7ff', color: '#4338ca', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>
+                        🏛️ Dean-forwarded · Stage {request.approvalLevel || 1}/2
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <div className={`priority-indicator priority-${request.priority}`}>{request.priority}</div>
               </div>
@@ -337,8 +358,66 @@ export default function Requests() {
                   {selectedRequest.requesterUsername && (
                     <div className="info-item"><label>Username</label><span>{selectedRequest.requesterUsername}</span></div>
                   )}
+                  {selectedRequest.unitType && (
+                    <div className="info-item"><label>Unit</label><span>{selectedRequest.unitName || selectedRequest.unitType}</span></div>
+                  )}
+                  {selectedRequest.collegeName && (
+                    <div className="info-item"><label>College</label><span>{selectedRequest.collegeName}</span></div>
+                  )}
+                  {selectedRequest.unitType === 'DEPARTMENT' && (
+                    <div className="info-item">
+                      <label>Approval Stage</label>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '2px 8px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+                          Stage {selectedRequest.approvalLevel || 1}/2
+                        </span>
+                        {(selectedRequest.approvalLevel || 1) >= 2 && (
+                          <span style={{ background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+                            ✓ Dean Approved
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Dean Approval Stamp — shown when request was approved by a dean */}
+              {selectedRequest.deanStamp?.deanName && (
+                <div className="detail-section" style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '1.5px solid #86efac', borderRadius: 12, padding: '16px 18px', marginBottom: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                    <span style={{ fontSize: 20 }}>🏛️</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: '#15803d' }}>Dean Approval Stamp</div>
+                      <div style={{ fontSize: 11, color: '#16a34a' }}>This request has been reviewed and approved by the College Dean</div>
+                    </div>
+                    <span style={{ marginLeft: 'auto', background: '#16a34a', color: '#fff', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>✓ VERIFIED</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 20px', background: 'rgba(255,255,255,0.6)', borderRadius: 8, padding: '12px 14px' }}>
+                    {[
+                      ['Dean Name',    selectedRequest.deanStamp.deanName],
+                      ['Employee ID',  selectedRequest.deanStamp.deanEmployeeId || '—'],
+                      ['College',      selectedRequest.deanStamp.collegeName],
+                      ['College Code', selectedRequest.deanStamp.collegeCode || '—'],
+                      ['Approved At',  selectedRequest.deanStamp.approvedAt
+                        ? new Date(selectedRequest.deanStamp.approvedAt).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
+                        : '—'],
+                      ['Username',     selectedRequest.deanStamp.deanUsername || '—'],
+                    ].map(([label, value]) => (
+                      <div key={label}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>{label}</div>
+                        <div style={{ fontSize: 13, color: '#14532d', fontWeight: 600 }}>{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {selectedRequest.deanStamp.remarks && (
+                    <div style={{ marginTop: 10, background: 'rgba(255,255,255,0.6)', borderRadius: 8, padding: '8px 12px' }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Dean&apos;s Remarks</div>
+                      <div style={{ fontSize: 13, color: '#14532d', fontStyle: 'italic' }}>&ldquo;{selectedRequest.deanStamp.remarks}&rdquo;</div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="detail-section">
                 <div className="section-header"><MapPin size={20} /><h4>Trip Details</h4></div>

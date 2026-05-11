@@ -14,7 +14,19 @@ import './manageUsersPage.css';
 const ROLE_LABELS = {
   ADMIN: 'Admin', TRANSPORT: 'Transport Officer', DRIVER: 'Driver',
   USER: 'User', FUEL_OFFICER: 'Fuel Officer', GATE_OFFICER: 'Gate Officer',
+  DEAN: 'College Dean',
 };
+
+const UNIT_TYPE_LABELS = {
+  DEPARTMENT: 'Department',
+  COLLEGE: 'College Office',
+  CAFETERIA: 'Cafeteria',
+  CLINIC: 'Clinic',
+  AGRICULTURAL_ACTIVITY: 'Agricultural Activity',
+  OTHER: 'Other',
+};
+
+const UNIT_TYPES = Object.entries(UNIT_TYPE_LABELS);
 
 // ── Small toast ────────────────────────────────────────────────────────────
 const Toast = ({ msg, type }) => msg ? (
@@ -116,12 +128,15 @@ export default function ManageUsersPage() {
     if (action === 'view') { setModal({ type: 'view', user }); return; }
     if (action === 'edit') {
       setEditForm({
-        name:       user.name       || '',
-        email:      user.email      || '',
-        phone:      user.phone      || '',
-        department: user.department || '',
-        employeeId: user.employeeId || '',
-        role:       user.role       || '',
+        name:        user.name        || '',
+        email:       user.email       || '',
+        phone:       user.phone       || '',
+        department:  user.department  || '',
+        employeeId:  user.employeeId  || '',
+        role:        user.role        || '',
+        unitType:    user.unitType    || '',
+        unitName:    user.unitName    || '',
+        collegeName: user.collegeName || '',
       });
       setModal({ type: 'edit', user });
       return;
@@ -150,12 +165,15 @@ export default function ManageUsersPage() {
     setEditSaving(true);
     try {
       const updated = await updateUser(modal.user._id, {
-        name:       editForm.name.trim(),
-        email:      editForm.email.trim(),
-        phone:      editForm.phone.trim(),
-        department: editForm.department.trim(),
-        employeeId: editForm.employeeId.trim(),
-        role:       editForm.role,
+        name:        editForm.name.trim(),
+        email:       editForm.email.trim(),
+        phone:       editForm.phone.trim(),
+        department:  editForm.department.trim(),
+        employeeId:  editForm.employeeId.trim(),
+        role:        editForm.role,
+        unitType:    editForm.unitType    || undefined,
+        unitName:    editForm.unitName.trim()    || undefined,
+        collegeName: editForm.collegeName.trim() || undefined,
       });
       setUsers(us => us.map(u => u._id === updated._id ? updated : u));
       showToast(`${updated.name} updated successfully`);
@@ -348,6 +366,18 @@ export default function ManageUsersPage() {
                     <Field label="Employee ID" value={modal.user.employeeId} />
                     <Field label="Role"        value={ROLE_LABELS[modal.user.role] || modal.user.role} />
                     <Field label="Status"      value={modal.user.isActive !== false ? 'Active' : 'Inactive'} />
+                    {modal.user.role === 'DEAN' && modal.user.collegeName && (
+                      <Field label="College Name" value={modal.user.collegeName} />
+                    )}
+                    {modal.user.role === 'DEAN' && modal.user.unitName && (
+                      <Field label="College Code" value={modal.user.unitName} />
+                    )}
+                    {modal.user.role !== 'DEAN' && modal.user.unitType && (
+                      <Field label="Unit Type" value={UNIT_TYPE_LABELS[modal.user.unitType] || modal.user.unitType} />
+                    )}
+                    {modal.user.role !== 'DEAN' && modal.user.unitName && (
+                      <Field label="Unit Name" value={modal.user.unitName} />
+                    )}
                     <Field label="Created"     value={modal.user.createdAt ? new Date(modal.user.createdAt).toLocaleDateString() : '—'} />
                     <Field label="Last Updated" value={modal.user.updatedAt ? new Date(modal.user.updatedAt).toLocaleDateString() : '—'} />
                   </div>
@@ -360,6 +390,8 @@ export default function ManageUsersPage() {
                         name: modal.user.name||'', email: modal.user.email||'',
                         phone: modal.user.phone||'', department: modal.user.department||'',
                         employeeId: modal.user.employeeId||'', role: modal.user.role||'',
+                        unitType: modal.user.unitType||'', unitName: modal.user.unitName||'',
+                        collegeName: modal.user.collegeName||'',
                       });
                       setModal({ type:'edit', user: modal.user });
                     }}>
@@ -426,6 +458,47 @@ export default function ManageUsersPage() {
                         {Object.entries(ROLE_LABELS).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
                       </select>
                     </div>
+                    {/* Unit Type — only for USER and DEAN */}
+                    {(editForm.role === 'USER' || editForm.role === 'DEAN') && (<>
+                      {editForm.role === 'DEAN' ? (<>
+                        {/* College Name for Dean */}
+                        <div style={{ marginBottom:14, gridColumn:'1/-1' }}>
+                          <label style={{ fontSize:12, fontWeight:600, color:'#374151', display:'block', marginBottom:4 }}>
+                            College Name <span style={{color:'#ef4444'}}>*</span>
+                          </label>
+                          <input className="lock-reason-input" type="text" value={editForm.collegeName}
+                            onChange={e => setEditForm(f=>({...f, collegeName:e.target.value}))}
+                            placeholder="e.g. College of Agriculture and Environmental Sciences"
+                            style={{ minHeight:'unset', height:40 }} />
+                        </div>
+                        <div style={{ marginBottom:14 }}>
+                          <label style={{ fontSize:12, fontWeight:600, color:'#374151', display:'block', marginBottom:4 }}>College Code (optional)</label>
+                          <input className="lock-reason-input" type="text" value={editForm.unitName}
+                            onChange={e => setEditForm(f=>({...f, unitName:e.target.value}))}
+                            placeholder="e.g. CAES" style={{ minHeight:'unset', height:40 }} />
+                        </div>
+                      </>) : (<>
+                        {/* Unit Type/Name for User */}
+                        <div style={{ marginBottom:14 }}>
+                          <label style={{ fontSize:12, fontWeight:600, color:'#374151', display:'block', marginBottom:4 }}>Unit Type</label>
+                          <select className="lock-reason-input" value={editForm.unitType}
+                            onChange={e => setEditForm(f=>({...f, unitType:e.target.value}))}
+                            style={{ minHeight:'unset', height:40, resize:'none' }}>
+                            <option value="">— None —</option>
+                            {UNIT_TYPES.map(([k,v]) => <option key={k} value={k}>{v}</option>)}
+                          </select>
+                          {editForm.unitType === 'DEPARTMENT' && (
+                            <p style={{ fontSize:11, color:'#2563eb', margin:'3px 0 0' }}>Routes: Department → Dean → Transport Officer</p>
+                          )}
+                        </div>
+                        <div style={{ marginBottom:14 }}>
+                          <label style={{ fontSize:12, fontWeight:600, color:'#374151', display:'block', marginBottom:4 }}>Unit Name</label>
+                          <input className="lock-reason-input" type="text" value={editForm.unitName}
+                            onChange={e => setEditForm(f=>({...f, unitName:e.target.value}))}
+                            placeholder="e.g. Computer Science" style={{ minHeight:'unset', height:40 }} />
+                        </div>
+                      </>)}
+                    </>)}
                   </div>
                 </div>
                 <div className="modal-footer">
@@ -483,7 +556,10 @@ export default function ManageUsersPage() {
                   <button className="modal-close" onClick={closeModal}>×</button>
                 </div>
                 <div className="modal-body">
-                  <p className="modal-description">Set a new password for <strong>{modal.user.name}</strong>.</p>
+                  <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: '#92400e' }}>
+                    🔒 For security, existing passwords are never visible — not even to admins. You can only set a new temporary password.
+                  </div>
+                  <p className="modal-description">Set a new temporary password for <strong>{modal.user.name}</strong>. Share it securely and ask them to change it after login.</p>
                   <input type={showPw ? 'text' : 'password'} placeholder="New password (min 6 chars)"
                     value={inputVal} onChange={e => setInputVal(e.target.value)}
                     className="lock-reason-input" style={{ marginBottom:10, minHeight:'unset', height:42 }} />

@@ -97,66 +97,116 @@ const LandingPage = () => {
           <h2 className="section-title">Our Services</h2>
           <p className="section-subtitle">Everything you need to manage university vehicle operations efficiently</p>
 
+          {/* Stats bar */}
+          <div className="services-stats">
+            <div className="services-stat">
+              <span className="services-stat-number">6+</span>
+              <span className="services-stat-label">Core Services</span>
+            </div>
+            <div className="services-stat-divider" />
+            <div className="services-stat">
+              <span className="services-stat-number">24/7</span>
+              <span className="services-stat-label">System Uptime</span>
+            </div>
+            <div className="services-stat-divider" />
+            <div className="services-stat">
+              <span className="services-stat-number">100%</span>
+              <span className="services-stat-label">Digital Workflow</span>
+            </div>
+            <div className="services-stat-divider" />
+            <div className="services-stat">
+              <span className="services-stat-number">Real-time</span>
+              <span className="services-stat-label">Fleet Tracking</span>
+            </div>
+          </div>
+
           <div className="services-grid">
-            <div className="service-card" onClick={() => navigate('/login')}>
-              <div className="service-icon-wrap" style={{ background: 'linear-gradient(135deg, #16a34a, #15803d)' }}>
+
+            <div className="service-card"
+              style={{ '--card-gradient': 'linear-gradient(135deg,#16a34a,#15803d)', '--card-glow': 'rgba(22,163,74,0.06)', '--tag-bg': 'rgba(22,163,74,0.12)', '--tag-border': 'rgba(22,163,74,0.3)', '--tag-color': '#4ade80' }}
+              onClick={() => navigate('/login')}>
+              <span className="service-card-number">01</span>
+              <div className="service-icon-wrap" style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', boxShadow: '0 8px 24px rgba(22,163,74,0.3)' }}>
                 <span className="service-icon">🚗</span>
               </div>
               <h3>Vehicle Booking</h3>
               <p>Submit and manage vehicle requests online. Staff can book vehicles for official trips with smart auto-assignment based on purpose and passenger count.</p>
-              <span className="service-tag">For Staff & Faculty</span>
+              <span className="service-tag">For Staff &amp; Faculty</span>
+              <div className="service-card-arrow">Get started <span>→</span></div>
             </div>
 
-            <div className="service-card" onClick={() => navigate('/login')}>
-              <div className="service-icon-wrap" style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }}>
+            <div className="service-card"
+              style={{ '--card-gradient': 'linear-gradient(135deg,#3b82f6,#2563eb)', '--card-glow': 'rgba(59,130,246,0.06)', '--tag-bg': 'rgba(59,130,246,0.12)', '--tag-border': 'rgba(59,130,246,0.3)', '--tag-color': '#93c5fd' }}
+              onClick={() => navigate('/login')}>
+              <span className="service-card-number">02</span>
+              <div className="service-icon-wrap" style={{ background: 'linear-gradient(135deg,#3b82f6,#2563eb)', boxShadow: '0 8px 24px rgba(59,130,246,0.3)' }}>
                 <span className="service-icon">📅</span>
               </div>
               <h3>Trip Scheduling</h3>
               <p>Plan and schedule trips with date, time, destination, and purpose. The system automatically detects the best vehicle type for each trip category.</p>
               <span className="service-tag">Smart Scheduling</span>
+              <div className="service-card-arrow">Get started <span>→</span></div>
             </div>
 
-            <div className="service-card" onClick={() => navigate('/login')}>
-              <div className="service-icon-wrap" style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' }}>
+            <div className="service-card"
+              style={{ '--card-gradient': 'linear-gradient(135deg,#8b5cf6,#7c3aed)', '--card-glow': 'rgba(139,92,246,0.06)', '--tag-bg': 'rgba(139,92,246,0.12)', '--tag-border': 'rgba(139,92,246,0.3)', '--tag-color': '#c4b5fd' }}
+              onClick={() => navigate('/login')}>
+              <span className="service-card-number">03</span>
+              <div className="service-icon-wrap" style={{ background: 'linear-gradient(135deg,#8b5cf6,#7c3aed)', boxShadow: '0 8px 24px rgba(139,92,246,0.3)' }}>
                 <span className="service-icon">👤</span>
               </div>
-              <h3>Driver & Vehicle Assignment</h3>
+              <h3>Driver &amp; Vehicle Assignment</h3>
               <p>Transport officers assign the best-matched vehicle and driver to each trip. Includes fuel estimation using real road distance and vehicle consumption rates.</p>
               <span className="service-tag">AI-Assisted Matching</span>
+              <div className="service-card-arrow">Get started <span>→</span></div>
             </div>
 
-            <div className="service-card" onClick={() => navigate('/login')}>
-              <div className="service-icon-wrap" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+            <div className="service-card"
+              style={{ '--card-gradient': 'linear-gradient(135deg,#f59e0b,#d97706)', '--card-glow': 'rgba(245,158,11,0.06)', '--tag-bg': 'rgba(245,158,11,0.12)', '--tag-border': 'rgba(245,158,11,0.3)', '--tag-color': '#fcd34d' }}
+              onClick={() => navigate('/login')}>
+              <span className="service-card-number">04</span>
+              <div className="service-icon-wrap" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', boxShadow: '0 8px 24px rgba(245,158,11,0.3)' }}>
                 <span className="service-icon">📍</span>
               </div>
               <h3>Real-Time Tracking</h3>
               <p>Monitor all university vehicles on an interactive satellite map. Track live positions, speed, and status of every vehicle in the fleet.</p>
               <span className="service-tag">Live Map View</span>
+              <div className="service-card-arrow">Get started <span>→</span></div>
             </div>
 
-            <div className="service-card" onClick={() => navigate('/login')}>
-              <div className="service-icon-wrap" style={{ background: 'linear-gradient(135deg, #dc2626, #b91c1c)' }}>
+            <div className="service-card"
+              style={{ '--card-gradient': 'linear-gradient(135deg,#dc2626,#b91c1c)', '--card-glow': 'rgba(220,38,38,0.06)', '--tag-bg': 'rgba(220,38,38,0.12)', '--tag-border': 'rgba(220,38,38,0.3)', '--tag-color': '#fca5a5' }}
+              onClick={() => navigate('/login')}>
+              <span className="service-card-number">05</span>
+              <div className="service-icon-wrap" style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 8px 24px rgba(220,38,38,0.3)' }}>
                 <span className="service-icon">🔐</span>
               </div>
               <h3>Gate Verification</h3>
               <p>Security officers verify vehicle entry and exit using QR code scanning or plate number detection. Unauthorized vehicles are flagged instantly.</p>
               <span className="service-tag">QR + ALPR</span>
+              <div className="service-card-arrow">Get started <span>→</span></div>
             </div>
 
-            <div className="service-card" onClick={() => navigate('/login')}>
-              <div className="service-icon-wrap" style={{ background: 'linear-gradient(135deg, #0891b2, #0e7490)' }}>
+            <div className="service-card"
+              style={{ '--card-gradient': 'linear-gradient(135deg,#0891b2,#0e7490)', '--card-glow': 'rgba(8,145,178,0.06)', '--tag-bg': 'rgba(8,145,178,0.12)', '--tag-border': 'rgba(8,145,178,0.3)', '--tag-color': '#67e8f9' }}
+              onClick={() => navigate('/login')}>
+              <span className="service-card-number">06</span>
+              <div className="service-icon-wrap" style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)', boxShadow: '0 8px 24px rgba(8,145,178,0.3)' }}>
                 <span className="service-icon">📊</span>
               </div>
-              <h3>Reports & Analytics</h3>
+              <h3>Reports &amp; Analytics</h3>
               <p>Generate comprehensive reports on fuel consumption, trip history, driver performance, maintenance costs, and fleet utilization with interactive charts.</p>
               <span className="service-tag">Data-Driven Insights</span>
+              <div className="service-card-arrow">Get started <span>→</span></div>
             </div>
+
           </div>
 
-          <div style={{ textAlign: 'center', marginTop: 48 }}>
+          <div className="services-cta">
             <button onClick={() => navigate('/login')} className="btn-primary-hero">
               Access All Services →
             </button>
+            <p className="services-cta-text">Login required · Secure university portal</p>
           </div>
         </div>
       </section>
@@ -226,45 +276,68 @@ const LandingPage = () => {
         <div className="section-container">
           <h2 className="section-title">Get In Touch</h2>
           <p className="section-subtitle">
-            Have questions? We'd love to hear from you
+            Have questions or need support? We&apos;d love to hear from you.
           </p>
-          
+
           <div className="contact-content">
+            {/* Info side */}
             <div className="contact-info">
-              <div className="info-card">
-                <div className="info-icon">📍</div>
-                <h3>Address</h3>
-                <p>Haramaya University<br/>P.O. Box 138<br/>Dire Dawa, Ethiopia</p>
+              <div className="contact-info-header">
+                <h3>Let&apos;s connect</h3>
+                <p>Reach out through any of the channels below and our team will get back to you as soon as possible.</p>
               </div>
-              
+
               <div className="info-card">
-                <div className="info-icon">📧</div>
-                <h3>Email</h3>
-                <p>transport@haramaya.edu.et<br/>support@hu-vms.edu.et</p>
+                <div className="info-icon-wrap blue">📍</div>
+                <div className="info-card-text">
+                  <span className="info-card-label">Address</span>
+                  <span className="info-card-value">Haramaya University, P.O. Box 138<br/>Dire Dawa, Ethiopia</span>
+                </div>
               </div>
-              
+
               <div className="info-card">
-                <div className="info-icon">📞</div>
-                <h3>Phone</h3>
-                <p>+251 25 553 0325<br/>+251 25 553 0326</p>
+                <div className="info-icon-wrap purple">📧</div>
+                <div className="info-card-text">
+                  <span className="info-card-label">Email</span>
+                  <span className="info-card-value">transport@haramaya.edu.et<br/>support@hu-vms.edu.et</span>
+                </div>
+              </div>
+
+              <div className="info-card">
+                <div className="info-icon-wrap teal">📞</div>
+                <div className="info-card-text">
+                  <span className="info-card-label">Phone</span>
+                  <span className="info-card-value">+251 25 553 0325<br/>+251 25 553 0326</span>
+                </div>
               </div>
             </div>
-            
+
+            {/* Form side */}
             <div className="contact-form">
+              <p className="contact-form-title">Send us a message</p>
               <form onSubmit={(e) => { e.preventDefault(); alert('Message sent successfully!'); }}>
-                <div className="form-group">
-                  <input type="text" placeholder="Your Name" required />
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Your Name</label>
+                    <input type="text" placeholder="John Doe" required />
+                  </div>
+                  <div className="form-group">
+                    <label>Email Address</label>
+                    <input type="email" placeholder="you@example.com" required />
+                  </div>
                 </div>
                 <div className="form-group">
-                  <input type="email" placeholder="Your Email" required />
+                  <label>Subject</label>
+                  <input type="text" placeholder="How can we help?" required />
                 </div>
                 <div className="form-group">
-                  <input type="text" placeholder="Subject" required />
+                  <label>Message</label>
+                  <textarea placeholder="Write your message here..." rows="5" required></textarea>
                 </div>
-                <div className="form-group">
-                  <textarea placeholder="Your Message" rows="5" required></textarea>
-                </div>
-                <button type="submit" className="submit-btn">Send Message</button>
+                <button type="submit" className="submit-btn">
+                  <span>Send Message</span>
+                  <span>→</span>
+                </button>
               </form>
             </div>
           </div>
@@ -275,26 +348,35 @@ const LandingPage = () => {
       <footer className="footer">
         <div className="footer-container">
           <div className="footer-content">
+
+            {/* Brand */}
             <div className="footer-section">
-              <h3 className="footer-title">
+              <div className="footer-title">
                 <span className="footer-icon">🚗</span>
-                HU-VMS
-              </h3>
+                <span className="footer-title-gradient">HU-VMS</span>
+              </div>
               <p className="footer-text">
-                Haramaya University Vehicle Management System - Streamlining fleet operations for better efficiency.
+                Haramaya University Vehicle Management System — streamlining fleet operations for better efficiency and transparency across the campus.
               </p>
+              <div className="footer-badge">
+                <span className="footer-badge-dot"></span>
+                System Online
+              </div>
             </div>
-            
+
+            {/* Quick Links */}
             <div className="footer-section">
               <h4>Quick Links</h4>
               <ul className="footer-links">
                 <li><button onClick={() => scrollToSection('home')}>Home</button></li>
+                <li><button onClick={() => scrollToSection('services')}>Services</button></li>
                 <li><button onClick={() => scrollToSection('about')}>About</button></li>
                 <li><button onClick={() => scrollToSection('contact')}>Contact</button></li>
                 <li><button onClick={() => navigate('/login')}>Login</button></li>
               </ul>
             </div>
-            
+
+            {/* Services */}
             <div className="footer-section">
               <h4>Services</h4>
               <ul className="footer-links">
@@ -304,19 +386,44 @@ const LandingPage = () => {
                 <li><button onClick={() => scrollToSection('services')}>Reports & Analytics</button></li>
               </ul>
             </div>
-            
+
+            {/* Contact Info */}
             <div className="footer-section">
               <h4>Contact Info</h4>
-              <ul className="footer-links">
-                <li>📍 Haramaya University</li>
-                <li>📧 transport@haramaya.edu.et</li>
-                <li>📞 +251 25 553 0325</li>
-              </ul>
+              <div className="footer-contact-item">
+                <div className="footer-contact-icon">📍</div>
+                <div className="footer-contact-text">
+                  <span className="footer-contact-label">Address</span>
+                  <span className="footer-contact-value">Haramaya University<br/>Dire Dawa, Ethiopia</span>
+                </div>
+              </div>
+              <div className="footer-contact-item">
+                <div className="footer-contact-icon">📧</div>
+                <div className="footer-contact-text">
+                  <span className="footer-contact-label">Email</span>
+                  <span className="footer-contact-value">transport@haramaya.edu.et</span>
+                </div>
+              </div>
+              <div className="footer-contact-item">
+                <div className="footer-contact-icon">📞</div>
+                <div className="footer-contact-text">
+                  <span className="footer-contact-label">Phone</span>
+                  <span className="footer-contact-value">+251 25 553 0325</span>
+                </div>
+              </div>
             </div>
+
           </div>
-          
+
+          <div className="footer-divider"></div>
+
           <div className="footer-bottom">
-            <p>&copy; 2024 Haramaya University Vehicle Management System. All rights reserved.</p>
+            <div className="footer-bottom-left">
+              &copy; 2024 <span>Haramaya University VMS</span>. All rights reserved.
+            </div>
+            <div className="footer-bottom-right">
+              Made with <span className="footer-heart">♥</span> for Haramaya University
+            </div>
           </div>
         </div>
       </footer>

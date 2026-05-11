@@ -81,7 +81,10 @@ import FuelNotifications from './pages/fuelStationOfficer/FuelNotifications';
 import FuelStationProfile from './pages/fuelStationOfficer/FuelStationProfile';
 import FuelStationSettings from './pages/fuelStationOfficer/FuelStationSettings';
 
-// Gate Security (legacy components kept for reference)
+// Dean
+import DeanLayout from './pages/dean/DeanLayout';
+import CollegeDeanRequests from './pages/dean/CollegeDeanRequests';
+import ApprovalHistory from './pages/dean/ApprovalHistory';
 import GateSecurityProfile from './pages/gateSecurity/GateSecurityProfile';
 // New Gate Security Module
 import GateLayout from './pages/gateSecurity/GateLayout';
@@ -375,6 +378,18 @@ function App() {
             <Route path="performance" element={<FuelDashboard />} />
           </Route>
           <Route path="*" element={<Navigate to="/fuel/dashboard" replace />} />
+        </>
+      )}
+
+      {/* College Dean Routes */}
+      {user?.role === 'DEAN' && (
+        <>
+          <Route path="/dean" element={<DeanLayout onLogout={handleLogout} />}>
+            <Route index element={<Navigate to="requests" replace />} />
+            <Route path="requests" element={<CollegeDeanRequests />} />
+            <Route path="history"  element={<ApprovalHistory />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/dean/requests" replace />} />
         </>
       )}
 

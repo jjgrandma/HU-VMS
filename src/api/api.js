@@ -77,6 +77,26 @@ export const approveRequest = async (id, payload) => {
   return data;
 };
 
+export const deanApproveRequest = async (id, payload = {}) => {
+  const res = await fetch(`${BASE_URL}/requests/${id}/dean-approve`, {
+    method: 'PUT',
+    headers: headers(),
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+// Fetch only requests for the logged-in dean's college (server-side filtered)
+export const getDeanRequests = async (filters = {}) => {
+  const params = new URLSearchParams(filters).toString();
+  const res = await fetch(`${BASE_URL}/requests/for-dean?${params}`, { headers: headers() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
 export const rejectRequest = async (id, rejectionReason) => {
   const res = await fetch(`${BASE_URL}/requests/${id}/reject`, {
     method: 'PUT',

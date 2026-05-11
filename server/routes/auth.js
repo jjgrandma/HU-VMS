@@ -4,28 +4,35 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const PasswordResetLog = require('../models/PasswordResetLog');
+const { authMiddleware, requireRole } = require('../middleware/auth');
+
+const VALID_ROLES = ['ADMIN', 'TRANSPORT', 'DRIVER', 'USER', 'FUEL_OFFICER', 'GATE_OFFICER', 'MAINTENANCE_OFFICER', 'DEAN'];
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
     const { username, password, role } = req.body;
 
-    // Find user by username (role is now optional)
-    const query = { username };
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Username and password are required' });
+    }
+
+    const query = { username: username.trim() };
     if (role) query.role = role;
-    
-    const user = await User.findOne(query);
+
+    const user = await User.findOne(query).select('+password');
+    // Use same message for both "not found" and "wrong password" to prevent user enumeration
     if (!user) return res.status(400).json({ message: 'Invalid credentials' });
 
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(400).json({ message: 'Wrong password' });
+    if (!valid) return res.status(400).json({ message: 'Invalid credentials' });
 
-    if (!user.isActive) return res.status(403).json({ message: 'Account is disabled' });
+    if (!user.isActive) return res.status(403).json({ message: 'Account is disabled. Contact admin.' });
 
     const token = jwt.sign(
       { id: user._id, role: user.role, name: user.name },
       process.env.JWT_SECRET,
-      { expiresIn: '8h' }
+      { expiresIn: '2h' }
     );
 
     res.json({
@@ -37,18 +44,19 @@ router.post('/login', async (req, res) => {
         email: user.email,
         role: user.role,
         department: user.department,
+        employeeId: user.employeeId,
         unitType:    user.unitType    || null,
         unitName:    user.unitName    || null,
         collegeName: user.collegeName || null,
       },
     });
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
 // POST /api/auth/register (admin only in production)
-router.post('/register', async (req, res) => {
+router.post('/register', authMiddleware, requireRole('ADMIN'), async (req, res) => {
   try {
     const { name, username, email, password, role, phone, department, employeeId, unitType, unitName, collegeName } = req.body;
 
@@ -56,26 +64,48 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'name, username, email, password and role are required' });
     }
 
-    const exists = await User.findOne({ $or: [{ username }, { email }] });
+    // Validate role is one of the allowed values
+    if (!VALID_ROLES.includes(role)) {
+      return res.status(400).json({ message: `Invalid role. Must be one of: ${VALID_ROLES.join(', ')}` });
+    }
+
+    // Basic email format check
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    const exists = await User.findOne({ $or: [{ username: username.trim() }, { email: email.trim() }] });
     if (exists) {
-      const field = exists.username === username ? 'Username' : 'Email';
+      const field = exists.username === username.trim() ? 'Username' : 'Email';
       return res.status(400).json({ message: `${field} already exists` });
     }
 
-    const hashed = await bcrypt.hash(password, 10);
+    const hashed = await bcrypt.hash(password, 12); // increased from 10 to 12
     const user = new User({
-      name, username, email, password: hashed, role,
-      phone, department, employeeId,
+      name: name.trim(),
+      username: username.trim(),
+      email: email.trim().toLowerCase(),
+      password: hashed,
+      role,
+      phone: phone?.trim(),
+      department: department?.trim(),
+      employeeId: employeeId?.trim(),
       unitType:    unitType    || null,
       unitName:    unitName    || null,
-      collegeName: collegeName || null,
+      collegeName: collegeName
+        ? collegeName.trim().replace(/\b\w/g, c => c.toUpperCase())
+        : null,
     });
     await user.save();
 
     const { password: _pw, ...userOut } = user.toObject();
     res.status(201).json({ message: 'User created successfully', user: userOut });
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -139,7 +169,7 @@ router.get('/verify-reset-token/:token', async (req, res) => {
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordExpires: { $gt: Date.now() }
-    });
+    }).select('+password');
 
     if (!user) {
       return res.status(400).json({ message: 'Invalid or expired token' });
@@ -165,7 +195,7 @@ router.post('/reset-password', async (req, res) => {
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordExpires: { $gt: Date.now() }
-    });
+    }).select('+password');
 
     if (!user) {
       // Mark as expired in log
@@ -176,8 +206,8 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ message: 'Invalid or expired reset token' });
     }
 
-    // Update password
-    user.password = await bcrypt.hash(password, 10);
+    // Update password — bcrypt rounds 12
+    user.password = await bcrypt.hash(password, 12);
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
@@ -195,7 +225,7 @@ router.post('/reset-password', async (req, res) => {
 });
 
 // GET /api/auth/reset-logs - Get password reset logs (Admin only)
-router.get('/reset-logs', async (req, res) => {
+router.get('/reset-logs', authMiddleware, requireRole('ADMIN'), async (req, res) => {
   try {
     const logs = await PasswordResetLog.find()
       .populate('user', 'name email username')

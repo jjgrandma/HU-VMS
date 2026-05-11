@@ -1,22 +1,55 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
 require('dotenv').config();
 
 const app = express();
 
+// ── Security headers ──────────────────────────────────────
+app.use(helmet());
+app.disable('x-powered-by');
+
+// ── CORS — only allow localhost in dev ────────────────────
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow any localhost origin or no origin (e.g. curl/Postman)
     if (!origin || origin.startsWith('http://localhost')) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
-  }
+  },
+  credentials: true,
 }));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+// ── Body parsing ──────────────────────────────────────────
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ limit: '2mb', extended: true }));
+
+// ── NoSQL injection sanitization ──────────────────────────
+app.use(mongoSanitize());
+
+// ── Global rate limiter (100 req / 15 min per IP) ─────────
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many requests, please try again later.' },
+});
+app.use('/api/', globalLimiter);
+
+// ── Strict login rate limiter (10 attempts / 15 min) ──────
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many login attempts. Please wait 15 minutes.' },
+});
+app.use('/api/auth/login', loginLimiter);
 
 // Routes
 app.use('/api/auth',       require('./routes/auth'));

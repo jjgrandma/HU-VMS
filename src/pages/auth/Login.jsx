@@ -32,6 +32,7 @@ export default function Login({ onLogin }) {
         FUEL_OFFICER: '/fuel/dashboard',
         GATE_OFFICER: '/gate/dashboard',
         MAINTENANCE_OFFICER: '/maintenance/dashboard',
+        DEAN: '/dean/requests',
       };
       const destination = routes[data.user.role];
       if (!destination) {

@@ -169,9 +169,21 @@ const detectVehicleType = (purpose, passengers, notes) => {
   return { type: 'Car', reason: `${pax} passenger(s) — Car is sufficient`, icon: '🚗' };
 };
 
+const UNIT_TYPE_LABELS = {
+  DEPARTMENT: 'Department',
+  COLLEGE: 'College Office',
+  CAFETERIA: 'Cafeteria',
+  CLINIC: 'Clinic',
+  AGRICULTURAL_ACTIVITY: 'Agricultural Activity',
+  OTHER: 'Other',
+};
+
 const SubmitVehicleRequest = () => {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
+
+  const isDepartment = currentUser?.unitType === 'DEPARTMENT';
+  const unitLabel = UNIT_TYPE_LABELS[currentUser?.unitType] || null;
 
   const [formData, setFormData] = useState({
     purpose: '',
@@ -181,6 +193,8 @@ const SubmitVehicleRequest = () => {
     passengers: 1,
     priority: 'normal',
     additionalNotes: '',
+    // Optional department field — pre-filled from user profile
+    requestingDepartment: currentUser?.unitName || currentUser?.department || '',
   });
 
   const [errors, setErrors]       = useState({});
@@ -229,14 +243,17 @@ const SubmitVehicleRequest = () => {
       await createRequest({
         requester:         currentUser?.name || 'Unknown',
         requesterUsername: currentUser?.username || '',
-        department:        currentUser?.department || 'N/A',
+        department:        formData.requestingDepartment || currentUser?.department || 'N/A',
         destination:       formData.destination || (isAgri ? 'University Farm, Haramaya' : ''),
         purpose:           formData.purpose,
         date:              `${formData.date} ${formData.time}`,
         passengers:        Number(formData.passengers),
         priority:          formData.priority,
-        vehicleType:       suggestion?.type || 'Car', // auto-assigned
+        vehicleType:       suggestion?.type || 'Car',
         specialRequirements: formData.additionalNotes,
+        unitType:          currentUser?.unitType  || null,
+        unitName:          currentUser?.unitName  || null,
+        collegeName:       currentUser?.collegeName || null,
       });
       alert('✅ Vehicle request submitted! The transport officer will review it.');
       navigate('/user/my-requests');
@@ -250,6 +267,43 @@ const SubmitVehicleRequest = () => {
   return (
     <div className="request-form-page">
       <h1 className="page-title">Submit Vehicle Request</h1>
+
+      {/* Approval route info — read-only, shown when unitType is set */}
+      {unitLabel && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+          background: isDepartment ? '#eff6ff' : '#f0fdf4',
+          border: `1px solid ${isDepartment ? '#bfdbfe' : '#bbf7d0'}`,
+          borderRadius: 12, padding: '14px 20px', marginBottom: 20,
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Your Unit</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#1e293b' }}>
+              {unitLabel}{currentUser?.unitName ? ` — ${currentUser.unitName}` : ''}
+            </span>
+          </div>
+          <div style={{ width: 1, height: 32, background: isDepartment ? '#bfdbfe' : '#bbf7d0' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Approval Route</span>
+            {isDepartment ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600 }}>
+                <span style={{ background: '#dbeafe', color: '#1d4ed8', padding: '2px 10px', borderRadius: 20 }}>You</span>
+                <span style={{ color: '#94a3b8' }}>→</span>
+                <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '2px 10px', borderRadius: 20 }}>College Dean</span>
+                <span style={{ color: '#94a3b8' }}>→</span>
+                <span style={{ background: '#dcfce7', color: '#15803d', padding: '2px 10px', borderRadius: 20 }}>Transport Officer</span>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600 }}>
+                <span style={{ background: '#dcfce7', color: '#15803d', padding: '2px 10px', borderRadius: 20 }}>You</span>
+                <span style={{ color: '#94a3b8' }}>→</span>
+                <span style={{ background: '#dcfce7', color: '#15803d', padding: '2px 10px', borderRadius: 20 }}>Transport Officer</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="form-container">
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
@@ -331,6 +385,33 @@ const SubmitVehicleRequest = () => {
               <textarea name="additionalNotes" value={formData.additionalNotes} onChange={handleChange}
                 rows="3" placeholder="Any special requirements, cargo details, or instructions..."
                 className="form-textarea" />
+            </div>
+
+            {/* Optional department field */}
+            <div className="form-group full-width">
+              <label className="form-label">
+                Requesting Department
+                <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 400, marginLeft: 6 }}>(Optional — helps identify your unit)</span>
+              </label>
+              <input
+                type="text"
+                name="requestingDepartment"
+                value={formData.requestingDepartment}
+                onChange={handleChange}
+                placeholder="e.g. Computer Science, Animal Sciences..."
+                className="form-input"
+                style={{ background: formData.requestingDepartment && currentUser?.unitName === formData.requestingDepartment ? '#f0fdf4' : undefined }}
+              />
+              {currentUser?.unitName && formData.requestingDepartment === currentUser.unitName && (
+                <p style={{ fontSize: 12, color: '#16a34a', marginTop: 4 }}>
+                  ✅ Auto-filled from your profile — you can change it if submitting on behalf of another unit
+                </p>
+              )}
+              {currentUser?.collegeName && (
+                <p style={{ fontSize: 12, color: '#6366f1', marginTop: 4 }}>
+                  🏛️ College: <strong>{currentUser.collegeName}</strong>
+                </p>
+              )}
             </div>
           </div>
 
