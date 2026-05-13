@@ -77,7 +77,6 @@ export default function FuelStationLayout({ onLogout }) {
     { to: '/fuel/dashboard',     icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
     { to: '/fuel/requests',      icon: <ClipboardList size={20} />,   label: 'Fuel Requests', badge: pendingCount },
     { to: '/fuel/inventory',     icon: <Package size={20} />,         label: 'Inventory' },
-    { to: '/fuel/transactions',  icon: <FileText size={20} />,        label: 'Transactions' },
     { to: '/fuel/reports',       icon: <FileText size={20} />,        label: 'Reports' },
     { to: '/fuel/notifications', icon: <Bell size={20} />,            label: 'Notifications' },
   ];

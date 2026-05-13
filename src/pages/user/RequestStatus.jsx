@@ -169,6 +169,26 @@ const RequestStatus = () => {
                         {req.assignedDriver && (
                           <div style={{ fontSize: 13, color: '#374151', marginTop: 4 }}>👨‍✈️ Assigned Driver: <strong>{req.assignedDriver}</strong></div>
                         )}
+                        {req.tripType && (
+                          <div style={{ fontSize: 13, color: '#374151', marginTop: 4 }}>
+                            {req.tripType === 'one_way' ? '➡️ One-way trip' : '🔄 Round trip'}
+                          </div>
+                        )}
+                        {req.estimatedFuelLiters && (
+                          <div style={{ fontSize: 13, color: '#374151', marginTop: 4 }}>
+                            ⛽ Fuel allocated: <strong>{req.estimatedFuelLiters}L {req.fuelType || ''}</strong>
+                          </div>
+                        )}
+                        {req.cashAllowanceETB > 0 && (
+                          <div style={{ marginTop: 10, padding: '10px 12px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8 }}>
+                            <div style={{ fontWeight: 700, color: '#d97706', fontSize: 14 }}>
+                              💵 Cash Allowance: {req.cashAllowanceETB.toLocaleString()} ETB
+                            </div>
+                            <div style={{ fontSize: 12, color: '#92400e', marginTop: 3 }}>
+                              Your trip is long — you will receive this cash to refuel on the road and return safely.
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 

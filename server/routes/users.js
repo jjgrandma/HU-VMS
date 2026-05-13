@@ -17,9 +17,17 @@ router.get('/me', authMiddleware, async (req, res) => {
 // PATCH /api/users/me — update own profile
 router.patch('/me', authMiddleware, async (req, res) => {
   try {
-    const allowed = ['name', 'email', 'phone', 'department', 'profilePhoto'];
+    const allowed = ['name', 'email', 'phone', 'department', 'profilePhoto', 'cbeAccount'];
     const updates = {};
     allowed.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; });
+
+    // Prevent duplicate email
+    if (updates.email) {
+      const exists = await User.findOne({ email: updates.email.trim().toLowerCase(), _id: { $ne: req.user.id } });
+      if (exists) return res.status(400).json({ message: 'Email is already in use by another account' });
+      updates.email = updates.email.trim().toLowerCase();
+    }
+
     const updated = await User.findByIdAndUpdate(req.user.id, updates, { new: true }).select('-password');
     res.json(updated);
   } catch (err) {
@@ -64,10 +72,20 @@ router.patch('/:id', authMiddleware, requireRole('ADMIN'), async (req, res) => {
     const id = req.params.id;
     const targetId = id === 'me' ? req.user.id : id;
 
-    // Never allow password to be set via this route — use reset-password instead
-    delete req.body.password;
+    // Whitelist allowed fields — never allow password, role escalation via this route
+    const allowed = ['name', 'email', 'phone', 'department', 'employeeId', 'isActive',
+                     'unitType', 'unitName', 'collegeName', 'profilePhoto'];
+    const updates = {};
+    allowed.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; });
 
-    const updated = await User.findByIdAndUpdate(targetId, req.body, { new: true }).select('-password');
+    // Prevent duplicate email
+    if (updates.email) {
+      const exists = await User.findOne({ email: updates.email.trim().toLowerCase(), _id: { $ne: targetId } });
+      if (exists) return res.status(400).json({ message: 'Email is already in use by another account' });
+      updates.email = updates.email.trim().toLowerCase();
+    }
+
+    const updated = await User.findByIdAndUpdate(targetId, updates, { new: true }).select('-password');
     if (!updated) return res.status(404).json({ message: 'User not found' });
     res.json(updated);
   } catch (err) {
@@ -121,7 +139,7 @@ router.delete('/:id', authMiddleware, requireRole('ADMIN'), async (req, res) => 
 // POST /api/users/profile — update own profile (avoids /:id conflict)
 router.post('/profile', authMiddleware, async (req, res) => {
   try {
-    const allowed = ['name', 'email', 'phone', 'department', 'profilePhoto'];
+    const allowed = ['name', 'email', 'phone', 'department', 'profilePhoto', 'cbeAccount'];
     const updates = {};
     allowed.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; });
     const updated = await User.findByIdAndUpdate(req.user.id, updates, { new: true }).select('-password');

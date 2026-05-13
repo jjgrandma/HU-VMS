@@ -253,7 +253,10 @@ const SubmitVehicleRequest = () => {
         specialRequirements: formData.additionalNotes,
         unitType:          currentUser?.unitType  || null,
         unitName:          currentUser?.unitName  || null,
-        collegeName:       currentUser?.collegeName || null,
+        // Normalize collegeName to consistent casing to avoid mismatch with dean's record
+        collegeName:       currentUser?.collegeName
+                             ? currentUser.collegeName.trim().replace(/\b\w/g, c => c.toUpperCase())
+                             : null,
       });
       alert('✅ Vehicle request submitted! The transport officer will review it.');
       navigate('/user/my-requests');
@@ -269,7 +272,19 @@ const SubmitVehicleRequest = () => {
       <h1 className="page-title">Submit Vehicle Request</h1>
 
       {/* Approval route info — read-only, shown when unitType is set */}
-      {unitLabel && (
+      {isDepartment && !currentUser?.collegeName && (
+        <div style={{
+          background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10,
+          padding: '12px 16px', marginBottom: 16, fontSize: 13, color: '#c2410c',
+          display: 'flex', alignItems: 'flex-start', gap: 10,
+        }}>
+          <span style={{ fontSize: 18, flexShrink: 0 }}>⚠️</span>
+          <div>
+            <strong>College not set on your profile.</strong> Your request will still be submitted but the College Dean may not see it automatically.
+            Contact your admin to update your profile with the correct college.
+          </div>
+        </div>
+      )}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
           background: isDepartment ? '#eff6ff' : '#f0fdf4',
@@ -384,7 +399,11 @@ const SubmitVehicleRequest = () => {
               <label className="form-label">Additional Notes (Optional)</label>
               <textarea name="additionalNotes" value={formData.additionalNotes} onChange={handleChange}
                 rows="3" placeholder="Any special requirements, cargo details, or instructions..."
-                className="form-textarea" />
+                className="form-textarea"
+                maxLength={500} />
+              <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 3, textAlign: 'right' }}>
+                {formData.additionalNotes.length}/500
+              </p>
             </div>
 
             {/* Optional department field */}

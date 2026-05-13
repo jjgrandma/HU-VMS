@@ -12,6 +12,7 @@ import Login from './pages/auth/Login';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
 import ContactSupport from './pages/auth/ContactSupport';
+import ForceChangePassword from './pages/auth/ForceChangePassword';
 
 // Components
 import AdminHeader from './components/AdminHeader';
@@ -115,7 +116,8 @@ function App() {
     try {
       const stored = localStorage.getItem('user');
       const fullUser = stored ? JSON.parse(stored) : userData;
-      setUser(fullUser);
+      // Merge mustChangePassword from the login response in case localStorage is stale
+      setUser({ ...fullUser, mustChangePassword: userData.mustChangePassword ?? fullUser.mustChangePassword ?? false });
     } catch {
       setUser(userData);
     }
@@ -134,6 +136,28 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
       <Route path="/contact-support" element={<ContactSupport />} />
+
+      {/* Force password change — accessible to any authenticated user with mustChangePassword flag */}
+      {user && (
+        <Route
+          path="/change-password"
+          element={
+            user.mustChangePassword
+              ? <ForceChangePassword />
+              : <Navigate to={
+                  user.role === 'ADMIN'               ? '/admin/dashboard'        :
+                  user.role === 'TRANSPORT'           ? '/transport/dashboard'    :
+                  user.role === 'DRIVER'              ? '/driver/dashboard'       :
+                  user.role === 'USER'                ? '/user/dashboard'         :
+                  user.role === 'FUEL_OFFICER'        ? '/fuel/dashboard'         :
+                  user.role === 'GATE_OFFICER'        ? '/gate/dashboard'         :
+                  user.role === 'MAINTENANCE_OFFICER' ? '/maintenance/dashboard'  :
+                  user.role === 'DEAN'                ? '/dean/requests'          :
+                  '/login'
+                } replace />
+          }
+        />
+      )}
 
       {!user && (
         <>

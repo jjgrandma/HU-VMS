@@ -50,13 +50,16 @@ router.get('/for-dean', authMiddleware, async (req, res) => {
       return res.status(403).json({ message: 'Access denied — Dean role required' });
     }
 
+    // Base filter: department requests awaiting dean review
     const filter = { unitType: 'DEPARTMENT' };
 
     if (dean.collegeName) {
-      // Case-insensitive match so capitalization differences don't break routing
+      // Case-insensitive match — handles capitalisation differences
       const escaped = dean.collegeName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.collegeName = { $regex: new RegExp(`^${escaped}$`, 'i') };
     }
+    // If dean has no collegeName set, return ALL department requests
+    // so they can still see and act on them (better than showing nothing)
 
     if (req.query.status) filter.status = req.query.status;
 
@@ -86,6 +89,63 @@ router.post('/', authMiddleware, async (req, res) => {
 
     const request = new Request(body);
     await request.save();
+
+    // ── Notify the relevant College Dean immediately ──────────
+    if (body.unitType === 'DEPARTMENT' && body.collegeName) {
+      try {
+        // Find the dean whose college matches this request
+        const escaped = body.collegeName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const dean = await User.findOne({
+          role:        'DEAN',
+          collegeName: { $regex: new RegExp(`^${escaped}$`, 'i') },
+          isActive:    true,
+        }).select('username name').lean();
+
+        await new Notification({
+          recipientRole:     'DEAN',
+          recipientUsername: dean?.username || null,  // targeted to the specific dean
+          type:    'review_request',
+          title:   `📋 New Request Awaiting Your Review`,
+          message: `${body.requester || 'A user'} from ${body.unitName || body.department || 'your college'} ` +
+                   `has submitted a vehicle request to ${body.destination || '—'} on ${body.date || '—'}. ` +
+                   `Purpose: ${body.purpose || '—'}. ${body.passengers || 1} passenger(s). ` +
+                   `Please review and approve or reject.`,
+          data: {
+            requestId:   request._id,
+            requester:   body.requester,
+            department:  body.unitName || body.department,
+            collegeName: body.collegeName,
+            destination: body.destination,
+            date:        body.date,
+            passengers:  body.passengers,
+            priority:    body.priority || 'normal',
+          },
+        }).save();
+      } catch (_) { /* notifications are non-critical — don't fail the request */ }
+    }
+
+    // ── Notify Transport Officer for non-department requests ──
+    if (body.unitType && body.unitType !== 'DEPARTMENT') {
+      try {
+        await new Notification({
+          recipientRole: 'TRANSPORT',
+          type:    'new_request',
+          title:   `🚗 New Vehicle Request`,
+          message: `${body.requester || 'A user'} from ${body.unitName || body.department || body.unitType} ` +
+                   `has submitted a vehicle request to ${body.destination || '—'} on ${body.date || '—'}. ` +
+                   `${body.passengers || 1} passenger(s). Priority: ${body.priority || 'normal'}.`,
+          data: {
+            requestId:   request._id,
+            requester:   body.requester,
+            department:  body.unitName || body.department,
+            destination: body.destination,
+            date:        body.date,
+            priority:    body.priority || 'normal',
+          },
+        }).save();
+      } catch (_) { /* non-critical */ }
+    }
+
     res.status(201).json(request);
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
@@ -147,6 +207,7 @@ router.put('/:id/dean-approve', authMiddleware, async (req, res) => {
     }
 
     // Ownership check — dean can only approve requests from their own college
+    // Skip check if either side has no collegeName set
     if (dean?.collegeName && request.collegeName) {
       const deanCollege = dean.collegeName.toLowerCase().trim();
       const reqCollege  = request.collegeName.toLowerCase().trim();
@@ -217,7 +278,8 @@ router.put('/:id/dean-approve', authMiddleware, async (req, res) => {
 // ─────────────────────────────────────────────────────────────
 router.put('/:id/approve', authMiddleware, async (req, res) => {
   try {
-    const { vehicleId, approvedBy, estimatedFuelLiters, fuelType } = req.body;
+    const { vehicleId, approvedBy, estimatedFuelLiters, fuelType,
+            tripType, cashAllowanceETB, totalFuelNeededLiters } = req.body;
 
     const vehicle = await Vehicle.findById(vehicleId);
     if (!vehicle) return res.status(404).json({ message: 'Vehicle not found' });
@@ -235,12 +297,16 @@ router.put('/:id/approve', authMiddleware, async (req, res) => {
     const updated = await Request.findByIdAndUpdate(
       req.params.id,
       {
-        status:            'approved',
-        assignedVehicle:   `${vehicle.model} (${vehicle.plateNumber})`,
-        assignedVehicleId: vehicleId,
-        assignedDriver:    vehicle.assignedDriverName || '',
-        approvedBy:        approvedBy || 'Transport Officer',
-        estimatedFuelLiters: estimatedFuelLiters || null,
+        status:                'approved',
+        assignedVehicle:       `${vehicle.model} (${vehicle.plateNumber})`,
+        assignedVehicleId:     vehicleId,
+        assignedDriver:        vehicle.assignedDriverName || '',
+        approvedBy:            approvedBy || 'Transport Officer',
+        estimatedFuelLiters:   estimatedFuelLiters || null,
+        fuelType:              fuelType || vehicle.fuelType || 'Diesel',
+        tripType:              tripType || 'round_trip',
+        cashAllowanceETB:      cashAllowanceETB || 0,
+        totalFuelNeededLiters: totalFuelNeededLiters || null,
         qrToken,
         qrGenerated: true,
       },
@@ -266,43 +332,53 @@ router.put('/:id/approve', authMiddleware, async (req, res) => {
         approvedAt:      new Date(),
       }).save();
 
-      // Notify Fuel Officer
+      // Notify Fuel Officer — include cash allowance info if applicable
+      const cashNote = cashAllowanceETB > 0
+        ? ` ⚠️ Cash allowance: ${cashAllowanceETB.toLocaleString()} ETB for road refuel (tank insufficient for full trip).`
+        : '';
       await new Notification({
         recipientRole: 'FUEL_OFFICER',
         type:    'fuel_request',
         title:   '⛽ Fuel Required for Approved Trip',
-        message: `Dispense ${estimatedFuelLiters}L (${fuelType || 'Diesel'}) to ${vehicle.assignedDriverName || updated.requester} — ${vehicle.plateNumber} → ${updated.destination}`,
+        message: `Dispense ${estimatedFuelLiters}L (${fuelType || 'Diesel'}) to ${vehicle.assignedDriverName || updated.requester} — ${vehicle.plateNumber} → ${updated.destination}.${cashNote}`,
         data: {
-          tripId:      updated._id,
-          vehicle:     vehicle.plateNumber,
-          model:       vehicle.model,
-          driver:      vehicle.assignedDriverName || updated.requester,
-          fuelLiters:  estimatedFuelLiters,
-          fuelType:    fuelType || 'Diesel',
-          destination: updated.destination,
-          date:        updated.date,
+          tripId:           updated._id,
+          vehicle:          vehicle.plateNumber,
+          model:            vehicle.model,
+          driver:           vehicle.assignedDriverName || updated.requester,
+          fuelLiters:       estimatedFuelLiters,
+          fuelType:         fuelType || 'Diesel',
+          destination:      updated.destination,
+          date:             updated.date,
+          cashAllowanceETB: cashAllowanceETB || 0,
         },
       }).save();
     }
 
-    // Notify Driver
+    // Notify Driver — include cash allowance if applicable
+    const tripTypeLabel = (tripType === 'one_way') ? 'One-way trip' : 'Round trip';
+    const cashMsg = cashAllowanceETB > 0
+      ? ` You will receive ${cashAllowanceETB.toLocaleString()} ETB cash allowance for road refueling.`
+      : '';
     await new Notification({
       recipientRole:     'DRIVER',
       recipientUsername: vehicle.assignedDriverUsername || null,
       type:    'trip_approved',
       title:   '✅ Trip Approved',
-      message: `Your trip to ${updated.destination} on ${updated.date} is approved. ` +
+      message: `Your trip to ${updated.destination} on ${updated.date} is approved (${tripTypeLabel}). ` +
                `Vehicle: ${vehicle.model} (${vehicle.plateNumber}).` +
-               `${estimatedFuelLiters ? ` Fuel allocated: ${estimatedFuelLiters}L ${fuelType || 'Diesel'}.` : ''} ` +
-               `Collect fuel from the fuel station before departure.`,
+               `${estimatedFuelLiters ? ` Fuel allocated: ${estimatedFuelLiters}L ${fuelType || 'Diesel'}.` : ''}` +
+               `${cashMsg} Collect fuel from the fuel station before departure.`,
       data: {
-        tripId:      updated._id,
-        vehicle:     vehicle.plateNumber,
-        model:       vehicle.model,
-        destination: updated.destination,
-        date:        updated.date,
-        fuelLiters:  estimatedFuelLiters || 0,
-        fuelType:    fuelType || 'Diesel',
+        tripId:           updated._id,
+        vehicle:          vehicle.plateNumber,
+        model:            vehicle.model,
+        destination:      updated.destination,
+        date:             updated.date,
+        fuelLiters:       estimatedFuelLiters || 0,
+        fuelType:         fuelType || 'Diesel',
+        tripType:         tripType || 'round_trip',
+        cashAllowanceETB: cashAllowanceETB || 0,
       },
     }).save();
 

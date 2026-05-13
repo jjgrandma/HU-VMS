@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Car, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import { getCurrentUser } from '../../api/api';
+import LiveLocationShare from './LiveLocationShare';
 import './NewDriverDashboard.css';
 
 const BASE = 'http://localhost:5000/api';
@@ -57,6 +58,15 @@ export default function NewDriverDashboard() {
           <span>Active trip to <strong>{stats.activeTrip.destination}</strong></span>
           <button onClick={() => navigate('/driver/trips')}>View Trip →</button>
         </div>
+      )}
+
+      {/* Live GPS Sharing — shown when driver has an active trip */}
+      {stats.activeTrip && (
+        <LiveLocationShare
+          vehicleId={stats.activeTrip.assignedVehicleId || null}
+          vehiclePlate={stats.activeTrip.assignedVehicle?.match(/\(([^)]+)\)/)?.[1] || ''}
+          tripId={stats.activeTrip._id}
+        />
       )}
 
       {/* Stats + Chart */}

@@ -4,8 +4,22 @@ Automatic License Plate Recognition using YOLOv8 + EasyOCR
 Runs on port 5001 — completely independent from the main Node.js server
 """
 
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+import sys
+
+try:
+    from flask import Flask, request, jsonify
+except ImportError as e:
+    print(f"[ERROR] Flask not installed: {e}")
+    print("[ERROR] Install with: pip install flask")
+    sys.exit(1)
+
+try:
+    from flask_cors import CORS
+except ImportError:
+    print("[WARNING] flask_cors not installed. Install with: pip install flask-cors")
+    def CORS(app):
+        pass
+
 import cv2
 import numpy as np
 import easyocr

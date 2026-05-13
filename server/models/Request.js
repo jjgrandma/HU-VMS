@@ -64,6 +64,12 @@ const requestSchema = new mongoose.Schema(
       approvedAt:     { type: Date,   default: null },
       remarks:        { type: String, default: null },
     },
+    // ── Fuel & trip type fields ────────────────────────────
+    tripType:              { type: String, enum: ['round_trip', 'one_way'], default: 'round_trip' },
+    estimatedFuelLiters:   { type: Number, default: null },  // fuel from station
+    totalFuelNeededLiters: { type: Number, default: null },  // total needed incl. buffer
+    cashAllowanceETB:      { type: Number, default: 0 },     // ETB cash for road refuel
+    fuelType:              { type: String, default: null },
   },
   { timestamps: true }
 );

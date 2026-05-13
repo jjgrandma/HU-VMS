@@ -17,6 +17,11 @@ const driverSchema = new mongoose.Schema(
     totalTrips: { type: Number, default: 0 },
     rating: { type: Number, default: 5 },
     isActive: { type: Boolean, default: true },
+    cbeAccount: {
+      accountNumber: { type: String, default: '' },
+      accountName:   { type: String, default: '' },
+      verified:      { type: Boolean, default: false },
+    },
   },
   { timestamps: true }
 );

@@ -6,6 +6,7 @@ import {
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
   Send, Zap, Activity, UserCheck, Hash, Globe, Info,
   CheckSquare, Ban, KeyRound, Fingerprint, BarChart3,
+  Copy, Check, Eye as EyeIcon, EyeOff,
 } from 'lucide-react';
 import './adminTheme.css';
 import './passwordResetManagement.css';
@@ -18,12 +19,12 @@ const authHeaders = () => ({
 });
 
 const STATUS_CONFIG = {
-  pending:   { bg: '#fef3c7', color: '#d97706', border: '#fde68a', label: 'Pending',   },
-  approved:  { bg: '#dbeafe', color: '#1d4ed8', border: '#bfdbfe', label: 'Approved',  },
-  completed: { bg: '#dcfce7', color: '#16a34a', border: '#86efac', label: 'Completed', },
-  rejected:  { bg: '#fce7f3', color: '#be185d', border: '#fbcfe8', label: 'Rejected',  },
-  expired:   { bg: '#fee2e2', color: '#dc2626', border: '#fca5a5', label: 'Expired',   },
-  cancelled: { bg: '#f1f5f9', color: '#64748b', border: '#e2e8f0', label: 'Cancelled', },
+  pending:   { bg: '#fef3c7', color: '#d97706', border: '#fde68a', label: 'Pending'   },
+  approved:  { bg: '#dbeafe', color: '#1d4ed8', border: '#bfdbfe', label: 'Approved'  },
+  completed: { bg: '#dcfce7', color: '#16a34a', border: '#86efac', label: 'Completed' },
+  rejected:  { bg: '#fce7f3', color: '#be185d', border: '#fbcfe8', label: 'Rejected'  },
+  expired:   { bg: '#fee2e2', color: '#dc2626', border: '#fca5a5', label: 'Expired'   },
+  cancelled: { bg: '#f1f5f9', color: '#64748b', border: '#e2e8f0', label: 'Cancelled' },
 };
 
 const ROLE_COLORS = {
@@ -40,13 +41,22 @@ const ROLE_COLORS = {
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 
 // ── Helpers ───────────────────────────────────────────────
-const fmt = (d) => d ? new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+const fmt      = (d) => d ? new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 const initials = (name) => (name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-const shortId = (id) => id ? `#${String(id).slice(-6).toUpperCase()}` : '—';
+const shortId  = (id) => id ? `#${String(id).slice(-6).toUpperCase()}` : '—';
 const isExpired = (log) => log.status === 'pending' && log.tokenExpires && new Date(log.tokenExpires) < new Date();
+const genTempPw = () => {
+  const up  = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lo  = 'abcdefghjkmnpqrstuvwxyz';
+  const dig = '23456789';
+  const sp  = '!@#$%';
+  const all = up + lo + dig + sp;
+  const rand = (s) => s[Math.floor(Math.random() * s.length)];
+  const base = rand(up) + rand(lo) + rand(dig) + rand(sp);
+  return (base + Array.from({ length: 8 }, () => rand(all)).join('')).split('').sort(() => Math.random() - 0.5).join('');
+};
 
-// ── Sub-components ────────────────────────────────────────
+// ── StatusBadge ───────────────────────────────────────────
 function StatusBadge({ status }) {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
   return (
@@ -62,6 +72,7 @@ function StatusBadge({ status }) {
   );
 }
 
+// ── RoleBadge ─────────────────────────────────────────────
 function RoleBadge({ role }) {
   const cfg = ROLE_COLORS[role] || { bg: '#f1f5f9', color: '#64748b' };
   return (
@@ -71,18 +82,20 @@ function RoleBadge({ role }) {
   );
 }
 
+// ── Toast ─────────────────────────────────────────────────
 function Toast({ toast }) {
   if (!toast) return null;
-  const isError   = toast.type === 'error';
-  const isWarning = toast.type === 'warning';
   return (
     <div className={`prm-toast ${toast.type}`}>
-      {isError ? <XCircle size={15} /> : isWarning ? <AlertTriangle size={15} /> : <CheckCircle size={15} />}
+      {toast.type === 'error'   ? <XCircle size={15} />       :
+       toast.type === 'warning' ? <AlertTriangle size={15} /> :
+                                  <CheckCircle size={15} />}
       {toast.msg}
     </div>
   );
 }
 
+// ── ErrorBanner ───────────────────────────────────────────
 function ErrorBanner({ error, onDismiss }) {
   if (!error) return null;
   const styles = {
@@ -100,6 +113,7 @@ function ErrorBanner({ error, onDismiss }) {
   );
 }
 
+// ── Pagination ────────────────────────────────────────────
 function Pagination({ page, totalPages, pageSize, totalItems, onPage, onPageSize }) {
   if (totalPages <= 1 && totalItems <= PAGE_SIZE_OPTIONS[0]) return null;
   const pages = [];
@@ -138,7 +152,6 @@ function DetailModal({ log, onClose, onReset, onCancel, onDelete, actionLoading 
   const user = log.user || {};
   const expired = isExpired(log);
   const canAct = log.status === 'pending' || log.status === 'approved';
-
   return (
     <div className="prm-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="prm-modal">
@@ -149,9 +162,7 @@ function DetailModal({ log, onClose, onReset, onCancel, onDelete, actionLoading 
           </div>
           <button className="prm-modal-close" onClick={onClose}><X size={18} /></button>
         </div>
-
         <div className="prm-modal-body">
-          {/* User Info */}
           <div className="prm-detail-section">
             <div className="prm-detail-section-title"><UserCheck size={13} />User Information</div>
             <div className="prm-reset-user-info">
@@ -164,59 +175,29 @@ function DetailModal({ log, onClose, onReset, onCancel, onDelete, actionLoading 
               </div>
             </div>
           </div>
-
-          {/* Request Info */}
           <div className="prm-detail-section">
             <div className="prm-detail-section-title"><Info size={13} />Request Information</div>
             <div className="prm-detail-grid">
-              <div className="prm-detail-row">
-                <span className="prm-dl">Request ID</span>
-                <span className="prm-dv prm-mono">{shortId(log._id)}</span>
-              </div>
-              <div className="prm-detail-row">
-                <span className="prm-dl">Requested At</span>
-                <span className="prm-dv">{fmt(log.requestedAt || log.createdAt)}</span>
-              </div>
+              <div className="prm-detail-row"><span className="prm-dl">Request ID</span><span className="prm-dv prm-mono">{shortId(log._id)}</span></div>
+              <div className="prm-detail-row"><span className="prm-dl">Requested At</span><span className="prm-dv">{fmt(log.requestedAt || log.createdAt)}</span></div>
               <div className="prm-detail-row">
                 <span className="prm-dl">Token Expires</span>
                 <span className={`prm-dv ${expired ? 'prm-expired-text' : ''}`}>
-                  {fmt(log.tokenExpires)}
-                  {expired && <span className="prm-expired-tag">EXPIRED</span>}
+                  {fmt(log.tokenExpires)}{expired && <span className="prm-expired-tag">EXPIRED</span>}
                 </span>
               </div>
-              {log.completedAt && (
-                <div className="prm-detail-row">
-                  <span className="prm-dl">Completed At</span>
-                  <span className="prm-dv">{fmt(log.completedAt)}</span>
-                </div>
-              )}
-              <div className="prm-detail-row">
-                <span className="prm-dl">Reset Method</span>
-                <span className="prm-dv">Email Link</span>
-              </div>
-              <div className="prm-detail-row">
-                <span className="prm-dl">Department</span>
-                <span className="prm-dv">{user.department || '—'}</span>
-              </div>
+              {log.completedAt && <div className="prm-detail-row"><span className="prm-dl">Completed At</span><span className="prm-dv">{fmt(log.completedAt)}</span></div>}
+              <div className="prm-detail-row"><span className="prm-dl">Reset Method</span><span className="prm-dv">Email Link</span></div>
+              <div className="prm-detail-row"><span className="prm-dl">Department</span><span className="prm-dv">{user.department || '—'}</span></div>
             </div>
           </div>
-
-          {/* Device / Network */}
           <div className="prm-detail-section">
             <div className="prm-detail-section-title"><Monitor size={13} />Device &amp; Network</div>
             <div className="prm-detail-grid">
-              <div className="prm-detail-row">
-                <span className="prm-dl">IP Address</span>
-                <span className="prm-dv prm-mono">{log.ipAddress || '—'}</span>
-              </div>
-              <div className="prm-detail-row">
-                <span className="prm-dl">User Agent</span>
-                <span className="prm-dv" style={{ fontSize: 11, wordBreak: 'break-all' }}>{log.userAgent || '—'}</span>
-              </div>
+              <div className="prm-detail-row"><span className="prm-dl">IP Address</span><span className="prm-dv prm-mono">{log.ipAddress || '—'}</span></div>
+              <div className="prm-detail-row"><span className="prm-dl">User Agent</span><span className="prm-dv" style={{ fontSize: 11, wordBreak: 'break-all' }}>{log.userAgent || '—'}</span></div>
             </div>
           </div>
-
-          {/* Security Notes */}
           <div className="prm-security-notes">
             <div className="prm-sn-title"><Shield size={13} style={{ marginRight: 5, verticalAlign: 'middle' }} />Security Compliance</div>
             <div className="prm-sn-grid">
@@ -229,24 +210,11 @@ function DetailModal({ log, onClose, onReset, onCancel, onDelete, actionLoading 
             </div>
           </div>
         </div>
-
         <div className="prm-modal-footer">
-          {canAct && (
-            <button className="prm-btn reset" onClick={() => onReset(log)} disabled={actionLoading}>
-              <KeyRound size={13} />Manual Reset
-            </button>
-          )}
-          {(log.status === 'pending') && (
-            <button className="prm-btn cancel" onClick={() => onCancel(log._id)} disabled={actionLoading}>
-              <Ban size={13} />Cancel Request
-            </button>
-          )}
-          <button className="prm-btn delete" onClick={() => onDelete(log._id)} disabled={actionLoading}>
-            <Trash2 size={13} />Delete Log
-          </button>
-          <button className="prm-btn view" onClick={onClose} style={{ marginLeft: 'auto' }}>
-            <X size={13} />Close
-          </button>
+          {canAct && <button className="prm-btn reset" onClick={() => onReset(log)} disabled={actionLoading}><KeyRound size={13} />Manual Reset</button>}
+          {log.status === 'pending' && <button className="prm-btn cancel" onClick={() => onCancel(log._id)} disabled={actionLoading}><Ban size={13} />Cancel Request</button>}
+          <button className="prm-btn delete" onClick={() => onDelete(log._id)} disabled={actionLoading}><Trash2 size={13} />Delete Log</button>
+          <button className="prm-btn view" onClick={onClose} style={{ marginLeft: 'auto' }}><X size={13} />Close</button>
         </div>
       </div>
     </div>
@@ -255,16 +223,30 @@ function DetailModal({ log, onClose, onReset, onCancel, onDelete, actionLoading 
 
 // ── Manual Reset Modal ────────────────────────────────────
 function ResetModal({ log, onClose, onConfirm, actionLoading }) {
-  const [pw, setPw] = useState('');
+  const [pw, setPw]         = useState('');
   const [showPw, setShowPw] = useState(false);
-  const [err, setErr] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [err, setErr]       = useState('');
   if (!log) return null;
   const user = log.user || {};
 
+  const autoGenerate = () => {
+    const p = genTempPw();
+    setPw(p);
+    setErr('');
+  };
+
+  const handleCopy = () => {
+    if (!pw) return;
+    navigator.clipboard.writeText(pw);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const handleSubmit = () => {
     if (!pw || pw.length < 8) { setErr('Password must be at least 8 characters.'); return; }
-    if (!/[A-Z]/.test(pw)) { setErr('Include at least one uppercase letter.'); return; }
-    if (!/[0-9]/.test(pw)) { setErr('Include at least one number.'); return; }
+    if (!/[A-Z]/.test(pw))    { setErr('Include at least one uppercase letter.'); return; }
+    if (!/[0-9]/.test(pw))    { setErr('Include at least one number.'); return; }
     setErr('');
     onConfirm(log._id, pw);
   };
@@ -275,7 +257,7 @@ function ResetModal({ log, onClose, onConfirm, actionLoading }) {
         <div className="prm-modal-header">
           <div>
             <h3><KeyRound size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />Manual Password Reset</h3>
-            <div className="prm-modal-id">Set a new password for this user</div>
+            <div className="prm-modal-id">Set a temporary password — user must change it on next login</div>
           </div>
           <button className="prm-modal-close" onClick={onClose}><X size={18} /></button>
         </div>
@@ -288,23 +270,36 @@ function ResetModal({ log, onClose, onConfirm, actionLoading }) {
               <div style={{ marginTop: 4 }}><RoleBadge role={user.role} /></div>
             </div>
           </div>
+
+          {/* Auto-generate strip */}
+          <div className="prm-autogen-strip">
+            <span className="prm-autogen-label">Quick generate a secure password</span>
+            <button className="prm-btn view" onClick={autoGenerate} type="button" style={{ padding: '5px 12px' }}>
+              <Zap size={12} />Auto-Generate
+            </button>
+          </div>
+
           <div className="prm-form-group">
-            <label>New Password</label>
+            <label>Temporary Password</label>
             <div className="prm-pw-wrap">
               <input
                 type={showPw ? 'text' : 'password'}
                 value={pw}
                 onChange={e => { setPw(e.target.value); setErr(''); }}
-                placeholder="Min 8 chars, 1 uppercase, 1 number"
+                placeholder="Min 8 chars · 1 uppercase · 1 number"
                 autoFocus
               />
-              <button className="prm-pw-toggle" onClick={() => setShowPw(v => !v)} type="button">
-                {showPw ? '🙈' : '👁️'}
+              <button className="prm-pw-toggle" onClick={() => setShowPw(v => !v)} type="button" title={showPw ? 'Hide' : 'Show'}>
+                {showPw ? <EyeOff size={15} /> : <EyeIcon size={15} />}
+              </button>
+              <button className="prm-pw-toggle" onClick={handleCopy} type="button" title="Copy password" style={{ borderLeft: '1px solid #e2e8f0' }}>
+                {copied ? <Check size={15} style={{ color: '#16a34a' }} /> : <Copy size={15} />}
               </button>
             </div>
             {err && <div className="prm-field-error">{err}</div>}
             <div className="prm-field-hint">
-              Password will be hashed with bcrypt (12 rounds). The user will need to log in with this new password.
+              <Shield size={11} style={{ marginRight: 4, verticalAlign: 'middle', color: '#6366f1' }} />
+              Password is bcrypt-hashed (12 rounds). User will be forced to change it on next login.
             </div>
           </div>
         </div>
@@ -313,6 +308,44 @@ function ResetModal({ log, onClose, onConfirm, actionLoading }) {
             <KeyRound size={13} />{actionLoading ? 'Resetting…' : 'Confirm Reset'}
           </button>
           <button className="prm-btn view" onClick={onClose}><X size={13} />Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Confirm Cancel Modal ──────────────────────────────────
+function ConfirmCancelModal({ log, onClose, onConfirm, actionLoading }) {
+  if (!log) return null;
+  const user = log.user || {};
+  return (
+    <div className="prm-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="prm-modal prm-modal-sm">
+        <div className="prm-modal-header">
+          <div>
+            <h3><Ban size={16} style={{ marginRight: 6, verticalAlign: 'middle', color: '#d97706' }} />Cancel Reset Request</h3>
+            <div className="prm-modal-id">This will invalidate the pending reset token</div>
+          </div>
+          <button className="prm-modal-close" onClick={onClose}><X size={18} /></button>
+        </div>
+        <div className="prm-modal-body">
+          <div className="prm-reset-user-info" style={{ marginBottom: 14 }}>
+            <div className="prm-avatar">{initials(user.name)}</div>
+            <div>
+              <div className="prm-user-name">{user.name || 'Unknown'}</div>
+              <div className="prm-user-sub">{user.email || user.username || '—'}</div>
+            </div>
+          </div>
+          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '12px 14px', color: '#92400e', fontSize: 13 }}>
+            <AlertTriangle size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+            The user's reset link will be invalidated. They will need to submit a new request if they still need access.
+          </div>
+        </div>
+        <div className="prm-modal-footer">
+          <button className="prm-btn cancel" onClick={() => onConfirm(log._id)} disabled={actionLoading}>
+            <Ban size={13} />{actionLoading ? 'Cancelling…' : 'Yes, Cancel Request'}
+          </button>
+          <button className="prm-btn view" onClick={onClose}><X size={13} />Keep Request</button>
         </div>
       </div>
     </div>
@@ -333,9 +366,9 @@ function ConfirmDeleteModal({ logId, onClose, onConfirm, actionLoading }) {
           <button className="prm-modal-close" onClick={onClose}><X size={18} /></button>
         </div>
         <div className="prm-modal-body">
-          <div style={{ background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 10, padding: '14px 16px', color: '#be123c', fontSize: 14 }}>
-            <AlertTriangle size={16} style={{ marginRight: 8, verticalAlign: 'middle' }} />
-            Are you sure you want to permanently delete this password reset log? This will remove all audit trail data for this request.
+          <div style={{ background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 10, padding: '14px 16px', color: '#be123c', fontSize: 13 }}>
+            <AlertTriangle size={14} style={{ marginRight: 8, verticalAlign: 'middle' }} />
+            Permanently delete this password reset log? All audit trail data for this request will be removed.
           </div>
         </div>
         <div className="prm-modal-footer">
@@ -351,44 +384,42 @@ function ConfirmDeleteModal({ logId, onClose, onConfirm, actionLoading }) {
 
 // ── Main Component ────────────────────────────────────────
 export default function PasswordResetManagement() {
-  // ── State ──
-  const [logs, setLogs]               = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [refreshing, setRefreshing]   = useState(false);
-  const [error, setError]             = useState(null);
-  const [toast, setToast]             = useState(null);
+  const [logs, setLogs]                   = useState([]);
+  const [loading, setLoading]             = useState(true);
+  const [refreshing, setRefreshing]       = useState(false);
+  const [error, setError]                 = useState(null);
+  const [toast, setToast]                 = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
   // Filters
-  const [search, setSearch]           = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [roleFilter, setRoleFilter]   = useState('all');
-  const [dateFrom, setDateFrom]       = useState('');
-  const [dateTo, setDateTo]           = useState('');
+  const [search, setSearch]               = useState('');
+  const [statusFilter, setStatusFilter]   = useState('all');
+  const [roleFilter, setRoleFilter]       = useState('all');
+  const [dateFrom, setDateFrom]           = useState('');
+  const [dateTo, setDateTo]               = useState('');
 
   // Pagination
-  const [page, setPage]               = useState(1);
-  const [pageSize, setPageSize]       = useState(10);
+  const [page, setPage]                   = useState(1);
+  const [pageSize, setPageSize]           = useState(10);
 
   // Modals
-  const [detailLog, setDetailLog]     = useState(null);
-  const [resetLog, setResetLog]       = useState(null);
-  const [deleteLogId, setDeleteLogId] = useState(null);
+  const [detailLog, setDetailLog]         = useState(null);
+  const [resetLog, setResetLog]           = useState(null);
+  const [cancelLog, setCancelLog]         = useState(null);
+  const [deleteLogId, setDeleteLogId]     = useState(null);
 
   const toastTimer = useRef(null);
   const searchRef  = useRef(null);
 
-  // ── Toast helper ──
   const showToast = useCallback((msg, type = 'success') => {
     clearTimeout(toastTimer.current);
     setToast({ msg, type });
     toastTimer.current = setTimeout(() => setToast(null), 3500);
   }, []);
 
-  // ── Fetch logs ──
+  // ── Fetch ──
   const fetchLogs = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    else setRefreshing(true);
+    if (!silent) setLoading(true); else setRefreshing(true);
     setError(null);
     try {
       const params = new URLSearchParams();
@@ -407,7 +438,7 @@ export default function PasswordResetManagement() {
       const data = await res.json();
       setLogs(Array.isArray(data) ? data : []);
       setPage(1);
-    } catch (e) {
+    } catch {
       setError({ level: 'warning', code: 'NET_ERR', msg: 'Cannot reach server. Check your connection.' });
     } finally {
       setLoading(false);
@@ -417,18 +448,13 @@ export default function PasswordResetManagement() {
 
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
 
-  // ── Client-side filter (role) ──
-  const filtered = logs.filter(l => {
-    if (roleFilter !== 'all' && (l.user?.role || '') !== roleFilter) return false;
-    return true;
-  });
+  // ── Client-side role filter ──
+  const filtered = logs.filter(l => roleFilter === 'all' || (l.user?.role || '') === roleFilter);
 
-  // ── Pagination ──
-  const totalItems  = filtered.length;
-  const totalPages  = Math.max(1, Math.ceil(totalItems / pageSize));
-  const paginated   = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const totalItems = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const paginated  = filtered.slice((page - 1) * pageSize, page * pageSize);
 
-  // ── Stats ──
   const stats = {
     total:     logs.length,
     pending:   logs.filter(l => l.status === 'pending').length,
@@ -442,15 +468,13 @@ export default function PasswordResetManagement() {
     setActionLoading(true);
     try {
       const res = await fetch(`${BASE}/auth/reset-logs/${logId}/manual-reset`, {
-        method: 'POST',
-        headers: authHeaders(),
+        method: 'POST', headers: authHeaders(),
         body: JSON.stringify({ newPassword }),
       });
       const data = await res.json();
       if (!res.ok) { showToast(data.message || 'Reset failed.', 'error'); return; }
-      showToast(data.message || 'Password reset successfully.', 'success');
-      setResetLog(null);
-      setDetailLog(null);
+      showToast(`${data.message || 'Password reset.'} User must change it on next login.`, 'success');
+      setResetLog(null); setDetailLog(null);
       fetchLogs(true);
     } catch { showToast('Network error. Try again.', 'error'); }
     finally { setActionLoading(false); }
@@ -464,8 +488,8 @@ export default function PasswordResetManagement() {
       });
       const data = await res.json();
       if (!res.ok) { showToast(data.message || 'Cancel failed.', 'error'); return; }
-      showToast('Request cancelled.', 'success');
-      setDetailLog(null);
+      showToast('Reset request cancelled.', 'success');
+      setCancelLog(null); setDetailLog(null);
       fetchLogs(true);
     } catch { showToast('Network error.', 'error'); }
     finally { setActionLoading(false); }
@@ -479,8 +503,7 @@ export default function PasswordResetManagement() {
       });
       if (!res.ok) { const d = await res.json(); showToast(d.message || 'Delete failed.', 'error'); return; }
       showToast('Log entry deleted.', 'success');
-      setDeleteLogId(null);
-      setDetailLog(null);
+      setDeleteLogId(null); setDetailLog(null);
       fetchLogs(true);
     } catch { showToast('Network error.', 'error'); }
     finally { setActionLoading(false); }
@@ -492,40 +515,32 @@ export default function PasswordResetManagement() {
   };
   const hasFilters = search || statusFilter !== 'all' || roleFilter !== 'all' || dateFrom || dateTo;
 
-  // ── Render ──
   return (
     <div className="prm-page">
       <Toast toast={toast} />
 
-      {/* Modals */}
+      {/* ── Modals ── */}
       {detailLog && (
-        <DetailModal
-          log={detailLog}
-          onClose={() => setDetailLog(null)}
+        <DetailModal log={detailLog} onClose={() => setDetailLog(null)}
           onReset={l => { setDetailLog(null); setResetLog(l); }}
-          onCancel={id => handleCancel(id)}
+          onCancel={id => { setDetailLog(null); setCancelLog(logs.find(l => l._id === id)); }}
           onDelete={id => { setDetailLog(null); setDeleteLogId(id); }}
-          actionLoading={actionLoading}
-        />
+          actionLoading={actionLoading} />
       )}
       {resetLog && (
-        <ResetModal
-          log={resetLog}
-          onClose={() => setResetLog(null)}
-          onConfirm={handleManualReset}
-          actionLoading={actionLoading}
-        />
+        <ResetModal log={resetLog} onClose={() => setResetLog(null)}
+          onConfirm={handleManualReset} actionLoading={actionLoading} />
+      )}
+      {cancelLog && (
+        <ConfirmCancelModal log={cancelLog} onClose={() => setCancelLog(null)}
+          onConfirm={handleCancel} actionLoading={actionLoading} />
       )}
       {deleteLogId && (
-        <ConfirmDeleteModal
-          logId={deleteLogId}
-          onClose={() => setDeleteLogId(null)}
-          onConfirm={handleDelete}
-          actionLoading={actionLoading}
-        />
+        <ConfirmDeleteModal logId={deleteLogId} onClose={() => setDeleteLogId(null)}
+          onConfirm={handleDelete} actionLoading={actionLoading} />
       )}
 
-      {/* ── Page Header ── */}
+      {/* ── Header ── */}
       <div className="prm-header">
         <div>
           <h1><KeyRound size={22} style={{ marginRight: 8, verticalAlign: 'middle', color: '#6366f1' }} />Password Reset Management</h1>
@@ -537,7 +552,6 @@ export default function PasswordResetManagement() {
         </button>
       </div>
 
-      {/* ── Error Banner ── */}
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
 
       {/* ── Security Banner ── */}
@@ -548,17 +562,17 @@ export default function PasswordResetManagement() {
         <div className="prm-sec-item"><Lock size={12} /><strong>bcrypt-12</strong> Password Hashing</div>
         <div className="prm-sec-item"><Globe size={12} /><strong>IP &amp; Device</strong> Logging</div>
         <div className="prm-sec-item"><Activity size={12} /><strong>Full</strong> Audit Trail</div>
-        <div className="prm-sec-item"><Zap size={12} /><strong>Auto-Expire</strong> Detection</div>
+        <div className="prm-sec-item"><Zap size={12} /><strong>Force-Change</strong> on Next Login</div>
       </div>
 
       {/* ── Stats ── */}
       <div className="prm-stats">
         {[
-          { label: 'Total Requests', val: stats.total,     color: '#6366f1', icon: <BarChart3 size={18} />,    bg: '#ede9fe' },
-          { label: 'Pending',        val: stats.pending,   color: '#d97706', icon: <Clock size={18} />,        bg: '#fef3c7' },
-          { label: 'Completed',      val: stats.completed, color: '#16a34a', icon: <CheckCircle size={18} />,  bg: '#dcfce7' },
-          { label: 'Expired',        val: stats.expired,   color: '#dc2626', icon: <AlertTriangle size={18} />,bg: '#fee2e2' },
-          { label: 'Cancelled',      val: stats.cancelled, color: '#64748b', icon: <ShieldOff size={18} />,    bg: '#f1f5f9' },
+          { label: 'Total Requests', val: stats.total,     color: '#6366f1', icon: <BarChart3 size={18} />,     bg: '#ede9fe' },
+          { label: 'Pending',        val: stats.pending,   color: '#d97706', icon: <Clock size={18} />,         bg: '#fef3c7' },
+          { label: 'Completed',      val: stats.completed, color: '#16a34a', icon: <CheckCircle size={18} />,   bg: '#dcfce7' },
+          { label: 'Expired',        val: stats.expired,   color: '#dc2626', icon: <AlertTriangle size={18} />, bg: '#fee2e2' },
+          { label: 'Cancelled',      val: stats.cancelled, color: '#64748b', icon: <ShieldOff size={18} />,     bg: '#f1f5f9' },
         ].map(s => (
           <div key={s.label} className="prm-stat-card" style={{ borderTopColor: s.color }}>
             <div className="prm-stat-icon" style={{ background: s.bg, color: s.color }}>{s.icon}</div>
@@ -572,19 +586,15 @@ export default function PasswordResetManagement() {
       <div className="prm-filters">
         <div className="prm-search">
           <Search size={15} />
-          <input
-            ref={searchRef}
-            value={search}
+          <input ref={searchRef} value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Search by name, email or username…"
-          />
+            placeholder="Search by name, email or username…" />
           {search && (
             <button className="prm-clear-search" onClick={() => { setSearch(''); searchRef.current?.focus(); }}>
               <X size={13} />
             </button>
           )}
         </div>
-
         <div className="prm-filter-group">
           <Filter size={13} />
           <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}>
@@ -595,7 +605,6 @@ export default function PasswordResetManagement() {
             <option value="cancelled">Cancelled</option>
           </select>
         </div>
-
         <div className="prm-filter-group">
           <Hash size={13} />
           <select value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(1); }}>
@@ -605,14 +614,12 @@ export default function PasswordResetManagement() {
             ))}
           </select>
         </div>
-
         <div className="prm-date-range">
           <Calendar size={13} />
           <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} title="From date" />
           <span>→</span>
           <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} title="To date" />
         </div>
-
         {hasFilters && (
           <button className="prm-btn cancel" onClick={clearFilters} style={{ padding: '8px 14px' }}>
             <X size={13} />Clear Filters
@@ -625,13 +632,15 @@ export default function PasswordResetManagement() {
         <div className="prm-table-meta">
           {loading ? 'Loading…' : `${totalItems} request${totalItems !== 1 ? 's' : ''} found`}
           {hasFilters && !loading && <span style={{ color: '#6366f1', marginLeft: 8 }}>(filtered)</span>}
+          {stats.pending > 0 && !loading && (
+            <span className="prm-pending-alert">
+              <Clock size={11} />{stats.pending} pending action{stats.pending !== 1 ? 's' : ''}
+            </span>
+          )}
         </div>
 
         {loading ? (
-          <div className="prm-loading">
-            <div className="prm-spinner" />
-            <span>Loading password reset logs…</span>
-          </div>
+          <div className="prm-loading"><div className="prm-spinner" /><span>Loading password reset logs…</span></div>
         ) : paginated.length === 0 ? (
           <div className="prm-empty">
             <Key size={40} strokeWidth={1.2} />
@@ -664,8 +673,9 @@ export default function PasswordResetManagement() {
                 const user    = log.user || {};
                 const expired = isExpired(log);
                 const status  = expired ? 'expired' : log.status;
+                const isPending = log.status === 'pending' && !expired;
                 return (
-                  <tr key={log._id} className={expired ? 'prm-row-expired' : ''}>
+                  <tr key={log._id} className={`${expired ? 'prm-row-expired' : ''} ${isPending ? 'prm-row-pending' : ''}`}>
                     <td><span className="prm-id">{shortId(log._id)}</span></td>
                     <td>
                       <div className="prm-user-cell">
@@ -677,10 +687,7 @@ export default function PasswordResetManagement() {
                       </div>
                     </td>
                     <td>
-                      <div className="prm-email">
-                        <Mail size={12} />
-                        {user.email || '—'}
-                      </div>
+                      <div className="prm-email"><Mail size={12} />{user.email || '—'}</div>
                     </td>
                     <td><RoleBadge role={user.role} /></td>
                     <td><div className="prm-date">{fmt(log.requestedAt || log.createdAt)}</div></td>
@@ -697,22 +704,60 @@ export default function PasswordResetManagement() {
                       </span>
                     </td>
                     <td><span className="prm-ip">{log.ipAddress || '—'}</span></td>
+
+                    {/* ── Action Cell ── */}
                     <td>
                       <div className="prm-actions">
-                        <button className="prm-btn view" onClick={() => setDetailLog(log)} title="View Details">
+
+                        {/* View Details — always available */}
+                        <button className="prm-btn view" onClick={() => setDetailLog(log)} title="View full details">
                           <Eye size={12} />View
                         </button>
-                        {(log.status === 'pending' || log.status === 'approved') && (
-                          <button className="prm-btn reset" onClick={() => setResetLog(log)} title="Manual Reset">
-                            <KeyRound size={12} />Reset
+
+                        {/* PENDING actions — the main workflow */}
+                        {isPending && (
+                          <>
+                            {/* Approve = set a temp password manually */}
+                            <button
+                              className="prm-btn reset prm-btn-approve"
+                              onClick={() => setResetLog(log)}
+                              disabled={actionLoading}
+                              title="Approve: set a temporary password for this user"
+                            >
+                              <KeyRound size={12} />Approve
+                            </button>
+
+                            {/* Cancel the request */}
+                            <button
+                              className="prm-btn cancel"
+                              onClick={() => setCancelLog(log)}
+                              disabled={actionLoading}
+                              title="Cancel this reset request"
+                            >
+                              <Ban size={12} />Reject
+                            </button>
+                          </>
+                        )}
+
+                        {/* Completed / approved — allow re-reset */}
+                        {(log.status === 'completed' || log.status === 'approved') && (
+                          <button
+                            className="prm-btn reset"
+                            onClick={() => setResetLog(log)}
+                            disabled={actionLoading}
+                            title="Reset password again"
+                          >
+                            <KeyRound size={12} />Re-Reset
                           </button>
                         )}
-                        {log.status === 'pending' && (
-                          <button className="prm-btn cancel" onClick={() => handleCancel(log._id)} disabled={actionLoading} title="Cancel Request">
-                            <Ban size={12} />Cancel
-                          </button>
-                        )}
-                        <button className="prm-btn delete" onClick={() => setDeleteLogId(log._id)} title="Delete Log">
+
+                        {/* Delete — always available */}
+                        <button
+                          className="prm-btn delete"
+                          onClick={() => setDeleteLogId(log._id)}
+                          disabled={actionLoading}
+                          title="Delete this log entry"
+                        >
                           <Trash2 size={12} />
                         </button>
                       </div>
@@ -724,25 +769,23 @@ export default function PasswordResetManagement() {
           </table>
         )}
 
-        {/* Pagination */}
+        {/* ── Pagination ── */}
         {!loading && paginated.length > 0 && (
           <Pagination
-            page={page}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            totalItems={totalItems}
+            page={page} totalPages={totalPages}
+            pageSize={pageSize} totalItems={totalItems}
             onPage={p => setPage(p)}
             onPageSize={n => { setPageSize(n); setPage(1); }}
           />
         )}
       </div>
 
-      {/* ── Footer Info ── */}
+      {/* ── Footer ── */}
       {!loading && logs.length > 0 && (
         <div style={{ marginTop: 16, display: 'flex', gap: 20, flexWrap: 'wrap', fontSize: 12, color: '#94a3b8' }}>
           <span><CheckSquare size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />Last refreshed: {new Date().toLocaleTimeString()}</span>
           <span><Info size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />Showing up to 200 most recent records from server</span>
-          <span><UserCheck size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />Expired tokens are auto-detected client-side</span>
+          <span><UserCheck size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />Approved resets force password change on next login</span>
         </div>
       )}
     </div>

@@ -53,10 +53,10 @@ export default function DeanLayout({ onLogout }) {
     finally { if (!silent) setIsRefreshing(false); }
   }, []);
 
-  // Initial load + poll every 30 seconds
+  // Initial load + poll every 10 seconds for near-instant notification
   useEffect(() => {
     fetchPending(false);
-    const interval = setInterval(() => fetchPending(true), 30000);
+    const interval = setInterval(() => fetchPending(true), 10000);
     return () => clearInterval(interval);
   }, [fetchPending]);
 
@@ -79,6 +79,8 @@ export default function DeanLayout({ onLogout }) {
   const handleBellClick = () => {
     setShowPanel(p => !p);
     if (!showPanel) {
+      // Fetch fresh data immediately when opening the panel
+      fetchPending(false);
       // Mark all as seen
       const now = Date.now();
       setLastSeen(now);

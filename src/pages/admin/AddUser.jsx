@@ -70,6 +70,9 @@ export default function AddUser() {
 
     // Client-side validation
     if (!form.name.trim())        { setError('Full name is required.');         return; }
+    if (/[@]/.test(form.name))    { setError('Full name must contain letters only — not an email address.'); return; }
+    if (/\d/.test(form.name))     { setError('Full name must contain letters only — no numbers allowed.'); return; }
+    if (form.name.trim().length < 2) { setError('Full name must be at least 2 characters.'); return; }
     if (!form.username.trim())    { setError('Username is required.');           return; }
     if (!form.email.trim())       { setError('Email is required.');              return; }
     if (!form.role)               { setError('Please select a role.');           return; }
@@ -212,13 +215,31 @@ export default function AddUser() {
           <div className="form-row">
             <div className="form-group">
               <label>Full Name <span style={{ color: '#ef4444' }}>*</span></label>
-              <input type="text" name="name" value={form.name} onChange={set}
-                placeholder="e.g. Abebe Kebede" />
+              <input
+                type="text"
+                name="name"
+                value={form.name}
+                onChange={e => {
+                  // Strip any characters that aren't letters, spaces, hyphens, apostrophes, or dots
+                  const cleaned = e.target.value.replace(/[^a-zA-Z\u00C0-\u024F\s'\-\.]/g, '');
+                  setForm(f => ({ ...f, name: cleaned }));
+                }}
+                placeholder="e.g. Abebe Kebede"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="words"
+                spellCheck="false"
+              />
+              {form.name && /[@0-9]/.test(form.name) && (
+                <p style={{ fontSize: 12, color: '#dc2626', marginTop: 4 }}>
+                  ⚠ Full name must contain letters only — no email addresses or numbers.
+                </p>
+              )}
             </div>
             <div className="form-group">
               <label>Username <span style={{ color: '#ef4444' }}>*</span></label>
               <input type="text" name="username" value={form.username} onChange={set}
-                placeholder="e.g. abebe.kebede" />
+                placeholder="e.g. abebe.kebede" autoComplete="off" />
             </div>
           </div>
 
@@ -241,7 +262,8 @@ export default function AddUser() {
             <div className="form-group">
               <label>Password <span style={{ color: '#ef4444' }}>*</span></label>
               <input type={showPw ? 'text' : 'password'} name="password"
-                value={form.password} onChange={set} placeholder="Min 6 characters" />
+                value={form.password} onChange={set} placeholder="Min 6 characters"
+                autoComplete="new-password" />
               <p style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
                 🔒 This is a temporary password. The user should change it after first login. You cannot view it after saving.
               </p>
@@ -249,7 +271,8 @@ export default function AddUser() {
             <div className="form-group">
               <label>Confirm Password <span style={{ color: '#ef4444' }}>*</span></label>
               <input type={showPw ? 'text' : 'password'} name="confirmPassword"
-                value={form.confirmPassword} onChange={set} placeholder="Repeat password" />
+                value={form.confirmPassword} onChange={set} placeholder="Repeat password"
+                autoComplete="new-password" />
             </div>
           </div>
 

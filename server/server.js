@@ -22,6 +22,13 @@ app.use(cors({
     }
   },
   credentials: true,
+  // Expose rate-limit headers so the frontend can read remaining attempts
+  exposedHeaders: [
+    'RateLimit-Limit',
+    'RateLimit-Remaining',
+    'RateLimit-Reset',
+    'Retry-After',
+  ],
 }));
 
 // ── Body parsing ──────────────────────────────────────────
@@ -31,25 +38,40 @@ app.use(express.urlencoded({ limit: '2mb', extended: true }));
 // ── NoSQL injection sanitization ──────────────────────────
 app.use(mongoSanitize());
 
-// ── Global rate limiter (100 req / 15 min per IP) ─────────
+// ── Global rate limiter ───────────────────────────────────
+// 1000 req / 15 min per IP — covers all normal usage including
+// GPS polling (every 4s = ~225 req/15min) and map polling.
+// Auth endpoints have their own stricter limiters below.
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: 'Too many requests, please try again later.' },
+  // Skip rate limiting for high-frequency polling endpoints
+  skip: (req) => {
+    const path = req.path;
+    return (
+      path.startsWith('/api/tracking') ||   // GPS updates every 4s
+      path.startsWith('/api/notifications') // notification bell polling
+    );
+  },
 });
 app.use('/api/', globalLimiter);
 
-// ── Strict login rate limiter (10 attempts / 15 min) ──────
-const loginLimiter = rateLimit({
+// ── Login rate limiter removed — no attempt blocking ──────
+// (kept for reference: was 50 attempts / 15 min)
+app.use('/api/auth/login', loginLimiter);
+// ── Password reset rate limiter (5 attempts / 15 min) ─────
+const resetLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: 'Too many login attempts. Please wait 15 minutes.' },
+  message: { message: 'Too many password reset attempts. Please wait 15 minutes.' },
 });
-app.use('/api/auth/login', loginLimiter);
+app.use('/api/auth/forgot-password', resetLimiter);
+app.use('/api/auth/reset-password', resetLimiter);
 
 // Routes
 app.use('/api/auth',       require('./routes/auth'));

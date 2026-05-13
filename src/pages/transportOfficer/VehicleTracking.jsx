@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import 'leaflet/dist/leaflet.css';
 import {
   Map as MapIcon, List, Car, User, Navigation, Activity,
-  AlertTriangle, MapPin, Clock, CheckCircle2, RefreshCw
+  AlertTriangle, MapPin, Clock, CheckCircle2, RefreshCw,
+  Radio, Smartphone, Satellite,
 } from 'lucide-react';
 import { getVehicles } from '../../api/api';
 import './VehicleTracking.css';
@@ -34,6 +35,8 @@ export default function VehicleTracking() {
   const [activeView, setActiveView]       = useState('fleet');
   const [statusFilter, setStatusFilter]   = useState('All');
   const [mapStyle, setMapStyle]           = useState('street'); // 'street' | 'satellite' | 'hybrid'
+  const [lastPollTime, setLastPollTime]   = useState(null);     // time of last successful live poll
+  const [liveCount, setLiveCount]         = useState(0);        // vehicles with real mobile GPS
   const tileLayerRef = useRef(null);
 
   // ── Fetch vehicles from DB ──────────────────────────────
@@ -68,6 +71,9 @@ export default function VehicleTracking() {
       const liveData = await res.json();
       if (!Array.isArray(liveData)) return;
 
+      setLastPollTime(new Date().toLocaleTimeString());
+      setLiveCount(liveData.length);
+
       setLiveCoords(prev => {
         const next = { ...prev };
         liveData.forEach(loc => {
@@ -76,11 +82,12 @@ export default function VehicleTracking() {
           // Priority: hardware > mobile
           if (next[key]?.source === 'hardware' && loc.source === 'mobile') return;
           next[key] = {
-            lat:    loc.lat,
-            lng:    loc.lng,
-            speed:  loc.speed || 0,
-            source: loc.source || 'mobile',
+            lat:        loc.lat,
+            lng:        loc.lng,
+            speed:      loc.speed || 0,
+            source:     loc.source || 'mobile',
             driverName: loc.driverName,
+            updatedAt:  loc.updatedAt || new Date().toISOString(),
           };
         });
         return next;
@@ -292,6 +299,42 @@ export default function VehicleTracking() {
           <p>Real-time fleet monitoring and map overview</p>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          {/* Live GPS status badge */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 7,
+            background: liveCount > 0 ? 'rgba(34,197,94,0.12)' : 'rgba(100,116,139,0.12)',
+            border: `1px solid ${liveCount > 0 ? 'rgba(34,197,94,0.3)' : 'rgba(100,116,139,0.2)'}`,
+            borderRadius: 20, padding: '5px 12px',
+          }}>
+            <span style={{
+              width: 8, height: 8, borderRadius: '50%',
+              background: liveCount > 0 ? '#22c55e' : '#64748b',
+              boxShadow: liveCount > 0 ? '0 0 0 3px rgba(34,197,94,0.25)' : 'none',
+              animation: liveCount > 0 ? 'vt-pulse 1.5s ease-in-out infinite' : 'none',
+              display: 'inline-block', flexShrink: 0,
+            }} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: liveCount > 0 ? '#4ade80' : '#64748b' }}>
+              {liveCount > 0 ? `${liveCount} LIVE` : 'NO LIVE GPS'}
+            </span>
+            {lastPollTime && (
+              <span style={{ fontSize: 11, color: '#475569' }}>· {lastPollTime}</span>
+            )}
+          </div>
+
+          {/* Mobile GPS indicator */}
+          {liveCount > 0 && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)',
+              borderRadius: 20, padding: '5px 12px',
+            }}>
+              <Smartphone size={13} style={{ color: '#60a5fa' }} />
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#60a5fa' }}>
+                {liveCount} Mobile GPS
+              </span>
+            </div>
+          )}
+
           <button onClick={fetchVehicles} title="Refresh" style={{
             background:'rgba(99,102,241,0.15)', border:'1px solid rgba(99,102,241,0.3)',
             color:'#818cf8', borderRadius:8, padding:'0.5rem', cursor:'pointer', display:'flex', alignItems:'center',
@@ -356,10 +399,27 @@ export default function VehicleTracking() {
                   >
                     <div className="fc-header">
                       <h4>{v.plateNumber} – {v.model}</h4>
-                      <span className="status-badge" style={{ background: `${color}22`, color }}>
-                        {v.status === 'in-use' && <span className="live-dot" style={{ background: color }}></span>}
-                        {STATUS_LABEL[v.status]}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {/* LIVE badge for mobile GPS */}
+                        {liveCoords[v._id]?.source === 'mobile' && (
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                            background: 'rgba(34,197,94,0.15)', color: '#4ade80',
+                            border: '1px solid rgba(34,197,94,0.3)',
+                            borderRadius: 20, padding: '2px 8px', fontSize: 10, fontWeight: 800,
+                          }}>
+                            <span style={{
+                              width: 6, height: 6, borderRadius: '50%', background: '#22c55e',
+                              animation: 'vt-pulse 1.5s ease-in-out infinite', display: 'inline-block',
+                            }} />
+                            LIVE
+                          </span>
+                        )}
+                        <span className="status-badge" style={{ background: `${color}22`, color }}>
+                          {v.status === 'in-use' && <span className="live-dot" style={{ background: color }}></span>}
+                          {STATUS_LABEL[v.status]}
+                        </span>
+                      </div>
                     </div>
                     <div className="fc-body">
                       <div className="fc-row"><User size={14} className="fc-icon" /><span>{v.assignedDriverName || '—'}</span></div>
@@ -377,6 +437,15 @@ export default function VehicleTracking() {
                           <Activity size={14} className="fc-icon" style={{ color: '#f59e0b' }} />
                           <span style={{ color: '#f59e0b', fontWeight: 600 }}>
                             Trip: {liveCoords[v._id].distanceKm} km · ~{liveCoords[v._id].fuelUsed}L used
+                          </span>
+                        </div>
+                      )}
+                      {/* GPS source + last update */}
+                      {liveCoords[v._id]?.source === 'mobile' && liveCoords[v._id]?.updatedAt && (
+                        <div className="fc-row" style={{ marginTop: 4 }}>
+                          <Smartphone size={13} style={{ color: '#3b82f6', flexShrink: 0 }} />
+                          <span style={{ fontSize: 11, color: '#3b82f6', fontWeight: 600 }}>
+                            📱 Mobile GPS · {new Date(liveCoords[v._id].updatedAt).toLocaleTimeString()}
                           </span>
                         </div>
                       )}

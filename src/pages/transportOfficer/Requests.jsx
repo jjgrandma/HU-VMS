@@ -72,6 +72,36 @@ const getFuelRate = (vehicle) => {
   return typeRates[type] || { rate: 12, label: 'Vehicle' };
 };
 
+// Fuel prices in ETB per liter (Ethiopia current approximate rates)
+const FUEL_PRICES_ETB = {
+  Diesel: 95,
+  Petrol: 100,
+  default: 95,
+};
+
+// Typical tank capacities by vehicle type (liters)
+const TANK_CAPACITY = {
+  bus:     200,
+  minibus: 80,
+  van:     70,
+  truck:   200,
+  pickup:  70,
+  suv:     65,
+  car:     50,
+  sedan:   50,
+};
+
+const getTankCapacity = (vehicle) => {
+  const type  = (vehicle?.type  || '').toLowerCase();
+  const model = (vehicle?.model || '').toLowerCase();
+  if (/coaster/.test(model))  return 100;
+  if (/hiace/.test(model))    return 70;
+  if (/land cruiser|prado/.test(model)) return 87;
+  if (/hilux/.test(model))    return 80;
+  if (/isuzu/.test(model))    return 100;
+  return TANK_CAPACITY[type] || 60;
+};
+
 export default function Requests() {
   const [requests, setRequests] = useState([]);
   const [vehicles, setVehicles] = useState([]);
@@ -90,6 +120,7 @@ export default function Requests() {
   const [actionLoading, setActionLoading] = useState(false);
   const [fuelEstimate, setFuelEstimate]   = useState(null);
   const [fuelLoading, setFuelLoading]     = useState(false);
+  const [tripType, setTripType]           = useState('round_trip'); // 'round_trip' | 'one_way'
 
   const currentUser = getCurrentUser();
 
@@ -148,6 +179,7 @@ export default function Requests() {
     setShowAssignmentModal(true);
     setRecommendedVehicles([]);
     setFuelEstimate(null);
+    setTripType('round_trip'); // default to round trip
 
     // Estimate fuel in background
     estimateFuel(request);
@@ -161,20 +193,26 @@ export default function Requests() {
     }
   };
 
-  const estimateFuel = async (request) => {
+  const estimateFuel = async (request, currentTripType = tripType) => {
     if (!request.destination) return;
     setFuelLoading(true);
     try {
       const origin = { lat: 9.1850, lon: 42.0350 }; // Haramaya University
       const dest   = await geocode(request.destination);
       const route  = await getRoadDistance(origin.lat, origin.lon, dest.lat, dest.lon);
-      const totalKm = route.distKm * 2; // round trip
+      // Round trip = ×2, one way = ×1, then add 10% safety buffer
+      const multiplier = currentTripType === 'one_way' ? 1 : 2;
+      const baseKm  = route.distKm * multiplier;
+      const totalKm = Math.round(baseKm * 1.10 * 10) / 10; // +10% buffer
       setFuelEstimate({
         distKm:      route.distKm,
-        totalKm:     Math.round(totalKm * 10) / 10,
+        baseKm:      Math.round(baseKm * 10) / 10,
+        totalKm,
+        bufferKm:    Math.round((totalKm - baseKm) * 10) / 10,
         durationMin: route.durationMin,
         source:      route.source,
         destName:    dest.display.split(',')[0],
+        tripType:    currentTripType,
       });
     } catch (err) {
       setFuelEstimate({ error: err.message });
@@ -186,8 +224,30 @@ export default function Requests() {
   const getFuelForVehicle = (vehicle) => {
     if (!fuelEstimate || fuelEstimate.error) return null;
     const { rate, label } = getFuelRate(vehicle);
-    const liters = Math.ceil((fuelEstimate.totalKm * rate) / 100);
-    return { liters, rate, label, km: fuelEstimate.totalKm };
+    const totalNeeded = Math.ceil((fuelEstimate.totalKm * rate) / 100);
+    const tankCapacity = getTankCapacity(vehicle);
+    const fuelType = vehicle?.fuelType || 'Diesel';
+    const pricePerLiter = FUEL_PRICES_ETB[fuelType] || FUEL_PRICES_ETB.default;
+
+    // Check if needed fuel exceeds tank capacity
+    const exceedsTank = totalNeeded > tankCapacity;
+    const fuelFromStation = exceedsTank ? tankCapacity : totalNeeded;
+    const fuelGapLiters   = exceedsTank ? totalNeeded - tankCapacity : 0;
+    const cashAllowanceETB = exceedsTank ? Math.ceil(fuelGapLiters * pricePerLiter) : 0;
+
+    return {
+      liters:           fuelFromStation,   // what the fuel station gives
+      totalNeeded,                          // total needed for the trip
+      tankCapacity,
+      exceedsTank,
+      fuelGapLiters,
+      cashAllowanceETB,
+      pricePerLiter,
+      fuelType,
+      rate,
+      label,
+      km: fuelEstimate.totalKm,
+    };
   };
 
   const confirmAssignment = async (vehicleId, vehicle) => {
@@ -199,6 +259,9 @@ export default function Requests() {
         approvedBy: currentUser?.name || currentUser?.username || "Transport Officer",
         estimatedFuelLiters: fuel?.liters || null,
         fuelType: vehicle?.fuelType || 'Diesel',
+        tripType,
+        cashAllowanceETB: fuel?.cashAllowanceETB || 0,
+        totalFuelNeededLiters: fuel?.totalNeeded || null,
       });
       setRequests(prev => prev.map(r => r._id === updated._id ? updated : r));
       setShowAssignmentModal(false);
@@ -441,6 +504,25 @@ export default function Requests() {
                       <h5>{selectedRequest.assignedVehicle}</h5>
                       {selectedRequest.assignedDriver && <span>Driver: {selectedRequest.assignedDriver}</span>}
                       {selectedRequest.approvedBy && <span>Approved by: {selectedRequest.approvedBy}</span>}
+                      {selectedRequest.tripType && (
+                        <span>Trip type: {selectedRequest.tripType === 'one_way' ? '➡️ One Way' : '🔄 Round Trip'}</span>
+                      )}
+                      {selectedRequest.estimatedFuelLiters && (
+                        <span>⛽ Fuel from station: {selectedRequest.estimatedFuelLiters}L {selectedRequest.fuelType || ''}</span>
+                      )}
+                      {selectedRequest.totalFuelNeededLiters && selectedRequest.totalFuelNeededLiters !== selectedRequest.estimatedFuelLiters && (
+                        <span>📊 Total needed: {selectedRequest.totalFuelNeededLiters}L (incl. 10% buffer)</span>
+                      )}
+                      {selectedRequest.cashAllowanceETB > 0 && (
+                        <div style={{ marginTop: 8, padding: '8px 12px', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 8, fontSize: 13 }}>
+                          💵 Cash Allowance: <strong style={{ color: '#d97706', fontSize: 15 }}>
+                            {selectedRequest.cashAllowanceETB.toLocaleString()} ETB
+                          </strong>
+                          <div style={{ fontSize: 11, color: '#92400e', marginTop: 2 }}>
+                            For road refueling — tank capacity insufficient for full trip
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div className="assignment-status"><CheckCircle size={16} /><span>Assigned</span></div>
                   </div>
@@ -508,6 +590,30 @@ export default function Requests() {
               <div className="fuel-estimate-banner">
                 <div className="fuel-estimate-icon"><Fuel size={20} color="#16a34a" /></div>
                 <div className="fuel-estimate-content">
+
+                  {/* Trip type toggle */}
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#374151', alignSelf: 'center' }}>Trip Type:</span>
+                    {[
+                      { value: 'round_trip', label: '🔄 Round Trip' },
+                      { value: 'one_way',    label: '➡️ One Way' },
+                    ].map(opt => (
+                      <button key={opt.value}
+                        onClick={() => {
+                          setTripType(opt.value);
+                          if (requestToApprove) estimateFuel(requestToApprove, opt.value);
+                        }}
+                        style={{
+                          padding: '4px 12px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                          fontSize: 12, fontWeight: 700,
+                          background: tripType === opt.value ? '#2563eb' : '#f1f5f9',
+                          color: tripType === opt.value ? '#fff' : '#64748b',
+                        }}>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
                   {fuelLoading ? (
                     <span style={{ color:'#6b7280', fontSize:13 }}>📍 Calculating route to {requestToApprove?.destination}...</span>
                   ) : fuelEstimate?.error ? (
@@ -521,11 +627,15 @@ export default function Requests() {
                       </div>
                       <div className="fuel-estimate-stats">
                         <span>📏 One-way: <strong>{fuelEstimate.distKm} km</strong></span>
-                        <span>🔄 Round trip: <strong>{fuelEstimate.totalKm} km</strong></span>
+                        {tripType === 'round_trip'
+                          ? <span>🔄 Round trip: <strong>{fuelEstimate.baseKm} km</strong></span>
+                          : <span>➡️ One-way trip: <strong>{fuelEstimate.baseKm} km</strong></span>
+                        }
+                        <span style={{ color: '#f59e0b' }}>+10% buffer: <strong>{fuelEstimate.totalKm} km total</strong></span>
                         {fuelEstimate.durationMin && <span>⏱ ~{fuelEstimate.durationMin} min one-way</span>}
                       </div>
                       <div style={{ fontSize:12, color:'#6b7280', marginTop:4 }}>
-                        Fuel needed per vehicle shown below ↓ (based on actual road distance)
+                        Fuel needed per vehicle shown below ↓ (includes 10% safety buffer)
                       </div>
                     </>
                   ) : null}
@@ -559,10 +669,34 @@ export default function Requests() {
                       )}
                       {/* Fuel Estimate for this vehicle */}
                       {fuel && (
-                        <div className="vehicle-fuel-estimate">
-                          <Fuel size={14} color="#16a34a" />
-                          <span>Estimated fuel: <strong style={{ color:'#16a34a' }}>{fuel.liters}L</strong></span>
-                          <span style={{ color:'#9ca3af', fontSize:11 }}>({fuel.label} — {fuel.rate}L/100km × {fuel.km}km)</span>
+                        <div>
+                          <div className="vehicle-fuel-estimate">
+                            <Fuel size={14} color="#16a34a" />
+                            <span>Fuel from station: <strong style={{ color:'#16a34a' }}>{fuel.liters}L</strong></span>
+                            <span style={{ color:'#9ca3af', fontSize:11 }}>({fuel.label} — {fuel.rate}L/100km × {fuel.km}km)</span>
+                          </div>
+                          {fuel.exceedsTank && (
+                            <div style={{
+                              marginTop: 8, padding: '10px 12px', borderRadius: 8,
+                              background: '#fef3c7', border: '1px solid #fde68a',
+                            }}>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: '#92400e', marginBottom: 4 }}>
+                                ⚠️ Tank capacity exceeded — Cash Allowance Required
+                              </div>
+                              <div style={{ fontSize: 12, color: '#78350f', lineHeight: 1.6 }}>
+                                <div>Total needed: <strong>{fuel.totalNeeded}L</strong> &nbsp;|&nbsp; Tank holds: <strong>{fuel.tankCapacity}L</strong></div>
+                                <div>Fuel gap: <strong>{fuel.fuelGapLiters}L</strong> to buy on the road</div>
+                                <div style={{ marginTop: 4, padding: '6px 10px', background: '#fffbeb', borderRadius: 6, border: '1px solid #fcd34d' }}>
+                                  💵 Cash Allowance: <strong style={{ fontSize: 14, color: '#d97706' }}>
+                                    {fuel.cashAllowanceETB.toLocaleString()} ETB
+                                  </strong>
+                                  <span style={{ fontSize: 11, color: '#92400e', marginLeft: 6 }}>
+                                    ({fuel.fuelGapLiters}L × {fuel.pricePerLiter} ETB/L)
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                       <div className="match-reasons">

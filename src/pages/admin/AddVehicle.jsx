@@ -14,19 +14,58 @@ const AddVehicle = () => {
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setMessage(null);
+    if (errors[e.target.name]) setErrors(prev => ({ ...prev, [e.target.name]: '' }));
+  };
+
+  const validate = () => {
+    const errs = {};
+    if (!formData.plateNumber.trim())
+      errs.plateNumber = 'Plate number is required';
+    else if (!/^[A-Za-z0-9\-]{3,15}$/.test(formData.plateNumber.trim()))
+      errs.plateNumber = 'Invalid plate format (letters, numbers, hyphens only, 3–15 chars)';
+
+    if (!formData.model.trim())
+      errs.model = 'Model is required';
+    else if (formData.model.trim().length > 60)
+      errs.model = 'Model name too long (max 60 characters)';
+
+    if (!formData.type)
+      errs.type = 'Vehicle type is required';
+
+    const cap = Number(formData.capacity);
+    if (!formData.capacity) errs.capacity = 'Capacity is required';
+    else if (!Number.isInteger(cap) || cap < 1 || cap > 200)
+      errs.capacity = 'Capacity must be a whole number between 1 and 200';
+
+    const yr = Number(formData.year);
+    const currentYear = new Date().getFullYear();
+    if (!formData.year) errs.year = 'Year is required';
+    else if (!Number.isInteger(yr) || yr < 1980 || yr > currentYear + 1)
+      errs.year = `Year must be between 1980 and ${currentYear + 1}`;
+
+    if (!formData.color.trim())
+      errs.color = 'Color is required';
+    else if (formData.color.trim().length > 30)
+      errs.color = 'Color name too long (max 30 characters)';
+
+    return errs;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setLoading(true);
     try {
-      await createVehicle({ ...formData, capacity: Number(formData.capacity) });
+      await createVehicle({ ...formData, capacity: Number(formData.capacity), year: Number(formData.year) });
       setMessage({ type: 'success', text: 'Vehicle added successfully!' });
       setFormData({ plateNumber: '', model: '', type: '', capacity: '', year: '', color: '', status: 'available' });
+      setErrors({});
     } catch (err) {
       setMessage({ type: 'error', text: err.message || 'Failed to add vehicle' });
     } finally {
@@ -58,9 +97,11 @@ const AddVehicle = () => {
                 name="plateNumber"
                 value={formData.plateNumber}
                 onChange={handleChange}
-                placeholder="ABC-1234"
+                placeholder="e.g. AA-12345"
                 required
+                maxLength={15}
               />
+              {errors.plateNumber && <p style={{color:'#dc2626',fontSize:12,marginTop:3}}>{errors.plateNumber}</p>}
             </div>
 
             <div className="form-group">
@@ -72,7 +113,9 @@ const AddVehicle = () => {
                 onChange={handleChange}
                 placeholder="Toyota Hiace"
                 required
+                maxLength={60}
               />
+              {errors.model && <p style={{color:'#dc2626',fontSize:12,marginTop:3}}>{errors.model}</p>}
             </div>
           </div>
 
@@ -91,19 +134,25 @@ const AddVehicle = () => {
                 <option value="minibus">Minibus</option>
                 <option value="truck">Truck</option>
                 <option value="car">Car</option>
+                <option value="pickup">Pickup</option>
+                <option value="suv">SUV</option>
               </select>
+              {errors.type && <p style={{color:'#dc2626',fontSize:12,marginTop:3}}>{errors.type}</p>}
             </div>
 
             <div className="form-group">
-              <label>Capacity</label>
+              <label>Capacity (seats)</label>
               <input
                 type="number"
                 name="capacity"
                 value={formData.capacity}
                 onChange={handleChange}
-                placeholder="15"
+                placeholder="e.g. 15"
+                min="1"
+                max="200"
                 required
               />
+              {errors.capacity && <p style={{color:'#dc2626',fontSize:12,marginTop:3}}>{errors.capacity}</p>}
             </div>
           </div>
 
@@ -115,9 +164,12 @@ const AddVehicle = () => {
                 name="year"
                 value={formData.year}
                 onChange={handleChange}
-                placeholder="2024"
+                placeholder={`e.g. ${new Date().getFullYear()}`}
+                min="1980"
+                max={new Date().getFullYear() + 1}
                 required
               />
+              {errors.year && <p style={{color:'#dc2626',fontSize:12,marginTop:3}}>{errors.year}</p>}
             </div>
 
             <div className="form-group">
@@ -129,7 +181,9 @@ const AddVehicle = () => {
                 onChange={handleChange}
                 placeholder="White"
                 required
+                maxLength={30}
               />
+              {errors.color && <p style={{color:'#dc2626',fontSize:12,marginTop:3}}>{errors.color}</p>}
             </div>
           </div>
 

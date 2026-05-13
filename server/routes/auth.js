@@ -17,7 +17,8 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Username and password are required' });
     }
 
-    const query = { username: username.trim() };
+    // Case-insensitive username lookup
+    const query = { username: { $regex: new RegExp(`^${username.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } };
     if (role) query.role = role;
 
     const user = await User.findOne(query).select('+password');
@@ -45,9 +46,10 @@ router.post('/login', async (req, res) => {
         role: user.role,
         department: user.department,
         employeeId: user.employeeId,
-        unitType:    user.unitType    || null,
-        unitName:    user.unitName    || null,
-        collegeName: user.collegeName || null,
+        unitType:         user.unitType         || null,
+        unitName:         user.unitName         || null,
+        collegeName:      user.collegeName      || null,
+        mustChangePassword: user.mustChangePassword || false,
       },
     });
   } catch (err) {
@@ -123,8 +125,9 @@ router.post('/forgot-password', async (req, res) => {
       $or: [{ email }, { username: email }]
     });
 
+    // Always return the same response to prevent account enumeration
     if (!user) {
-      return res.status(404).json({ message: 'No account found with that email or username' });
+      return res.json({ message: 'If an account with that email or username exists, a reset link has been sent.' });
     }
 
     // Generate reset token
@@ -152,7 +155,7 @@ router.post('/forgot-password', async (req, res) => {
     console.log('User:', user.email);
 
     res.json({ 
-      message: 'Password reset link sent to your email',
+      message: 'If an account with that email or username exists, a reset link has been sent.',
       // Remove this in production
       resetUrl: process.env.NODE_ENV === 'development' ? resetUrl : undefined
     });
@@ -188,6 +191,10 @@ router.post('/reset-password', async (req, res) => {
 
     if (!token || !password) {
       return res.status(400).json({ message: 'Token and password are required' });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters' });
     }
 
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
@@ -227,12 +234,139 @@ router.post('/reset-password', async (req, res) => {
 // GET /api/auth/reset-logs - Get password reset logs (Admin only)
 router.get('/reset-logs', authMiddleware, requireRole('ADMIN'), async (req, res) => {
   try {
-    const logs = await PasswordResetLog.find()
-      .populate('user', 'name email username')
+    const { status, search, dateFrom, dateTo } = req.query;
+    const filter = {};
+    if (status && status !== 'all') filter.status = status;
+    if (dateFrom || dateTo) {
+      filter.requestedAt = {};
+      if (dateFrom) filter.requestedAt.$gte = new Date(dateFrom);
+      if (dateTo)   filter.requestedAt.$lte = new Date(new Date(dateTo).setHours(23,59,59,999));
+    }
+
+    let logs = await PasswordResetLog.find(filter)
+      .populate('user', 'name email username role department')
       .sort({ requestedAt: -1 })
-      .limit(100);
+      .limit(200);
+
+    // Search filter (post-query since it's on populated fields)
+    if (search) {
+      const q = search.toLowerCase();
+      logs = logs.filter(l =>
+        (l.user?.name     || '').toLowerCase().includes(q) ||
+        (l.user?.email    || '').toLowerCase().includes(q) ||
+        (l.user?.username || '').toLowerCase().includes(q)
+      );
+    }
+
+    // Auto-mark expired pending tokens
+    const now = new Date();
+    const expiredIds = logs
+      .filter(l => l.status === 'pending' && l.tokenExpires && new Date(l.tokenExpires) < now)
+      .map(l => l._id);
+    if (expiredIds.length > 0) {
+      await PasswordResetLog.updateMany({ _id: { $in: expiredIds } }, { status: 'expired' });
+      logs = logs.map(l =>
+        expiredIds.some(id => id.equals(l._id)) ? { ...l.toObject(), status: 'expired' } : l
+      );
+    }
 
     res.json(logs);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// POST /api/auth/reset-logs/:id/manual-reset — Admin manually resets a user's password
+router.post('/reset-logs/:id/manual-reset', authMiddleware, requireRole('ADMIN'), async (req, res) => {
+  try {
+    const log = await PasswordResetLog.findById(req.params.id).populate('user');
+    if (!log) return res.status(404).json({ message: 'Log not found' });
+
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 8)
+      return res.status(400).json({ message: 'Password must be at least 8 characters' });
+
+    const hashed = await bcrypt.hash(newPassword, 12);
+    await User.findByIdAndUpdate(log.user._id, {
+      password: hashed,
+      resetPasswordToken: undefined,
+      resetPasswordExpires: undefined,
+      mustChangePassword: true,   // force user to change on next login
+    });
+
+    await PasswordResetLog.findByIdAndUpdate(req.params.id, {
+      status: 'completed',
+      completedAt: new Date(),
+    });
+
+    res.json({ message: `Password reset successfully for ${log.user.name}` });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// PATCH /api/auth/reset-logs/:id/cancel — Admin cancels/rejects a request
+router.patch('/reset-logs/:id/cancel', authMiddleware, requireRole('ADMIN'), async (req, res) => {
+  try {
+    const log = await PasswordResetLog.findByIdAndUpdate(
+      req.params.id,
+      { status: 'cancelled' },
+      { new: true }
+    ).populate('user', 'name email username role');
+    if (!log) return res.status(404).json({ message: 'Log not found' });
+    res.json(log);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// DELETE /api/auth/reset-logs/:id — Admin deletes a log entry
+router.delete('/reset-logs/:id', authMiddleware, requireRole('ADMIN'), async (req, res) => {
+  try {
+    await PasswordResetLog.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Log deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// POST /api/auth/change-password — Authenticated user changes their own password
+// Used when mustChangePassword === true (admin-set temporary password)
+router.post('/change-password', authMiddleware, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current and new password are required' });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: 'New password must be at least 8 characters' });
+    }
+
+    if (!/[A-Z]/.test(newPassword)) {
+      return res.status(400).json({ message: 'New password must contain at least one uppercase letter' });
+    }
+
+    if (!/[0-9]/.test(newPassword)) {
+      return res.status(400).json({ message: 'New password must contain at least one number' });
+    }
+
+    const user = await User.findById(req.user.id).select('+password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const valid = await bcrypt.compare(currentPassword, user.password);
+    if (!valid) return res.status(400).json({ message: 'Current password is incorrect' });
+
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ message: 'New password must be different from the current password' });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 12);
+    user.mustChangePassword = false;
+    await user.save();
+
+    res.json({ message: 'Password changed successfully' });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

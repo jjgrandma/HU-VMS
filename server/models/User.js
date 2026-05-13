@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+﻿const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema(
   {
@@ -18,6 +18,8 @@ const userSchema = new mongoose.Schema(
     profilePhoto: { type: String, default: null },
     resetPasswordToken: String,
     resetPasswordExpires: Date,
+    // Forces user to change password on next login (set by admin manual reset)
+    mustChangePassword: { type: Boolean, default: false },
     // Organizational unit — used for approval routing
     unitType: {
       type: String,
@@ -26,6 +28,11 @@ const userSchema = new mongoose.Schema(
     },
     unitName:    { type: String, default: null },
     collegeName: { type: String, default: null }, // for DEAN role — the college they oversee
+    // CBE payment method — used for cash allowance transfers
+    cbeAccount: {
+      accountNumber: { type: String, default: '' },
+      accountName:   { type: String, default: '' },
+    },
   },
   { timestamps: true }
 );
