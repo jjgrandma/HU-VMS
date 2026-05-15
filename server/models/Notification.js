@@ -5,7 +5,11 @@ const notificationSchema = new mongoose.Schema({
   recipientUsername: String, // specific user, or null = all of that role
   type: {
     type: String,
-    enum: ['fuel_request', 'trip_approved', 'trip_rejected', 'fuel_dispensed', 'general'],
+    enum: [
+      'fuel_request', 'trip_approved', 'trip_rejected', 'fuel_dispensed', 'general',
+      // Routine schedule types
+      'routine_reminder', 'new_request', 'request_forwarded', 'review_request',
+    ],
     default: 'general',
   },
   title:   { type: String, required: true },

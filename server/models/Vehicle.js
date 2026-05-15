@@ -4,7 +4,7 @@ const vehicleSchema = new mongoose.Schema(
   {
     plateNumber: { type: String, required: true, unique: true },
     model: { type: String, required: true },
-    type: { type: String, enum: ['bus', 'minibus', 'car', 'truck', 'van'], required: true },
+    type: { type: String, enum: ['bus', 'minibus', 'car', 'truck', 'van', 'pickup', 'suv'], required: true },
     capacity: { type: Number, required: true },
     status: {
       type: String,

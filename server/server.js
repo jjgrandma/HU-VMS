@@ -88,6 +88,7 @@ app.use('/api/security',  require('./routes/security'));
 app.use('/api/maintenance', require('./routes/maintenance'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/tracking',     require('./routes/tracking'));
+app.use('/api/routines',     require('./routes/routineRoutes'));
 
 // ─── Scheduled Jobs ───────────────────────────────────────
 require('./jobs/dailyMaintenanceReport')();
@@ -99,6 +100,9 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log('MongoDB connected');
+    // Initialize routine scheduler after DB connection
+    const { initializeRoutineScheduler } = require('./services/routineScheduler');
+    initializeRoutineScheduler();
     app.listen(process.env.PORT || 5000, () =>
       console.log(`Server running on port ${process.env.PORT || 5000}`)
     );

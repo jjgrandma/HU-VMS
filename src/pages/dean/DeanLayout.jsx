@@ -4,8 +4,10 @@ import { getCurrentUser, getDeanRequests } from '../../api/api';
 import { HU_COLLEGES } from '../../data/colleges';
 
 const NAV_ITEMS = [
-  { path: '/dean/requests', label: '📋 Requests' },
-  { path: '/dean/history',  label: '📜 Approval History' },
+  { path: '/dean/requests',    label: '📋 Requests' },
+  { path: '/dean/history',     label: '📜 Approval History' },
+  { path: '/dean/request-vehicle', label: '🚗 Request Vehicle' },
+  { path: '/dean/my-requests', label: '📁 My Requests' },
 ];
 
 const PRIORITY_COLORS = {
@@ -32,6 +34,7 @@ export default function DeanLayout({ onLogout }) {
   const user      = getCurrentUser();
   const panelRef  = useRef(null);
 
+  const [collapsed, setCollapsed]             = useState(false);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [showPanel, setShowPanel]             = useState(false);
   const [lastSeen, setLastSeen]               = useState(() => {
@@ -323,54 +326,95 @@ export default function DeanLayout({ onLogout }) {
 
         {/* Sidebar */}
         <aside style={{
-          width: 220, background: 'linear-gradient(180deg, #1e1b4b 0%, #312e81 100%)',
+          width: collapsed ? 64 : 220,
+          minWidth: collapsed ? 64 : 220,
+          background: 'linear-gradient(180deg, #1e1b4b 0%, #312e81 100%)',
           display: 'flex', flexDirection: 'column', flexShrink: 0,
           boxShadow: '2px 0 12px rgba(0,0,0,0.15)',
+          transition: 'width 0.25s ease, min-width 0.25s ease',
+          overflow: 'hidden',
         }}>
 
-          {/* User info */}
-          <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>
-              {user?.collegeName || 'College Dean'}
-            </div>
-            {col && (
-              <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 8, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 20, fontWeight: 800, color: '#a5b4fc' }}>{col.departments.length}</span>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', lineHeight: 1.3 }}>
-                  departments<br/>under your college
-                </span>
+          {/* Collapse toggle button */}
+          <button
+            onClick={() => setCollapsed(c => !c)}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            style={{
+              alignSelf: 'flex-end',
+              margin: '10px 10px 0',
+              width: 32, height: 32,
+              background: 'rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: 8,
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 14, color: 'rgba(255,255,255,0.7)',
+              flexShrink: 0,
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+          >
+            {collapsed ? '▶' : '◀'}
+          </button>
+
+          {/* User info — hidden when collapsed */}
+          {!collapsed && (
+            <div style={{ padding: '12px 16px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>
+                {user?.collegeName || 'College Dean'}
               </div>
-            )}
-          </div>
+              {col && (
+                <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 8, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 20, fontWeight: 800, color: '#a5b4fc' }}>{col.departments.length}</span>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', lineHeight: 1.3 }}>
+                    departments<br/>under your college
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Nav */}
-          <nav style={{ flex: 1, padding: '12px 10px' }}>
+          <nav style={{ flex: 1, padding: collapsed ? '12px 8px' : '12px 10px' }}>
             {NAV_ITEMS.map(item => {
               const active = location.pathname.startsWith(item.path);
               return (
                 <button key={item.path}
                   onClick={() => navigate(item.path)}
+                  title={collapsed ? item.label : ''}
                   style={{
-                    width: '100%', textAlign: 'left', padding: '10px 14px', borderRadius: 8,
-                    border: 'none', cursor: 'pointer', fontSize: 13.5, fontWeight: 600,
+                    width: '100%', textAlign: collapsed ? 'center' : 'left',
+                    padding: collapsed ? '10px 0' : '10px 14px',
+                    borderRadius: 8, border: 'none', cursor: 'pointer',
+                    fontSize: collapsed ? 18 : 13.5, fontWeight: 600,
                     background: active ? 'rgba(255,255,255,0.15)' : 'transparent',
                     color: active ? '#fff' : 'rgba(255,255,255,0.6)',
                     marginBottom: 4, transition: 'all 0.2s',
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    display: 'flex', alignItems: 'center',
+                    justifyContent: collapsed ? 'center' : 'space-between',
+                    overflow: 'hidden', whiteSpace: 'nowrap',
                   }}
                   onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
                   onMouseLeave={e => { if (!active) e.currentTarget.style.background = active ? 'rgba(255,255,255,0.15)' : 'transparent'; }}
                 >
-                  <span>{item.label}</span>
-                  {/* Show pending count badge on Requests nav item */}
-                  {item.path === '/dean/requests' && pendingRequests.length > 0 && (
-                    <span style={{
-                      background: '#ef4444', color: '#fff', fontSize: 10, fontWeight: 800,
-                      minWidth: 18, height: 18, borderRadius: 9, display: 'flex',
-                      alignItems: 'center', justifyContent: 'center', padding: '0 4px',
-                    }}>
-                      {pendingRequests.length}
-                    </span>
+                  {collapsed ? (
+                    /* Show only the emoji icon when collapsed */
+                    <span>{item.label.split(' ')[0]}</span>
+                  ) : (
+                    <>
+                      <span>{item.label}</span>
+                      {/* Pending count badge on Requests nav item */}
+                      {item.path === '/dean/requests' && pendingRequests.length > 0 && (
+                        <span style={{
+                          background: '#ef4444', color: '#fff', fontSize: 10, fontWeight: 800,
+                          minWidth: 18, height: 18, borderRadius: 9, display: 'flex',
+                          alignItems: 'center', justifyContent: 'center', padding: '0 4px',
+                        }}>
+                          {pendingRequests.length}
+                        </span>
+                      )}
+                    </>
                   )}
                 </button>
               );
@@ -378,10 +422,18 @@ export default function DeanLayout({ onLogout }) {
           </nav>
 
           {/* Logout */}
-          <div style={{ padding: '14px 10px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <div style={{ padding: collapsed ? '14px 8px' : '14px 10px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
             <button onClick={onLogout}
-              style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13.5, fontWeight: 600, background: 'rgba(239,68,68,0.15)', color: '#fca5a5' }}>
-              🚪 Logout
+              title={collapsed ? 'Logout' : ''}
+              style={{
+                width: '100%',
+                padding: collapsed ? '10px 0' : '10px 14px',
+                borderRadius: 8, border: 'none', cursor: 'pointer',
+                fontSize: collapsed ? 18 : 13.5, fontWeight: 600,
+                background: 'rgba(239,68,68,0.15)', color: '#fca5a5',
+                textAlign: collapsed ? 'center' : 'left',
+              }}>
+              {collapsed ? '🚪' : '🚪 Logout'}
             </button>
           </div>
         </aside>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Car, Calendar, ClipboardCheck, Fuel, Wrench, Bell, Settings, User, X, CheckCheck, MessageSquareWarning } from 'lucide-react';
+import { LayoutDashboard, Car, Calendar, ClipboardCheck, Fuel, Wrench, Bell, Settings, User, X, CheckCheck, MessageSquareWarning, CalendarClock } from 'lucide-react';
 import { getCurrentUser, getNotifications, markNotificationRead, markAllNotificationsRead } from '../../api/api';
 import './DriverLayout.css';
 import './driverShared.css';
@@ -66,6 +66,7 @@ const DriverLayout = ({ onLogout }) => {
     { to: '/driver/dashboard', icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
     { to: '/driver/trips',     icon: <Car size={18} />,             label: 'My Trips' },
     { to: '/driver/schedule',  icon: <Calendar size={18} />,        label: 'Schedule' },
+    { to: '/driver/routine-trips', icon: <CalendarClock size={18} />, label: 'Routine Trips' },
     { to: '/driver/inspection',icon: <ClipboardCheck size={18} />,  label: 'Inspection' },
     { to: '/driver/fuel',         icon: <Fuel size={18} />,            label: 'Fuel Log' },
     { to: '/driver/fuel-request', icon: <Fuel size={18} />,            label: 'Fuel Request' },

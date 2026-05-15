@@ -24,6 +24,11 @@ router.post('/', authMiddleware, async (req, res) => {
     if (!model?.trim())       return res.status(400).json({ message: 'Model is required' });
     if (!type)                return res.status(400).json({ message: 'Vehicle type is required' });
 
+    const validTypes = ['bus', 'minibus', 'car', 'truck', 'van', 'pickup', 'suv'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ message: `Invalid vehicle type. Must be one of: ${validTypes.join(', ')}` });
+    }
+
     // Plate format: letters, numbers, hyphens, 3–15 chars
     if (!/^[A-Za-z0-9\-]{3,15}$/.test(plateNumber.trim())) {
       return res.status(400).json({ message: 'Invalid plate number format' });

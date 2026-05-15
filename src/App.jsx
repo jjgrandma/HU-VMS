@@ -49,6 +49,12 @@ import ComplaintHistory from './pages/transportOfficer/ComplaintHistory';
 import TransportReports from './pages/transportOfficer/TransportReports';
 import FuelApprovals from './pages/transportOfficer/FuelApprovals';
 
+// Routine Schedules
+import RoutineScheduleList from './pages/routines/RoutineScheduleList';
+import RoutineScheduleForm from './pages/routines/RoutineScheduleForm';
+import RoutineTripLogs from './pages/routines/RoutineTripLogs';
+import DriverRoutineTrips from './pages/routines/DriverRoutineTrips';
+
 // Driver
 import DriverLayout from './pages/driver/DriverLayout';
 import NewDriverDashboard from './pages/driver/NewDriverDashboard';
@@ -86,6 +92,8 @@ import FuelStationSettings from './pages/fuelStationOfficer/FuelStationSettings'
 import DeanLayout from './pages/dean/DeanLayout';
 import CollegeDeanRequests from './pages/dean/CollegeDeanRequests';
 import ApprovalHistory from './pages/dean/ApprovalHistory';
+import DeanRequestVehicle from './pages/dean/DeanRequestVehicle';
+import DeanMyRequests from './pages/dean/DeanMyRequests';
 import GateSecurityProfile from './pages/gateSecurity/GateSecurityProfile';
 // New Gate Security Module
 import GateLayout from './pages/gateSecurity/GateLayout';
@@ -342,6 +350,10 @@ function App() {
             <Route path="trips" element={<TripManagement />} />
             <Route path="tracking" element={<VehicleTracking />} />
             <Route path="drivers" element={<DriverCoordination />} />
+            <Route path="routines" element={<RoutineScheduleList />} />
+            <Route path="routines/new" element={<RoutineScheduleForm />} />
+            <Route path="routines/:id/edit" element={<RoutineScheduleForm />} />
+            <Route path="routines/:id/logs" element={<RoutineTripLogs />} />
             <Route path="complaints" element={<TransportComplaints />} />
             <Route path="complaint-history" element={<ComplaintHistory />} />
             <Route path="reports" element={<TransportReports />} />
@@ -360,6 +372,7 @@ function App() {
             <Route path="dashboard"   element={<NewDriverDashboard />} />
             <Route path="trips"       element={<DriverTrips />} />
             <Route path="schedule"    element={<DriverSchedule />} />
+            <Route path="routine-trips" element={<DriverRoutineTrips />} />
             <Route path="inspection"  element={<DriverInspection />} />
             <Route path="fuel"        element={<DriverFuelLog />} />
             <Route path="fuel-request" element={<DriverFuelRequest />} />
@@ -410,8 +423,10 @@ function App() {
         <>
           <Route path="/dean" element={<DeanLayout onLogout={handleLogout} />}>
             <Route index element={<Navigate to="requests" replace />} />
-            <Route path="requests" element={<CollegeDeanRequests />} />
-            <Route path="history"  element={<ApprovalHistory />} />
+            <Route path="requests"        element={<CollegeDeanRequests />} />
+            <Route path="history"         element={<ApprovalHistory />} />
+            <Route path="request-vehicle" element={<DeanRequestVehicle />} />
+            <Route path="my-requests"     element={<DeanMyRequests />} />
           </Route>
           <Route path="*" element={<Navigate to="/dean/requests" replace />} />
         </>
