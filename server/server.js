@@ -59,9 +59,7 @@ const globalLimiter = rateLimit({
 });
 app.use('/api/', globalLimiter);
 
-// ── Login rate limiter removed — no attempt blocking ──────
-// (kept for reference: was 50 attempts / 15 min)
-app.use('/api/auth/login', loginLimiter);
+
 // ── Password reset rate limiter (5 attempts / 15 min) ─────
 const resetLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
