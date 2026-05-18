@@ -1,12 +1,143 @@
 import { useState, useEffect } from 'react';
-import { FileText, Download, FileSpreadsheet, Clock, Inbox, Send } from 'lucide-react';
+import { FileText, Download, FileSpreadsheet, Clock, Inbox, Send, BarChart2 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { getReceivedReports, submitReportRequest, getCurrentUser } from '../../api/api';
 import './TransportReports.css';
 
+const API = 'http://localhost:5000/api';
+const tok = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` });
+
+// ── Department Usage Report sub-tab ──────────────────────────
+function DepartmentUsageReport() {
+  const [from, setFrom]       = useState('');
+  const [to, setTo]           = useState('');
+  const [dept, setDept]       = useState('');
+  const [rows, setRows]       = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [pricePerLiter, setPricePerLiter] = useState(0);
+
+  useEffect(() => {
+    fetch(`${API}/system-config`, { headers: tok() })
+      .then(r => r.json())
+      .then(d => setPricePerLiter(d.pricePerLiter?.Diesel || 0))
+      .catch(() => {});
+  }, []);
+
+  const run = async () => {
+    if (!from || !to) { alert('Select a date range'); return; }
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ from, to });
+      if (dept) params.set('department', dept);
+      const r = await fetch(`${API}/requests?${params}&limit=500`, { headers: tok() });
+      const data = await r.json();
+
+      // Aggregate by department
+      const map = {};
+      (Array.isArray(data) ? data : []).forEach(req => {
+        const d = req.department || req.unitName || req.collegeName || 'Unknown';
+        if (!map[d]) map[d] = { department: d, trips: 0, totalKm: 0, totalFuel: 0 };
+        map[d].trips++;
+        if (req.estimatedDistanceKm) map[d].totalKm += req.estimatedDistanceKm;
+        if (req.estimatedFuelLiters) map[d].totalFuel += req.estimatedFuelLiters;
+      });
+      setRows(Object.values(map).sort((a, b) => b.trips - a.trips));
+    } finally { setLoading(false); }
+  };
+
+  const exportPDF = () => {
+    if (!rows?.length) return;
+    const doc = new jsPDF();
+    doc.setFillColor(30, 64, 175); doc.rect(0, 0, 210, 24, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFontSize(14); doc.setFont('helvetica', 'bold');
+    doc.text('HU-VMS — Department Usage Report', 14, 16);
+    doc.setTextColor(80, 80, 80); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+    doc.text(`Period: ${from} to ${to}  |  Generated: ${new Date().toLocaleString()}`, 14, 32);
+    doc.autoTable({
+      head: [['Department', 'Trips', 'Total km', 'Total Fuel (L)', 'Est. Cost (ETB)']],
+      body: rows.map(r => [r.department, r.trips, r.totalKm.toFixed(0), r.totalFuel.toFixed(1), (r.totalFuel * pricePerLiter).toFixed(2)]),
+      startY: 38, theme: 'grid',
+      headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [240, 245, 255] },
+      styles: { fontSize: 8, cellPadding: 3 },
+    });
+    doc.save('department_usage_report.pdf');
+  };
+
+  const exportExcel = () => {
+    if (!rows?.length) return;
+    const ws = XLSX.utils.json_to_sheet(rows.map(r => ({ Department: r.department, Trips: r.trips, 'Total km': r.totalKm.toFixed(0), 'Total Fuel (L)': r.totalFuel.toFixed(1), 'Est. Cost (ETB)': (r.totalFuel * pricePerLiter).toFixed(2) })));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Dept Usage');
+    XLSX.writeFile(wb, 'department_usage_report.xlsx');
+  };
+
+  return (
+    <div>
+      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '20px 22px', marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>From</label>
+            <input type="date" value={from} onChange={e => setFrom(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13 }} />
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>To</label>
+            <input type="date" value={to} onChange={e => setTo(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13 }} />
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Department (optional)</label>
+            <input value={dept} onChange={e => setDept(e.target.value)} placeholder="Filter by department…" style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, width: 200 }} />
+          </div>
+          <button onClick={run} disabled={loading} style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+            {loading ? 'Running…' : 'Generate'}
+          </button>
+          {rows?.length > 0 && (
+            <>
+              <button onClick={exportPDF} style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}><Download size={13} /> PDF</button>
+              <button onClick={exportExcel} style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}><Download size={13} /> Excel</button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {rows !== null && (
+        rows.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 48, color: '#94a3b8' }}>No trip data found for the selected period.</div>
+        ) : (
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: '#f8fafc' }}>
+                  {['Department', 'Trips', 'Total km', 'Total Fuel (L)', 'Est. Cost (ETB)'].map(h => (
+                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #e2e8f0' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '10px 16px', fontWeight: 600, color: '#1e293b' }}>{r.department}</td>
+                    <td style={{ padding: '10px 16px', color: '#374151' }}>{r.trips}</td>
+                    <td style={{ padding: '10px 16px', color: '#374151' }}>{r.totalKm.toFixed(0)} km</td>
+                    <td style={{ padding: '10px 16px', color: '#374151' }}>{r.totalFuel.toFixed(1)} L</td>
+                    <td style={{ padding: '10px 16px', fontWeight: 600, color: '#2563eb' }}>
+                      {pricePerLiter > 0 ? `ETB ${(r.totalFuel * pricePerLiter).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      )}
+    </div>
+  );
+}
+
 const TransportReports = () => {
+  const [mainTab, setMainTab] = useState('received');
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -113,18 +244,32 @@ const TransportReports = () => {
       <div className="dashboard-header">
         <div>
           <h1>Reports</h1>
-          <p>Reports sent to you by the Admin</p>
+          <p>Reports sent to you by the Admin, and on-demand usage reports</p>
         </div>
       </div>
 
-      {/* ── Request a Report ── */}
-      <div style={{
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.10)',
-        borderRadius: '12px',
-        padding: '20px 24px',
-        marginBottom: '24px',
-      }}>
+      {/* Main tab switcher */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'rgba(255,255,255,0.06)', borderRadius: 10, padding: 4, width: 'fit-content' }}>
+        {[['received', '📥 Received Reports'], ['dept-usage', '🏛️ Department Usage'], ['request', '📋 Request a Report']].map(([key, label]) => (
+          <button key={key} onClick={() => setMainTab(key)}
+            style={{ padding: '7px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13,
+              background: mainTab === key ? 'rgba(255,255,255,0.12)' : 'transparent',
+              color: mainTab === key ? 'var(--text-primary, #fff)' : 'var(--text-secondary, #aaa)' }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {mainTab === 'dept-usage' && <DepartmentUsageReport />}
+
+      {mainTab === 'request' && (
+        <div style={{
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.10)',
+          borderRadius: '12px',
+          padding: '20px 24px',
+          marginBottom: '24px',
+        }}>
         <h3 style={{ marginBottom: '16px', fontSize: '15px', color: 'var(--text-primary)' }}>
           📋 Request a Report from Admin
         </h3>
@@ -194,7 +339,10 @@ const TransportReports = () => {
           </div>
         )}
       </div>
+      )}
 
+      {mainTab === 'received' && (
+      <>
       {/* Filter */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
         {['all', 'vehicle_usage', 'driver_activity'].map(f => (
@@ -284,6 +432,8 @@ const TransportReports = () => {
             </div>
           ))}
         </div>
+      )}
+      </>
       )}
     </div>
   );
